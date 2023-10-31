@@ -13,16 +13,21 @@ enum GPURenderPassClearFlag {
   GPU_RENDER_PASS_CLEAR_FLAG_STENCIL = 0x4,
 };
 
+struct GPURenderPassAttachment {
+  GPUFormat format;
+  GPUTextureUsage usage;
+};
+
 /* there is no concept of a render pass in opengl, but we still need to do smth
  * with a framebuffers */
 class GPURenderPass {
 public:
   virtual ~GPURenderPass() {}
 
-  virtual void Create(std::vector<GPURenderTarget *> pass_render_targets,
-                      glm::vec4 pass_render_area, glm::vec4 pass_clear_color,
-                      float pass_depth, float pass_stencil,
-                      uint8_t pass_clear_flags) = 0;
+  virtual void
+  Create(std::vector<GPURenderPassAttachment> pass_render_attachments,
+         glm::vec4 pass_render_area, glm::vec4 pass_clear_color,
+         float pass_depth, float pass_stencil, uint8_t pass_clear_flags) = 0;
   virtual void Destroy() = 0;
 
   virtual void Begin(GPURenderTarget *target) = 0;
@@ -39,7 +44,7 @@ public:
   }
 
 protected:
-  std::vector<GPURenderTarget *> render_targets;
+  std::vector<GPURenderPassAttachment> attachments;
   glm::vec4 render_area;
   glm::vec4 clear_color;
   float depth;

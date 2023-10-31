@@ -4,7 +4,7 @@
 #include "opengl_utils.h"
 
 void OpenGLTexture::Create(GPUFormat image_format,
-                           GPUTextureAspect texture_usage,
+                           GPUTextureUsage texture_usage,
                            uint32_t texture_width, uint32_t texture_height) {
   format = image_format;
   aspect = texture_usage;

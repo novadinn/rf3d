@@ -78,8 +78,13 @@ bool VulkanBackend::Initialize(SDL_Window *sdl_window) {
 
   main_render_pass = RenderPassAllocate();
   main_render_pass->Create(
-      std::vector<GPURenderTarget *>{}, glm::vec4(0, 0, width, height),
-      glm::vec4(0.1f, 0.1f, 0.1f, 1.0f), 1.0f, 0.0f,
+      std::vector<GPURenderPassAttachment>{
+          GPURenderPassAttachment{GPU_FORMAT_RGBA8,
+                                  GPU_TEXTURE_USAGE_COLOR_ATTACHMENT},
+          GPURenderPassAttachment{GPU_FORMAT_D24_S8,
+                                  GPU_TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT}},
+      glm::vec4(0, 0, width, height), glm::vec4(0.1f, 0.1f, 0.1f, 1.0f), 1.0f,
+      0.0f,
       GPU_RENDER_PASS_CLEAR_FLAG_COLOR | GPU_RENDER_PASS_CLEAR_FLAG_DEPTH |
           GPU_RENDER_PASS_CLEAR_FLAG_STENCIL);
 

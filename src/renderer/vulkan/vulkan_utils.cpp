@@ -72,7 +72,7 @@ VulkanUtils::GPUShaderStageTypeToVulkanStage(GPUShaderStageType stage) {
 }
 
 VkImageAspectFlags
-VulkanUtils::GPUTextureUsageToVulkanAspectFlags(GPUTextureAspect usage) {
+VulkanUtils::GPUTextureUsageToVulkanAspectFlags(GPUTextureUsage usage) {
   switch (usage) {
   case GPU_TEXTURE_USAGE_COLOR_ATTACHMENT: {
     return VK_IMAGE_ASPECT_COLOR_BIT;

@@ -42,7 +42,7 @@ bool OpenGLBackend::Initialize(SDL_Window *sdl_window) {
 
   main_render_pass = RenderPassAllocate();
   main_render_pass->Create(
-      std::vector<GPURenderTarget *>{}, glm::vec4(0, 0, width, height),
+      std::vector<GPURenderPassAttachment>{}, glm::vec4(0, 0, width, height),
       glm::vec4(0.1f, 0.1f, 0.1f, 1.0f), 1.0f, 0.0f,
       GPU_RENDER_PASS_CLEAR_FLAG_COLOR | GPU_RENDER_PASS_CLEAR_FLAG_DEPTH |
           GPU_RENDER_PASS_CLEAR_FLAG_STENCIL);

@@ -8,7 +8,7 @@
 #include "vulkan_utils.h"
 
 void VulkanTexture::Create(GPUFormat image_format,
-                           GPUTextureAspect texture_aspect,
+                           GPUTextureUsage texture_aspect,
                            uint32_t texture_width, uint32_t texture_height) {
   VulkanContext *context = VulkanBackend::GetContext();
 

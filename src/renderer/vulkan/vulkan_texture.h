@@ -8,7 +8,7 @@
 /* TODO: we dont need to have both texture and image classes */
 class VulkanTexture : public GPUTexture {
 public:
-  void Create(GPUFormat image_format, GPUTextureAspect texture_usage,
+  void Create(GPUFormat image_format, GPUTextureUsage texture_usage,
               uint32_t width, uint32_t height) override;
   void Destroy() override;
 

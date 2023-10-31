@@ -6,7 +6,7 @@
 
 class OpenGLTexture : public GPUTexture {
 public:
-  void Create(GPUFormat image_format, GPUTextureAspect texture_usage,
+  void Create(GPUFormat image_format, GPUTextureUsage texture_usage,
               uint32_t width, uint32_t height) override;
   void Destroy() override;
 

@@ -45,7 +45,7 @@ bool OpenGLFramebuffer::Invalidate() {
   uint32_t color_attachment_count = 0;
   for (int i = 0; i < attachments.size(); ++i) {
     GPUFormat temp_format = attachments[i]->GetFormat();
-    GPUTextureAspect temp_aspect = attachments[i]->GetUsage();
+    GPUTextureUsage temp_aspect = attachments[i]->GetUsage();
     uint32_t temp_width = attachments[i]->GetWidth();
     uint32_t temp_height = attachments[i]->GetHeight();
     /* recreate textures, since they are bound at framebuffer's creation time */

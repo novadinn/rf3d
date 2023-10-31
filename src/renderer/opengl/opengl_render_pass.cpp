@@ -5,10 +5,10 @@
 #include <glad/glad.h>
 
 void OpenGLRenderPass::Create(
-    std::vector<GPURenderTarget *> pass_render_targets,
+    std::vector<GPURenderPassAttachment> pass_render_attachments,
     glm::vec4 pass_render_area, glm::vec4 pass_clear_color, float pass_depth,
     float pass_stencil, uint8_t pass_clear_flags) {
-  render_targets = pass_render_targets;
+  attachments = pass_render_attachments;
   render_area = pass_render_area;
   clear_color = pass_clear_color;
   depth = pass_depth;
@@ -17,7 +17,7 @@ void OpenGLRenderPass::Create(
 }
 
 void OpenGLRenderPass::Destroy() {
-  render_targets.clear();
+  attachments.clear();
   render_area = glm::vec4(0.0f);
   clear_color = glm::vec4(0.0f);
   depth = 0;
