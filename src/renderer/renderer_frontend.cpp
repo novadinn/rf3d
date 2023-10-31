@@ -28,6 +28,8 @@ void RendererFrontend::Shutdown() {
   backend->Shutdown();
 
   delete backend;
+
+  backend = 0;
 }
 
 void RendererFrontend::Resize(uint32_t width, uint32_t height) {

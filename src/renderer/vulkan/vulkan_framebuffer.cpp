@@ -48,6 +48,11 @@ void VulkanFramebuffer::Destroy() {
 
   vkDestroyFramebuffer(context->device->GetLogicalDevice(), handle,
                        context->allocator);
+
+  handle = 0;
+  attachments.clear();
+  width = 0;
+  height = 0;
 }
 
 bool VulkanFramebuffer::Resize(uint32_t new_width, uint32_t new_height) {

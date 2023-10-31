@@ -39,6 +39,9 @@ void OpenGLVertexArray::Create(GPUBuffer *vertex_buffer,
   }
 }
 
-void OpenGLVertexArray::Destroy() { glDeleteVertexArrays(1, &id); }
+void OpenGLVertexArray::Destroy() {
+  glDeleteVertexArrays(1, &id);
+  id = GL_NONE;
+}
 
 void OpenGLVertexArray::Bind() { glBindVertexArray(id); }

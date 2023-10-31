@@ -244,13 +244,15 @@ void VulkanShader::Destroy() {
   }
 
   pipeline.Destroy();
+  pipeline = {};
+  uniform_buffers.clear();
 }
 
 void VulkanShader::Bind() {
   VulkanContext *context = VulkanBackend::GetContext();
 
-  VulkanDeviceQueueInfo info;
-  context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_GRAPHICS, &info);
+  VulkanDeviceQueueInfo info =
+      context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_GRAPHICS);
 
   VulkanCommandBuffer *command_buffer =
       &info.command_buffers[context->image_index];

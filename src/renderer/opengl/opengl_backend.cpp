@@ -37,11 +37,8 @@ bool OpenGLBackend::Initialize(SDL_Window *sdl_window) {
 
   glEnable(GL_DEPTH_TEST);
 
-  int w, h;
-  SDL_GetWindowSize(window, &w, &h);
-
-  width = (uint32_t)w;
-  height = (uint32_t)h;
+  int width, height;
+  SDL_GetWindowSize(window, &width, &height);
 
   main_render_pass = RenderPassAllocate();
   main_render_pass->Create(
@@ -53,13 +50,20 @@ bool OpenGLBackend::Initialize(SDL_Window *sdl_window) {
   return true;
 }
 
-void OpenGLBackend::Shutdown() { SDL_GL_DeleteContext(gl_context); }
+void OpenGLBackend::Shutdown() {
+  main_render_pass->Destroy();
+  delete main_render_pass;
+  window = 0;
+  gl_context = 0;
+  SDL_GL_DeleteContext(gl_context);
+}
 
 void OpenGLBackend::Resize(uint32_t width, uint32_t height) {}
 
 bool OpenGLBackend::BeginFrame() {
   SDL_GL_MakeCurrent(window, gl_context);
-  glViewport(0, 0, width, height);
+  glm::vec4 &render_area = main_render_pass->GetRenderArea();
+  glViewport(render_area.x, render_area.y, render_area.z, render_area.w);
 
   return true;
 }

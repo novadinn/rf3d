@@ -37,7 +37,4 @@ private:
   SDL_GLContext gl_context;
 
   GPURenderPass *main_render_pass;
-
-  /* TODO: temp code section */
-  uint32_t width, height;
 };

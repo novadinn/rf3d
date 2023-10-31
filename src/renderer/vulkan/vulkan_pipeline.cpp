@@ -166,6 +166,9 @@ void VulkanPipeline::Destroy() {
                     context->allocator);
   vkDestroyPipelineLayout(context->device->GetLogicalDevice(), layout,
                           context->allocator);
+
+  handle = 0;
+  layout = 0;
 }
 
 void VulkanPipeline::Bind(VulkanCommandBuffer *command_buffer,

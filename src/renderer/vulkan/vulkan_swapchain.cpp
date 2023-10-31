@@ -58,18 +58,10 @@ bool VulkanSwapchain::Create(uint32_t width, uint32_t height) {
 
   max_frames_in_flight = image_count - 1;
 
-  VulkanDeviceQueueInfo graphics_queue_info = {};
-  if (!context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_GRAPHICS,
-                                     &graphics_queue_info)) {
-    ERROR("Can not create a swapchain without graphics queue support!");
-    return false;
-  }
-  VulkanDeviceQueueInfo present_queue_info = {};
-  if (!context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_PRESENT,
-                                     &present_queue_info)) {
-    ERROR("Can not create a swapchain without present queue support!");
-    return false;
-  }
+  VulkanDeviceQueueInfo graphics_queue_info =
+      context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_GRAPHICS);
+  VulkanDeviceQueueInfo present_queue_info =
+      context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_PRESENT);
 
   VkSwapchainCreateInfoKHR swapchain_create_info = {};
   swapchain_create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -148,6 +140,7 @@ void VulkanSwapchain::Destroy() {
   VulkanContext *context = VulkanBackend::GetContext();
 
   depth_attachment.Destroy();
+  depth_attachment = {};
 
   for (int i = 0; i < image_views.size(); ++i) {
     vkDestroyImageView(context->device->GetLogicalDevice(), image_views[i],
@@ -161,6 +154,15 @@ void VulkanSwapchain::Destroy() {
 
   vkDestroySwapchainKHR(context->device->GetLogicalDevice(), handle,
                         context->allocator);
+
+  handle = 0;
+  max_frames_in_flight = 0;
+  images.clear();
+  image_views.clear();
+  image_format = {};
+  present_mode = {};
+  extent = {};
+  framebuffers.clear();
 }
 
 bool VulkanSwapchain::Recreate(uint32_t width, uint32_t height) {

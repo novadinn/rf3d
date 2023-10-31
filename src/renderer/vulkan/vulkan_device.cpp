@@ -122,6 +122,17 @@ void VulkanDevice::Destroy() {
   }
 
   vkDestroyDevice(logical_device, context->allocator);
+
+  physical_device = 0;
+  logical_device = 0;
+
+  properties = {};
+  features = {};
+  memory = {};
+
+  queue_infos.clear();
+  swapchain_support_info = {};
+  depth_format = VK_FORMAT_UNDEFINED;
 }
 
 void VulkanDevice::UpdateSwapchainSupport() {

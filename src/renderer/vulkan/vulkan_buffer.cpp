@@ -98,16 +98,20 @@ void VulkanBuffer::Destroy() {
   vkFreeMemory(context->device->GetLogicalDevice(), memory, context->allocator);
   vkDestroyBuffer(context->device->GetLogicalDevice(), handle,
                   context->allocator);
+
+  handle = 0;
+  memory = 0;
+  usage = 0;
+  memory_index = -1;
+  type = GPU_BUFFER_TYPE_NONE;
+  total_size = 0;
 }
 
 bool VulkanBuffer::Bind(uint64_t offset) {
   VulkanContext *context = VulkanBackend::GetContext();
 
-  VulkanDeviceQueueInfo info;
-  if (!context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_GRAPHICS,
-                                     &info)) {
-    return false;
-  }
+  VulkanDeviceQueueInfo info =
+      context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_GRAPHICS);
 
   VulkanCommandBuffer *command_buffer =
       &info.command_buffers[context->image_index];
@@ -192,11 +196,8 @@ bool VulkanBuffer::CopyTo(GPUBuffer *dest, uint64_t source_offset,
                           uint64_t dest_offset, uint64_t size) {
   VulkanContext *context = VulkanBackend::GetContext();
 
-  VulkanDeviceQueueInfo graphics_queue_info = {};
-  if (!context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_GRAPHICS,
-                                     &graphics_queue_info)) {
-    return false;
-  }
+  VulkanDeviceQueueInfo graphics_queue_info =
+      context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_GRAPHICS);
 
   VkQueue queue = graphics_queue_info.queue;
   VkCommandPool command_pool = graphics_queue_info.command_pool;

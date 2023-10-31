@@ -115,6 +115,14 @@ void VulkanRenderPass::Destroy() {
 
   vkDestroyRenderPass(context->device->GetLogicalDevice(), handle,
                       context->allocator);
+
+  handle = 0;
+  render_targets.clear();
+  render_area = glm::vec4(0.0f);
+  clear_color = glm::vec4(0.0f);
+  depth = 0;
+  stencil = 0;
+  clear_flags = 0;
 }
 
 void VulkanRenderPass::Begin(GPURenderTarget *target) {
@@ -157,8 +165,8 @@ void VulkanRenderPass::Begin(GPURenderTarget *target) {
   begin_info.clearValueCount = clear_values.size();
   begin_info.pClearValues = clear_values.data();
 
-  VulkanDeviceQueueInfo info;
-  context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_GRAPHICS, &info);
+  VulkanDeviceQueueInfo info =
+      context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_GRAPHICS);
   VulkanCommandBuffer *command_buffer =
       &info.command_buffers[context->image_index];
 
@@ -169,8 +177,8 @@ void VulkanRenderPass::Begin(GPURenderTarget *target) {
 void VulkanRenderPass::End() {
   VulkanContext *context = VulkanBackend::GetContext();
 
-  VulkanDeviceQueueInfo info;
-  context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_GRAPHICS, &info);
+  VulkanDeviceQueueInfo info =
+      context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_GRAPHICS);
   VulkanCommandBuffer *command_buffer =
       &info.command_buffers[context->image_index];
 

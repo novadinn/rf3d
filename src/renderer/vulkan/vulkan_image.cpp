@@ -73,6 +73,12 @@ void VulkanImage::Destroy() {
   vkFreeMemory(context->device->GetLogicalDevice(), memory, context->allocator);
   vkDestroyImage(context->device->GetLogicalDevice(), handle,
                  context->allocator);
+
+  handle = 0;
+  view = 0;
+  memory = 0;
+  width = 0;
+  height = 0;
 }
 
 void VulkanImage::CreateImageView(VkFormat format,
@@ -102,9 +108,8 @@ void VulkanImage::TransitionLayout(VulkanCommandBuffer *command_buffer,
                                    VkImageLayout new_layout) {
   VulkanContext *context = VulkanBackend::GetContext();
 
-  VulkanDeviceQueueInfo graphics_queue_info;
-  context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_GRAPHICS,
-                                &graphics_queue_info);
+  VulkanDeviceQueueInfo graphics_queue_info =
+      context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_GRAPHICS);
 
   VkImageMemoryBarrier barrier = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
   barrier.oldLayout = old_layout;

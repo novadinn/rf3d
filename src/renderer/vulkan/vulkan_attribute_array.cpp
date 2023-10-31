@@ -7,7 +7,10 @@ void VulkanAttributeArray::Create(GPUBuffer *target_vertex_buffer,
   index_buffer = target_index_buffer;
 }
 
-void VulkanAttributeArray::Destroy() {}
+void VulkanAttributeArray::Destroy() {
+  vertex_buffer = 0;
+  index_buffer = 0;
+}
 
 void VulkanAttributeArray::Bind() {
   if (index_buffer) {

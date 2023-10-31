@@ -113,6 +113,7 @@ bool OpenGLShader::Create(GPUShaderConfig *config, GPURenderPass *render_pass,
 
 void OpenGLShader::Destroy() {
   glDeleteProgram(id);
+  id = GL_NONE;
   for (auto it = descriptors.begin(); it != descriptors.end(); ++it) {
     it->second.buffer->Destroy();
     delete it->second.buffer;

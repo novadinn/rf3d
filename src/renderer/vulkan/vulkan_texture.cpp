@@ -63,6 +63,11 @@ void VulkanTexture::Destroy() {
   vkDestroySampler(context->device->GetLogicalDevice(), sampler,
                    context->allocator);
   image.Destroy();
+  image = {};
+
+  sampler = 0;
+  native_format = VK_FORMAT_UNDEFINED;
+  native_aspect_flags = VK_IMAGE_ASPECT_NONE;
 }
 
 void VulkanTexture::WriteData(uint8_t *pixels, uint32_t offset) {
@@ -80,8 +85,8 @@ void VulkanTexture::WriteData(uint8_t *pixels, uint32_t offset) {
   staging.Create(GPU_BUFFER_TYPE_STAGING, size);
   staging.LoadData(0, size, pixels);
 
-  VulkanDeviceQueueInfo queue_info;
-  context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_GRAPHICS, &queue_info);
+  VulkanDeviceQueueInfo queue_info =
+      context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_GRAPHICS);
   VkCommandPool command_pool = queue_info.command_pool;
   VkQueue queue = queue_info.queue;
 

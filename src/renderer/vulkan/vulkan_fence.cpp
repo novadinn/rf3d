@@ -24,6 +24,9 @@ void VulkanFence::Destroy() {
 
   vkDestroyFence(context->device->GetLogicalDevice(), handle,
                  context->allocator);
+
+  handle = 0;
+  signaled = false;
 }
 
 bool VulkanFence::Wait(uint64_t timeout_ns) {

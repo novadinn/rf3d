@@ -28,6 +28,11 @@ public:
   virtual void Begin(GPURenderTarget *target) = 0;
   virtual void End() = 0;
 
+  inline glm::vec4 &GetRenderArea() { return render_area; }
+  inline void SetRenderArea(glm::vec4 new_render_area) {
+    render_area = new_render_area;
+  }
+
   inline glm::vec4 &GetClearColor() { return clear_color; }
   inline void SetClearColor(glm::vec4 new_clear_color) {
     clear_color = new_clear_color;

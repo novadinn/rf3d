@@ -18,6 +18,9 @@ void OpenGLFramebuffer::Destroy() {
     glDeleteFramebuffers(1, &id);
   }
 
+  attachments.clear();
+  width = 0;
+  height = 0;
   id = GL_NONE;
 }
 
@@ -29,7 +32,9 @@ bool OpenGLFramebuffer::Resize(uint32_t new_width, uint32_t new_height) {
 }
 
 bool OpenGLFramebuffer::Invalidate() {
-  Destroy();
+  if (id != GL_NONE) {
+    glDeleteFramebuffers(1, &id);
+  }
 
   /* TODO: no multisampling support for now */
   GLenum texture_target = GL_TEXTURE_2D;

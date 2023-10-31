@@ -25,6 +25,8 @@ void VulkanCommandBuffer::Free(VkCommandPool command_pool) {
 
   vkFreeCommandBuffers(context->device->GetLogicalDevice(), command_pool, 1,
                        &handle);
+
+  handle = 0;
 }
 
 void VulkanCommandBuffer::Begin(VkCommandBufferUsageFlags usage) {

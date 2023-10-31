@@ -34,7 +34,13 @@ bool OpenGLBuffer::Create(GPUBufferType buffer_type, uint64_t buffer_size) {
   return true;
 }
 
-void OpenGLBuffer::Destroy() { glDeleteBuffers(1, &id); }
+void OpenGLBuffer::Destroy() {
+  glDeleteBuffers(1, &id);
+  internal_type = GL_NONE;
+  type = GPU_BUFFER_TYPE_NONE;
+  total_size = 0;
+  id = GL_NONE;
+}
 
 bool OpenGLBuffer::Bind(uint64_t offset) {
   glBindBuffer(internal_type, id);

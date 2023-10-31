@@ -3,6 +3,7 @@
 #include <stdint.h>
 
 enum GPUBufferType {
+  GPU_BUFFER_TYPE_NONE,
   GPU_BUFFER_TYPE_VERTEX,
   GPU_BUFFER_TYPE_INDEX,
   GPU_BUFFER_TYPE_UNIFORM,

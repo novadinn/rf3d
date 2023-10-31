@@ -8,6 +8,7 @@ void OpenGLRenderPass::Create(
     std::vector<GPURenderTarget *> pass_render_targets,
     glm::vec4 pass_render_area, glm::vec4 pass_clear_color, float pass_depth,
     float pass_stencil, uint8_t pass_clear_flags) {
+  render_targets = pass_render_targets;
   render_area = pass_render_area;
   clear_color = pass_clear_color;
   depth = pass_depth;
@@ -15,7 +16,14 @@ void OpenGLRenderPass::Create(
   clear_flags = pass_clear_flags;
 }
 
-void OpenGLRenderPass::Destroy() {}
+void OpenGLRenderPass::Destroy() {
+  render_targets.clear();
+  render_area = glm::vec4(0.0f);
+  clear_color = glm::vec4(0.0f);
+  depth = 0;
+  stencil = 0;
+  clear_flags = 0;
+}
 
 void OpenGLRenderPass::Begin(GPURenderTarget *target) {
   GLuint framebuffer_id = 0;

@@ -38,7 +38,14 @@ void OpenGLTexture::Create(GPUFormat image_format,
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_REPEAT);
 }
 
-void OpenGLTexture::Destroy() { glDeleteTextures(1, &id); }
+void OpenGLTexture::Destroy() {
+  glDeleteTextures(1, &id);
+  id = GL_NONE;
+  format = GPU_FORMAT_NONE;
+  aspect = GPU_TEXTURE_USAGE_NONE;
+  width = 0;
+  height = 0;
+}
 
 void OpenGLTexture::WriteData(uint8_t *pixels, uint32_t offset) {
   glBindTexture(GL_TEXTURE_2D, id);

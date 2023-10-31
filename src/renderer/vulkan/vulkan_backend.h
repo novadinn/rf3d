@@ -36,7 +36,4 @@ private:
   SDL_Window *window;
 
   GPURenderPass *main_render_pass;
-
-  /* TODO: temp */
-  float width, height;
 };

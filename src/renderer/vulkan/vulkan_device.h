@@ -45,14 +45,8 @@ public:
 
   inline VkPhysicalDevice GetPhysicalDevice() const { return physical_device; }
   inline VkDevice GetLogicalDevice() const { return logical_device; }
-  inline bool GetQueueInfo(VulkanDeviceQueueType type,
-                           VulkanDeviceQueueInfo *out_info) const {
-    if (queue_infos.count(type)) {
-      *out_info = queue_infos.at(type);
-      return true;
-    }
-
-    return false;
+  inline VulkanDeviceQueueInfo GetQueueInfo(VulkanDeviceQueueType type) const {
+    return queue_infos.at(type);
   }
   inline VulkanSwapchainSupportInfo GetSwapchainSupportInfo() const {
     return swapchain_support_info;

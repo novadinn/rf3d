@@ -68,14 +68,11 @@ bool VulkanBackend::Initialize(SDL_Window *sdl_window) {
   }
 
   /* TODO: temp */
-  int w, h;
-  SDL_Vulkan_GetDrawableSize(window, &w, &h);
-
-  width = (float)w;
-  height = (float)h;
+  int width, height;
+  SDL_Vulkan_GetDrawableSize(window, &width, &height);
 
   context->swapchain = new VulkanSwapchain();
-  if (!context->swapchain->Create(w, h)) {
+  if (!context->swapchain->Create(width, height)) {
     return false;
   }
 
@@ -87,7 +84,7 @@ bool VulkanBackend::Initialize(SDL_Window *sdl_window) {
           GPU_RENDER_PASS_CLEAR_FLAG_STENCIL);
 
   context->swapchain->RegenerateFramebuffers(
-      (VulkanRenderPass *)main_render_pass, w, h);
+      (VulkanRenderPass *)main_render_pass, width, height);
 
   context->device->UpdateCommandBuffers();
 
@@ -143,6 +140,8 @@ void VulkanBackend::Shutdown() {
   }
 
   main_render_pass->Destroy();
+  delete main_render_pass;
+  main_render_pass = 0;
 
   context->swapchain->Destroy();
   delete context->swapchain;
@@ -162,6 +161,8 @@ void VulkanBackend::Shutdown() {
   vkDestroyInstance(context->instance, context->allocator);
 
   delete context;
+  context = 0;
+  window = 0;
 }
 
 void VulkanBackend::Resize(uint32_t width, uint32_t height) {}
@@ -173,18 +174,16 @@ bool VulkanBackend::BeginFrame() {
     return false;
   }
 
+  glm::vec4 render_area = main_render_pass->GetRenderArea();
   if (!context->swapchain->AcquireNextImage(
           UINT64_MAX,
-          context->image_available_semaphores[context->current_frame], 0, width,
-          height, &context->image_index)) {
+          context->image_available_semaphores[context->current_frame], 0,
+          render_area.z, render_area.w, &context->image_index)) {
     return false;
   }
 
-  VulkanDeviceQueueInfo info;
-  if (!context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_GRAPHICS,
-                                     &info)) {
-    return false;
-  }
+  VulkanDeviceQueueInfo info =
+      context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_GRAPHICS);
 
   VulkanCommandBuffer *command_buffer =
       &info.command_buffers[context->image_index];
@@ -192,16 +191,16 @@ bool VulkanBackend::BeginFrame() {
 
   VkViewport viewport;
   viewport.x = 0.0f;
-  viewport.y = height;
-  viewport.width = width;
-  viewport.height = -height;
+  viewport.y = render_area.w;
+  viewport.width = render_area.z;
+  viewport.height = -render_area.w;
   viewport.minDepth = 0.0f;
   viewport.maxDepth = 1.0f;
 
   VkRect2D scissor;
   scissor.offset.x = scissor.offset.y = 0;
-  scissor.extent.width = width;
-  scissor.extent.height = height;
+  scissor.extent.width = render_area.z;
+  scissor.extent.height = render_area.w;
 
   vkCmdSetViewport(command_buffer->GetHandle(), 0, 1, &viewport);
   vkCmdSetScissor(command_buffer->GetHandle(), 0, 1, &scissor);
@@ -210,11 +209,8 @@ bool VulkanBackend::BeginFrame() {
 }
 
 bool VulkanBackend::EndFrame() {
-  VulkanDeviceQueueInfo info;
-  if (!context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_GRAPHICS,
-                                     &info)) {
-    return false;
-  }
+  VulkanDeviceQueueInfo info =
+      context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_GRAPHICS);
 
   VulkanCommandBuffer *command_buffer =
       &info.command_buffers[context->image_index];
@@ -254,18 +250,10 @@ bool VulkanBackend::EndFrame() {
       VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
   submit_info.pWaitDstStageMask = flags;
 
-  VulkanDeviceQueueInfo graphics_queue_info = {};
-  if (!context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_GRAPHICS,
-                                     &graphics_queue_info)) {
-    ERROR("Failed to get graphics queue.");
-    return false;
-  }
-  VulkanDeviceQueueInfo present_queue_info = {};
-  if (!context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_PRESENT,
-                                     &present_queue_info)) {
-    ERROR("Failed to get present queue.");
-    return false;
-  }
+  VulkanDeviceQueueInfo graphics_queue_info =
+      context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_GRAPHICS);
+  VulkanDeviceQueueInfo present_queue_info =
+      context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_PRESENT);
 
   VkResult result = vkQueueSubmit(
       graphics_queue_info.queue, 1, &submit_info,
@@ -286,9 +274,10 @@ bool VulkanBackend::EndFrame() {
   present_info.pImageIndices = &context->image_index;
   present_info.pResults = 0;
 
+  glm::vec4 render_area = main_render_pass->GetRenderArea();
   result = vkQueuePresentKHR(present_queue_info.queue, &present_info);
   if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-    context->swapchain->Recreate(width, height);
+    context->swapchain->Recreate(render_area.z, render_area.w);
   } else if (result != VK_SUCCESS) {
     FATAL("Failed to present swap chain image!");
     return false;
@@ -301,11 +290,8 @@ bool VulkanBackend::EndFrame() {
 }
 
 bool VulkanBackend::Draw(uint32_t element_count) {
-  VulkanDeviceQueueInfo info;
-  if (!context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_GRAPHICS,
-                                     &info)) {
-    return false;
-  }
+  VulkanDeviceQueueInfo info =
+      context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_GRAPHICS);
 
   VulkanCommandBuffer *command_buffer =
       &info.command_buffers[context->image_index];
