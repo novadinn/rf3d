@@ -101,14 +101,10 @@ bool VulkanSwapchain::Create(uint32_t width, uint32_t height) {
                                    &swapchain_image_count, 0));
   images.resize(swapchain_image_count);
   image_views.resize(swapchain_image_count);
-  framebuffers.resize(swapchain_image_count);
   VK_CHECK(vkGetSwapchainImagesKHR(context->device->GetLogicalDevice(), handle,
                                    &swapchain_image_count, images.data()));
 
   for (int i = 0; i < swapchain_image_count; ++i) {
-    /* TODO: rendertargetallocate */
-    framebuffers[i] = new VulkanFramebuffer();
-
     VkImage image = images[i];
 
     VkImageViewCreateInfo view_info = {
@@ -147,11 +143,6 @@ void VulkanSwapchain::Destroy() {
                        context->allocator);
   }
 
-  for (int i = 0; i < framebuffers.size(); ++i) {
-    framebuffers[i]->Destroy();
-    delete framebuffers[i];
-  }
-
   vkDestroySwapchainKHR(context->device->GetLogicalDevice(), handle,
                         context->allocator);
 
@@ -162,7 +153,6 @@ void VulkanSwapchain::Destroy() {
   image_format = {};
   present_mode = {};
   extent = {};
-  framebuffers.clear();
 }
 
 bool VulkanSwapchain::Recreate(uint32_t width, uint32_t height) {
@@ -190,27 +180,4 @@ bool VulkanSwapchain::AcquireNextImage(uint64_t timeout_ns,
   }
 
   return true;
-}
-
-void VulkanSwapchain::RegenerateFramebuffers(VulkanRenderPass *render_pass,
-                                             uint32_t width, uint32_t height) {
-  for (int i = 0; i < framebuffers.size(); ++i) {
-    // std::vector<VkImageView> attachments = {image_views[i],
-    //                                         depth_attachment.GetImageView()};
-    /* TODO: horrible... */
-    VulkanImage color_image;
-    color_image.SetImageView(image_views[i]);
-    VulkanImage depth_image;
-    depth_image.SetImageView(depth_attachment.GetImageView());
-    VulkanTexture color_texture;
-    color_texture.SetImage(color_image);
-    VulkanTexture depth_texture;
-    depth_texture.SetImage(depth_image);
-
-    std::vector<GPUTexture *> attachments;
-    attachments.emplace_back(&color_texture);
-    attachments.emplace_back(&depth_texture);
-
-    framebuffers[i]->Create(render_pass, attachments, width, height);
-  }
 }

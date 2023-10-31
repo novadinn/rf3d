@@ -83,8 +83,11 @@ bool VulkanBackend::Initialize(SDL_Window *sdl_window) {
       GPU_RENDER_PASS_CLEAR_FLAG_COLOR | GPU_RENDER_PASS_CLEAR_FLAG_DEPTH |
           GPU_RENDER_PASS_CLEAR_FLAG_STENCIL);
 
-  context->swapchain->RegenerateFramebuffers(
-      (VulkanRenderPass *)main_render_pass, width, height);
+  main_framebuffers.resize(context->swapchain->GetImageViews().size());
+  for (int i = 0; i < main_framebuffers.size(); ++i) {
+    main_framebuffers[i] = RenderTargetAllocate();
+  }
+  RegenerateFramebuffers();
 
   context->device->UpdateCommandBuffers();
 
@@ -138,6 +141,12 @@ void VulkanBackend::Shutdown() {
     context->in_flight_fences[i]->Destroy();
     delete context->in_flight_fences[i];
   }
+
+  for (int i = 0; i < main_framebuffers.size(); ++i) {
+    main_framebuffers[i]->Destroy();
+    delete main_framebuffers[i];
+  }
+  main_framebuffers.clear();
 
   main_render_pass->Destroy();
   delete main_render_pass;
@@ -304,7 +313,7 @@ bool VulkanBackend::Draw(uint32_t element_count) {
 GPURenderPass *VulkanBackend::GetWindowRenderPass() { return main_render_pass; }
 
 GPURenderTarget *VulkanBackend::GetCurrentWindowRenderTarget() {
-  return context->swapchain->GetFramebuffers()[context->image_index];
+  return main_framebuffers[context->image_index];
 }
 
 GPUBuffer *VulkanBackend::BufferAllocate() { return new VulkanBuffer(); }
@@ -326,6 +335,32 @@ GPUAttributeArray *VulkanBackend::AttributeArrayAllocate() {
 GPUTexture *VulkanBackend::TextureAllocate() { return new VulkanTexture(); }
 
 VulkanContext *VulkanBackend::GetContext() { return context; }
+
+void VulkanBackend::RegenerateFramebuffers() {
+  std::vector<VkImageView> &image_views = context->swapchain->GetImageViews();
+  VulkanImage &depth_attachment = context->swapchain->GetDepthImage();
+  glm::vec4 &render_area = main_render_pass->GetRenderArea();
+  for (int i = 0; i < main_framebuffers.size(); ++i) {
+    // std::vector<VkImageView> attachments = {image_views[i],
+    //                                         depth_attachment.GetImageView()};
+    /* TODO: horrible... */
+    VulkanImage color_image;
+    color_image.SetImageView(image_views[i]);
+    VulkanImage depth_image;
+    depth_image.SetImageView(depth_attachment.GetImageView());
+    VulkanTexture color_texture;
+    color_texture.SetImage(color_image);
+    VulkanTexture depth_texture;
+    depth_texture.SetImage(depth_image);
+
+    std::vector<GPUTexture *> attachments;
+    attachments.emplace_back(&color_texture);
+    attachments.emplace_back(&depth_texture);
+
+    main_framebuffers[i]->Create(main_render_pass, attachments, render_area.z,
+                                 render_area.w);
+  }
+}
 
 static bool createVulkanInstance(VkApplicationInfo application_info,
                                  SDL_Window *window, VkInstance *out_instance) {

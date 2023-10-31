@@ -32,8 +32,11 @@ public:
   static VulkanContext *GetContext();
 
 private:
+  void RegenerateFramebuffers();
+
   static VulkanContext *context;
   SDL_Window *window;
 
   GPURenderPass *main_render_pass;
+  std::vector<GPURenderTarget *> main_framebuffers;
 };
