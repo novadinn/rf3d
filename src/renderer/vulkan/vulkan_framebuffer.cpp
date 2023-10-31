@@ -19,7 +19,7 @@ bool VulkanFramebuffer::Create(GPURenderPass *target_render_pass,
   std::vector<VkImageView> attachment_views;
   for (int i = 0; i < target_attachments.size(); ++i) {
     VulkanTexture *native_attachment = ((VulkanTexture *)target_attachments[i]);
-    attachment_views.push_back(native_attachment->GetImage().GetImageView());
+    attachment_views.push_back(native_attachment->GetImageView());
   }
 
   VkFramebufferCreateInfo framebuffer_create_info = {};

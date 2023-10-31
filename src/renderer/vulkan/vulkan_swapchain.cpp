@@ -122,12 +122,9 @@ bool VulkanSwapchain::Create(uint32_t width, uint32_t height) {
                                context->allocator, &image_views[i]));
   }
 
-  depth_attachment.Create(
-      extent.width, extent.height, context->device->GetDepthFormat(),
-      VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_DEPTH_BIT);
-  depth_attachment.CreateImageView(context->device->GetDepthFormat(),
-                                   VK_IMAGE_ASPECT_DEPTH_BIT);
+  depth_attachment.Create(GPU_FORMAT_D24_S8,
+                          GPU_TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT,
+                          extent.width, extent.height);
 
   return true;
 }

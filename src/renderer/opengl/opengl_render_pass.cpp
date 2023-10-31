@@ -11,8 +11,6 @@ void OpenGLRenderPass::Create(
   attachments = pass_render_attachments;
   render_area = pass_render_area;
   clear_color = pass_clear_color;
-  depth = pass_depth;
-  stencil = pass_stencil;
   clear_flags = pass_clear_flags;
 }
 
@@ -20,8 +18,6 @@ void OpenGLRenderPass::Destroy() {
   attachments.clear();
   render_area = glm::vec4(0.0f);
   clear_color = glm::vec4(0.0f);
-  depth = 0;
-  stencil = 0;
   clear_flags = 0;
 }
 

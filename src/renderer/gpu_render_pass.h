@@ -47,7 +47,5 @@ protected:
   std::vector<GPURenderPassAttachment> attachments;
   glm::vec4 render_area;
   glm::vec4 clear_color;
-  float depth;
-  float stencil;
   uint8_t clear_flags;
 };

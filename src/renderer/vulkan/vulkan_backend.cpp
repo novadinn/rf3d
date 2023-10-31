@@ -343,24 +343,18 @@ VulkanContext *VulkanBackend::GetContext() { return context; }
 
 void VulkanBackend::RegenerateFramebuffers() {
   std::vector<VkImageView> &image_views = context->swapchain->GetImageViews();
-  VulkanImage &depth_attachment = context->swapchain->GetDepthImage();
+  VulkanTexture depth_attachment = context->swapchain->GetDepthImage();
   glm::vec4 &render_area = main_render_pass->GetRenderArea();
   for (int i = 0; i < main_framebuffers.size(); ++i) {
     // std::vector<VkImageView> attachments = {image_views[i],
     //                                         depth_attachment.GetImageView()};
     /* TODO: horrible... */
-    VulkanImage color_image;
-    color_image.SetImageView(image_views[i]);
-    VulkanImage depth_image;
-    depth_image.SetImageView(depth_attachment.GetImageView());
     VulkanTexture color_texture;
-    color_texture.SetImage(color_image);
-    VulkanTexture depth_texture;
-    depth_texture.SetImage(depth_image);
+    color_texture.SetImageView(image_views[i]);
 
     std::vector<GPUTexture *> attachments;
     attachments.emplace_back(&color_texture);
-    attachments.emplace_back(&depth_texture);
+    attachments.emplace_back(&depth_attachment);
 
     main_framebuffers[i]->Create(main_render_pass, attachments, render_area.z,
                                  render_area.w);

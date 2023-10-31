@@ -48,7 +48,6 @@ set(SRC
   src/renderer/vulkan/vulkan_backend.cpp
   src/renderer/vulkan/vulkan_device.cpp
   src/renderer/vulkan/vulkan_swapchain.cpp
-  src/renderer/vulkan/vulkan_image.cpp
   src/renderer/vulkan/vulkan_utils.cpp
   src/renderer/vulkan/vulkan_command_buffer.cpp
   src/renderer/vulkan/vulkan_render_pass.cpp
