@@ -1,8 +1,8 @@
 #include "opengl_backend.h"
 
 #include "logger.h"
-#include "opengl_descriptor.h"
 #include "opengl_render_pass.h"
+#include "opengl_shader_buffer.h"
 #include "opengl_texture.h"
 #include "platform.h"
 
@@ -103,6 +103,6 @@ GPUAttributeArray *OpenGLBackend::AttributeArrayAllocate() {
 
 GPUTexture *OpenGLBackend::TextureAllocate() { return new OpenGLTexture(); }
 
-GPUDescriptor *OpenGLBackend::DescriptorAllocate() {
-  return new OpenGLDescriptor();
+GPUShaderBuffer *OpenGLBackend::ShaderBufferAllocate() {
+  return new OpenGLShaderBuffer();
 }

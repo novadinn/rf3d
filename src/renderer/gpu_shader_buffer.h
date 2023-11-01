@@ -6,16 +6,16 @@
 
 class GPUShader;
 
-enum GPUDescriptorType {
+enum GPUShaderBufferType {
   GPU_DESCRIPTOR_TYPE_NONE,
   GPU_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 };
 
-class GPUDescriptor {
+class GPUShaderBuffer {
 public:
-  virtual ~GPUDescriptor() {}
+  virtual ~GPUShaderBuffer() {}
   virtual void Create(const char *descriptor_name,
-                      GPUDescriptorType descriptor_type,
+                      GPUShaderBufferType descriptor_type,
                       uint8_t descriptor_stage_flags, uint64_t descriptor_size,
                       uint32_t descriptor_index) = 0;
   virtual void Destroy() = 0;
@@ -28,5 +28,5 @@ public:
 
 protected:
   const char *name;
-  GPUDescriptorType type;
+  GPUShaderBufferType type;
 };

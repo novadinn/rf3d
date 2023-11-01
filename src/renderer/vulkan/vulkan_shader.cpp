@@ -4,7 +4,7 @@
 #include "renderer/gpu_utils.h"
 #include "vulkan_backend.h"
 #include "vulkan_context.h"
-#include "vulkan_descriptor.h"
+#include "vulkan_shader_buffer.h"
 #include "vulkan_utils.h"
 
 #include <stdio.h>
@@ -94,7 +94,7 @@ bool VulkanShader::Create(GPUShaderConfig *config, GPURenderPass *render_pass,
   descriptor_set_layouts.resize(config->descriptors.size());
   for (int i = 0; i < descriptor_set_layouts.size(); ++i) {
     descriptor_set_layouts[i] =
-        ((VulkanDescriptor *)config->descriptors[i])->GetSetLayout();
+        ((VulkanShaderBuffer *)config->descriptors[i])->GetSetLayout();
   }
 
   /* TODO: empty for now */

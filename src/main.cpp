@@ -7,7 +7,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#define WITH_VULKAN_BACKEND 0
+#define WITH_VULKAN_BACKEND 1
 
 int main(int argc, char **argv) {
   if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
@@ -39,7 +39,7 @@ int main(int argc, char **argv) {
   GPUBuffer *vertex_buffer = frontend->BufferAllocate();
   GPUAttributeArray *attribute_array = frontend->AttributeArrayAllocate();
   GPUShader *shader = frontend->ShaderAllocate();
-  GPUDescriptor *uniform_buffer = frontend->DescriptorAllocate();
+  GPUShaderBuffer *uniform_buffer = frontend->ShaderBufferAllocate();
   GPURenderPass *window_render_pass = frontend->GetWindowRenderPass();
 
   std::vector<float> vertices = {

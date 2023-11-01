@@ -2,8 +2,8 @@
 
 #include "gpu_buffer.h"
 #include "gpu_core.h"
-#include "gpu_descriptor.h"
 #include "gpu_render_pass.h"
+#include "gpu_shader_buffer.h"
 
 #include <vector>
 
@@ -25,7 +25,7 @@ struct GPUShaderAttributeConfig {
 struct GPUShaderConfig {
   std::vector<GPUShaderStageConfig> stage_configs;
   std::vector<GPUShaderAttributeConfig> attribute_configs;
-  std::vector<GPUDescriptor *> descriptors;
+  std::vector<GPUShaderBuffer *> descriptors;
 };
 
 class GPUShader {

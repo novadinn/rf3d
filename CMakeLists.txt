@@ -58,7 +58,7 @@ set(SRC
   src/renderer/vulkan/vulkan_buffer.cpp
   src/renderer/vulkan/vulkan_texture.cpp
   src/renderer/vulkan/vulkan_attribute_array.cpp
-  src/renderer/vulkan/vulkan_descriptor.cpp
+  src/renderer/vulkan/vulkan_shader_buffer.cpp
   src/renderer/opengl/opengl_backend.cpp
   src/renderer/opengl/opengl_buffer.cpp
   src/renderer/opengl/opengl_shader.cpp
@@ -67,7 +67,7 @@ set(SRC
   src/renderer/opengl/opengl_vertex_array.cpp
   src/renderer/opengl/opengl_texture.cpp
   src/renderer/opengl/opengl_render_pass.cpp
-  src/renderer/opengl/opengl_descriptor.cpp
+  src/renderer/opengl/opengl_shader_buffer.cpp
 )
 
 set(GLAD_SRC 

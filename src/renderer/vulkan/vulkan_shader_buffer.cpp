@@ -1,13 +1,14 @@
-#include "vulkan_descriptor.h"
+#include "vulkan_shader_buffer.h"
 
+#include "logger.h"
 #include "vulkan_backend.h"
 #include "vulkan_utils.h"
 
-void VulkanDescriptor::Create(const char *descriptor_name,
-                              GPUDescriptorType descriptor_type,
-                              uint8_t descriptor_stage_flags,
-                              uint64_t descriptor_size,
-                              uint32_t descriptor_index) {
+void VulkanShaderBuffer::Create(const char *descriptor_name,
+                                GPUShaderBufferType descriptor_type,
+                                uint8_t descriptor_stage_flags,
+                                uint64_t descriptor_size,
+                                uint32_t descriptor_index) {
   VulkanContext *context = VulkanBackend::GetContext();
 
   name = descriptor_name;
@@ -17,7 +18,7 @@ void VulkanDescriptor::Create(const char *descriptor_name,
    * properly */
   std::vector<VkDescriptorPoolSize> pool_sizes;
   VkDescriptorPoolSize pool_size;
-  pool_size.type = VulkanUtils::GPUDescriptorTypeToVulkanDescriptorType(type);
+  pool_size.type = VulkanUtils::GPUShaderBufferTypeToVulkanDescriptorType(type);
   pool_size.descriptorCount = context->swapchain->GetImagesCount();
   pool_sizes.emplace_back(pool_size);
 
@@ -36,12 +37,12 @@ void VulkanDescriptor::Create(const char *descriptor_name,
   VkDescriptorSetLayoutBinding layout_binding = {};
   layout_binding.binding = descriptor_index;
   layout_binding.descriptorType =
-      VulkanUtils::GPUDescriptorTypeToVulkanDescriptorType(type);
+      VulkanUtils::GPUShaderBufferTypeToVulkanDescriptorType(type);
   layout_binding.descriptorCount = 1; /* TODO: for array of uniforms */
   layout_binding.stageFlags =
       VulkanUtils::GPUShaderStageFlagsToVulkanShaderStageFlags(
           descriptor_stage_flags);
-  layout_binding.pImmutableSamplers = 0; /* TODO: texture samples */
+  layout_binding.pImmutableSamplers = 0; /* texture samples */
 
   VkDescriptorSetLayoutCreateInfo layout_create_info = {};
   layout_create_info.sType =
@@ -74,41 +75,38 @@ void VulkanDescriptor::Create(const char *descriptor_name,
 
   buffers.resize(context->swapchain->GetImagesCount());
 
-  std::vector<VkDescriptorBufferInfo> buffer_infos;
-  buffer_infos.resize(context->swapchain->GetImagesCount());
-  std::vector<VkWriteDescriptorSet> write_descriptor_sets;
-  write_descriptor_sets.resize(context->swapchain->GetImagesCount());
+  for (int i = 0; i < context->swapchain->GetImagesCount(); ++i) {
+    buffers[i] = new VulkanBuffer();
+    buffers[i]->Create(GPU_BUFFER_TYPE_UNIFORM, descriptor_size);
 
-  for (int j = 0; j < context->swapchain->GetImagesCount(); ++j) {
-    buffers[j] = new VulkanBuffer();
-    buffers[j]->Create(GPU_BUFFER_TYPE_UNIFORM, descriptor_size);
+    VkDescriptorBufferInfo buffer_info = {};
+    buffer_info.buffer = ((VulkanBuffer *)buffers[i])->GetHandle();
+    buffer_info.offset = 0;
+    buffer_info.range = descriptor_size;
 
-    buffer_infos[j].buffer = ((VulkanBuffer *)buffers[j])->GetHandle();
-    buffer_infos[j].offset = 0;
-    buffer_infos[j].range = descriptor_size;
-
-    write_descriptor_sets[j].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    write_descriptor_sets[j].pNext = 0;
-    write_descriptor_sets[j].dstSet = sets[descriptor_index];
-    write_descriptor_sets[j].dstBinding = descriptor_index;
-    write_descriptor_sets[j].dstArrayElement = 0;
-    write_descriptor_sets[j].descriptorCount = 1;
-    write_descriptor_sets[j].descriptorType =
-        VulkanUtils::GPUDescriptorTypeToVulkanDescriptorType(type);
-    write_descriptor_sets[j].pImageInfo = 0;
-    write_descriptor_sets[j].pBufferInfo = &buffer_infos[descriptor_index];
-    write_descriptor_sets[j].pTexelBufferView = 0;
+    VkWriteDescriptorSet write_descriptor_set = {};
+    write_descriptor_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    write_descriptor_set.pNext = 0;
+    write_descriptor_set.dstSet = sets[i];
+    write_descriptor_set.dstBinding = descriptor_index;
+    write_descriptor_set.dstArrayElement = 0;
+    write_descriptor_set.descriptorCount = 1;
+    write_descriptor_set.descriptorType =
+        VulkanUtils::GPUShaderBufferTypeToVulkanDescriptorType(type);
+    write_descriptor_set.pImageInfo = 0;
+    write_descriptor_set.pBufferInfo = &buffer_info;
+    write_descriptor_set.pTexelBufferView = 0;
 
     VK_CHECK(vkBindBufferMemory(context->device->GetLogicalDevice(),
-                                ((VulkanBuffer *)buffers[j])->GetHandle(),
-                                ((VulkanBuffer *)buffers[j])->GetMemory(), 0));
+                                ((VulkanBuffer *)buffers[i])->GetHandle(),
+                                ((VulkanBuffer *)buffers[i])->GetMemory(), 0));
 
     vkUpdateDescriptorSets(context->device->GetLogicalDevice(), 1,
-                           &write_descriptor_sets[j], 0, 0);
+                           &write_descriptor_set, 0, 0);
   }
 }
 
-void VulkanDescriptor::Destroy() {
+void VulkanShaderBuffer::Destroy() {
   VulkanContext *context = VulkanBackend::GetContext();
 
   for (int j = 0; j < context->swapchain->GetImagesCount(); ++j) {
@@ -121,7 +119,7 @@ void VulkanDescriptor::Destroy() {
                           context->allocator);
 }
 
-void VulkanDescriptor::Bind(GPUShader *shader) {
+void VulkanShaderBuffer::Bind(GPUShader *shader) {
   VulkanContext *context = VulkanBackend::GetContext();
 
   VulkanDeviceQueueInfo info =
@@ -137,7 +135,7 @@ void VulkanDescriptor::Bind(GPUShader *shader) {
                           0, 1, &sets[context->image_index], 0, 0);
 }
 
-GPUBuffer *VulkanDescriptor::GetBuffer() {
+GPUBuffer *VulkanShaderBuffer::GetBuffer() {
   VulkanContext *context = VulkanBackend::GetContext();
 
   return buffers[context->image_index];

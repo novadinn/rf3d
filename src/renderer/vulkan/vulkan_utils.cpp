@@ -97,8 +97,8 @@ VulkanUtils::GPUTextureUsageToVulkanAspectFlags(GPUTextureUsage usage) {
   return VK_IMAGE_ASPECT_NONE_KHR;
 }
 
-VkDescriptorType
-VulkanUtils::GPUDescriptorTypeToVulkanDescriptorType(GPUDescriptorType type) {
+VkDescriptorType VulkanUtils::GPUShaderBufferTypeToVulkanDescriptorType(
+    GPUShaderBufferType type) {
   switch (type) {
   case GPU_DESCRIPTOR_TYPE_UNIFORM_BUFFER: {
     return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;

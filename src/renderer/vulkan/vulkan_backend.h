@@ -28,7 +28,7 @@ public:
   GPUShader *ShaderAllocate() override;
   GPUAttributeArray *AttributeArrayAllocate() override;
   GPUTexture *TextureAllocate() override;
-  GPUDescriptor *DescriptorAllocate() override;
+  GPUShaderBuffer *ShaderBufferAllocate() override;
 
   static VulkanContext *GetContext();
 

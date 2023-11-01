@@ -31,7 +31,7 @@ public:
   GPUShader *ShaderAllocate();
   GPUAttributeArray *AttributeArrayAllocate();
   GPUTexture *TextureAllocate();
-  GPUDescriptor *DescriptorAllocate();
+  GPUShaderBuffer *ShaderBufferAllocate();
 
 private:
   RendererBackend *backend;
