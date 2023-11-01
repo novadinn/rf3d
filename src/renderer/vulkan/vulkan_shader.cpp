@@ -103,8 +103,8 @@ bool VulkanShader::Create(GPUShaderConfig *config, GPURenderPass *render_pass,
     GPUShaderPushConstantConfig *push_constant_config =
         &config->push_constant_configs[i];
     VkPushConstantRange range = {};
-    range.stageFlags =
-        VK_SHADER_STAGE_FRAGMENT_BIT; // VulkanUtils::GPUShaderStageFlagsToVulkanShaderStageFlags(push_constant_config->stage_flags);
+    range.stageFlags = VulkanUtils::GPUShaderStageFlagsToVulkanShaderStageFlags(
+        push_constant_config->stage_flags);
     range.offset = push_constant_config->offset;
     range.size = push_constant_config->size;
 
@@ -167,7 +167,6 @@ void VulkanShader::PushConstant(void *value, uint64_t size, uint32_t offset,
 
   vkCmdPushConstants(
       command_buffer->GetHandle(), pipeline.GetLayout(),
-      VK_SHADER_STAGE_FRAGMENT_BIT,
-      // VulkanUtils::GPUShaderStageFlagsToVulkanShaderStageFlags(stage_flags),
+      VulkanUtils::GPUShaderStageFlagsToVulkanShaderStageFlags(stage_flags),
       offset, size, value);
 }

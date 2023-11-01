@@ -144,6 +144,15 @@ int main(int argc, char **argv) {
         glm::mat4 _pad0;
       };
       UniformBufferObject ubo = {};
+      struct PushConsts {
+        float roughness;
+        float metallic;
+        float r;
+        float g;
+        float b;
+      };
+      PushConsts push_consts;
+
       ubo.model = glm::mat4(1.0f);
       static float angle = 0.0f;
       angle += 0.003f;
@@ -158,14 +167,6 @@ int main(int argc, char **argv) {
           0, uniform_buffer->GetBuffer()->GetSize(), &ubo);
       uniform_buffer->Bind(shader);
 
-      struct PushConsts {
-        float roughness;
-        float metallic;
-        float r;
-        float g;
-        float b;
-      };
-      PushConsts push_consts;
       push_consts.roughness = 0.1f;
       push_consts.metallic = 1.0f;
       push_consts.r = 0.672411f;

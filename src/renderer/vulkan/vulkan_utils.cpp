@@ -113,6 +113,13 @@ VkDescriptorType VulkanUtils::GPUShaderBufferTypeToVulkanDescriptorType(
 VkShaderStageFlags
 VulkanUtils::GPUShaderStageFlagsToVulkanShaderStageFlags(uint8_t stage_flags) {
   /* TODO: */
+  VkShaderStageFlags result = VK_SHADER_STAGE_ALL_GRAPHICS;
+  if (stage_flags & GPU_SHADER_STAGE_TYPE_VERTEX) {
+    result |= VK_SHADER_STAGE_FRAGMENT_BIT;
+  }
+  if (stage_flags & GPU_SHADER_STAGE_TYPE_FRAGMENT) {
+    result |= VK_SHADER_STAGE_VERTEX_BIT;
+  }
 
-  return VK_SHADER_STAGE_ALL_GRAPHICS;
+  return result;
 }
