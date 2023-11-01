@@ -81,9 +81,7 @@ VulkanUtils::GPUTextureUsageToVulkanAspectFlags(GPUTextureUsage usage) {
     return VK_IMAGE_ASPECT_DEPTH_BIT;
   } break;
   case GPU_TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT: {
-    /* TODO: on my device, d24_s8 is not supported :( fix possibility to use
-     * stencil buffer later */
-    return VK_IMAGE_ASPECT_DEPTH_BIT;
+    return VK_IMAGE_ASPECT_DEPTH_BIT; /* TODO: | VK_IMAGE_ASPECT_STENCIL_BIT */
   } break;
   case GPU_TEXTURE_USAGE_NONE: {
     return VK_IMAGE_ASPECT_NONE_KHR;
