@@ -84,7 +84,7 @@ bool VulkanBackend::Initialize(SDL_Window *sdl_window) {
                                   GPU_TEXTURE_USAGE_COLOR_ATTACHMENT},
           GPURenderPassAttachment{GPU_FORMAT_D24_S8,
                                   GPU_TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT}},
-      glm::vec4(0, 0, width, height), glm::vec4(0.1f, 0.1f, 0.1f, 1.0f), 1.0f,
+      glm::vec4(0, 0, width, height), glm::vec4(0.2f, 0.2f, 0.2f, 1.0f), 1.0f,
       0.0f,
       GPU_RENDER_PASS_CLEAR_FLAG_COLOR | GPU_RENDER_PASS_CLEAR_FLAG_DEPTH |
           GPU_RENDER_PASS_CLEAR_FLAG_STENCIL);
@@ -257,10 +257,6 @@ bool VulkanBackend::EndFrame() {
   submit_info.pSignalSemaphores =
       &context->queue_complete_semaphores[context->current_frame];
 
-  /* each semaphore waits on the corresponding pipeline stage to complete. 1:1
-   * ratio. VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT prevents subsequent
-   * colour attachment writes from executing until the semaphore signals (i.e.
-   * one frame is presented at a time) */
   VkPipelineStageFlags flags[1] = {
       VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
   submit_info.pWaitDstStageMask = flags;

@@ -7,7 +7,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#define WITH_VULKAN_BACKEND 0
+#define WITH_VULKAN_BACKEND 1
 
 int main(int argc, char **argv) {
   if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
@@ -40,6 +40,8 @@ int main(int argc, char **argv) {
   GPUAttributeArray *attribute_array = frontend->AttributeArrayAllocate();
   GPUShader *shader = frontend->ShaderAllocate();
   GPUShaderBuffer *uniform_buffer = frontend->ShaderBufferAllocate();
+  GPUShaderBuffer *uniform_buffer2 = frontend->ShaderBufferAllocate();
+  GPUShaderBuffer *uniform_buffer3 = frontend->ShaderBufferAllocate();
   GPURenderPass *window_render_pass = frontend->GetWindowRenderPass();
 
   std::vector<float> vertices = {
@@ -84,6 +86,12 @@ int main(int argc, char **argv) {
   attribute_array->Create(vertex_buffer, 0, attributes);
 
   uniform_buffer->Create(
+      "uniform_buffer_object", GPU_SHADER_BUFFER_TYPE_UNIFORM_BUFFER,
+      GPU_SHADER_STAGE_TYPE_VERTEX, sizeof(glm::mat4) * 4, 0);
+  uniform_buffer2->Create(
+      "uniform_buffer_object", GPU_SHADER_BUFFER_TYPE_UNIFORM_BUFFER,
+      GPU_SHADER_STAGE_TYPE_VERTEX, sizeof(glm::mat4) * 4, 0);
+  uniform_buffer3->Create(
       "uniform_buffer_object", GPU_SHADER_BUFFER_TYPE_UNIFORM_BUFFER,
       GPU_SHADER_STAGE_TYPE_VERTEX, sizeof(glm::mat4) * 4, 0);
 
@@ -143,7 +151,7 @@ int main(int argc, char **argv) {
         glm::mat4 projection;
         glm::mat4 _pad0;
       };
-      UniformBufferObject ubo = {};
+
       struct PushConsts {
         float roughness;
         float metallic;
@@ -151,33 +159,40 @@ int main(int argc, char **argv) {
         float g;
         float b;
       };
-      PushConsts push_consts;
 
-      ubo.model = glm::mat4(1.0f);
+      std::vector<glm::vec3> cube_positions = {glm::vec3(0, 0, -5.0f),
+                                               glm::vec3(2, 0, -5.0f),
+                                               glm::vec3(-2, 0, -5.0f)};
+      std::vector<PushConsts> push_constants = {
+          PushConsts{0.1f, 1.0f, 0.672411f, 0.637331f, 0.585456f},
+          PushConsts{0.8f, 0.2f, 1, 0, 0}, PushConsts{0.5f, 0.5f, 0, 1, 0}};
+      std::vector<GPUShaderBuffer *> uniform_buffers = {
+          uniform_buffer, uniform_buffer2, uniform_buffer3};
+
       static float angle = 0.0f;
       angle += 0.003f;
-      ubo.model = glm::rotate(ubo.model, angle,
-                              glm::normalize(glm::vec3(0.0f, 1.0f, 1.0f)));
-      ubo.view = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, -5.0f));
-      ubo.view = glm::inverse(ubo.view);
-      ubo.projection = glm::perspective(
-          glm::radians(45.0f), (float)width / (float)height, 0.1f, 1000.0f);
-      shader->Bind();
-      uniform_buffer->GetBuffer()->LoadData(
-          0, uniform_buffer->GetBuffer()->GetSize(), &ubo);
-      uniform_buffer->Bind(shader);
+      for (int i = 0; i < cube_positions.size(); ++i) {
+        UniformBufferObject ubo = {};
+        ubo.model = glm::mat4(1.0f);
+        ubo.model = glm::rotate(ubo.model, angle,
+                                glm::normalize(glm::vec3(0.0f, 1.0f, 1.0f)));
+        ubo.view = glm::translate(glm::mat4(1.0f), cube_positions[i]);
+        ubo.view = glm::inverse(ubo.view);
+        ubo.projection = glm::perspective(
+            glm::radians(45.0f), (float)width / (float)height, 0.1f, 1000.0f);
 
-      push_consts.roughness = 0.1f;
-      push_consts.metallic = 1.0f;
-      push_consts.r = 0.672411f;
-      push_consts.g = 0.637331f;
-      push_consts.b = 0.585456f;
-      shader->PushConstant(&push_consts, sizeof(PushConsts), 0,
-                           GPU_SHADER_STAGE_TYPE_FRAGMENT);
+        shader->Bind();
+        uniform_buffers[i]->GetBuffer()->LoadData(
+            0, uniform_buffers[i]->GetBuffer()->GetSize(), &ubo);
+        uniform_buffers[i]->Bind(shader);
 
-      attribute_array->Bind();
+        shader->PushConstant(&push_constants[i], sizeof(PushConsts), 0,
+                             GPU_SHADER_STAGE_TYPE_FRAGMENT);
 
-      frontend->Draw(vertices.size());
+        attribute_array->Bind();
+
+        frontend->Draw(vertices.size());
+      }
 
       window_render_pass->End();
 
@@ -187,6 +202,10 @@ int main(int argc, char **argv) {
 
   shader->Destroy();
   delete shader;
+  uniform_buffer3->Destroy();
+  delete uniform_buffer3;
+  uniform_buffer2->Destroy();
+  delete uniform_buffer2;
   uniform_buffer->Destroy();
   delete uniform_buffer;
   attribute_array->Destroy();
