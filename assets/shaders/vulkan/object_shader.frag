@@ -10,19 +10,16 @@ layout(location = 0) out vec4 outColor;
 // layout(binding = 1) uniform UBOShared { vec4 lights[4]; }
 // uboParams;
 
-// layout(push_constant) uniform PushConsts {
-//   layout(offset = 12) float roughness;
-//   layout(offset = 16) float metallic;
-//   layout(offset = 20) float r;
-//   layout(offset = 24) float g;
-//   layout(offset = 28) float b;
-// }
-// material;
+layout(push_constant) uniform PushConsts {
+  layout(offset = 0) float roughness;
+  layout(offset = 4) float metallic;
+  layout(offset = 8) float r;
+  layout(offset = 12) float g;
+  layout(offset = 16) float b;
+}
+material;
 
 const float PI = 3.14159265359;
-const vec3 MaterialColor = vec3(0.672411, 0.637331, 0.585456);
-const float MaterialMetallic = 1.0;
-const float MaterialRoughness = 0.1;
 
 float D_GGX(float dotNH, float roughness) {
   float alpha = roughness * roughness;
@@ -40,7 +37,7 @@ float G_SchlicksmithGGX(float dotNL, float dotNV, float roughness) {
 }
 
 vec3 F_Schlick(float cosTheta, float metallic) {
-  vec3 F0 = mix(vec3(0.04), MaterialColor, metallic);
+  vec3 F0 = mix(vec3(0.04), vec3(material.r, material.g, material.b), metallic);
   vec3 F = F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
   return F;
 }
@@ -85,10 +82,10 @@ void main() {
 
   for (int i = 0; i < lights.length(); i++) {
     vec3 L = normalize(lights[i].xyz - outWorldPos);
-    Lo += BRDF(L, V, N, MaterialMetallic, MaterialRoughness);
+    Lo += BRDF(L, V, N, material.metallic, material.roughness);
   }
 
-  vec3 color = MaterialColor * 0.02;
+  vec3 color = vec3(material.r, material.g, material.b) * 0.02;
   color += Lo;
 
   color = pow(color, vec3(0.4545));

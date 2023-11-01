@@ -99,3 +99,10 @@ void OpenGLShader::Destroy() {
 }
 
 void OpenGLShader::Bind() { glUseProgram(id); }
+
+void OpenGLShader::PushConstant(void *value, uint64_t size, uint32_t offset,
+                                uint8_t stage_flags) {
+  /* TODO: do nothing - unsupported in opengl. We can add support via making a
+   * pushconstant struct that holds a list of void *, but that will complicate a
+   * code a lot, so dont care for now */
+}

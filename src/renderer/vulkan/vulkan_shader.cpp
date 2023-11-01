@@ -97,6 +97,20 @@ bool VulkanShader::Create(GPUShaderConfig *config, GPURenderPass *render_pass,
         ((VulkanShaderBuffer *)config->descriptors[i])->GetSetLayout();
   }
 
+  std::vector<VkPushConstantRange> push_constant_ranges;
+  push_constant_ranges.resize(config->push_constant_configs.size());
+  for (int i = 0; i < push_constant_ranges.size(); ++i) {
+    GPUShaderPushConstantConfig *push_constant_config =
+        &config->push_constant_configs[i];
+    VkPushConstantRange range = {};
+    range.stageFlags =
+        VK_SHADER_STAGE_FRAGMENT_BIT; // VulkanUtils::GPUShaderStageFlagsToVulkanShaderStageFlags(push_constant_config->stage_flags);
+    range.offset = push_constant_config->offset;
+    range.size = push_constant_config->size;
+
+    push_constant_ranges[i] = range;
+  }
+
   /* TODO: empty for now */
   std::vector<VkDynamicState> dynamic_states;
 
@@ -104,6 +118,7 @@ bool VulkanShader::Create(GPUShaderConfig *config, GPURenderPass *render_pass,
   pipeline_config.attributes = attributes;
   pipeline_config.descriptor_set_layouts = descriptor_set_layouts;
   pipeline_config.dynamic_states = dynamic_states;
+  pipeline_config.push_constant_ranges = push_constant_ranges;
   pipeline_config.scissor = scissor;
   pipeline_config.stages = pipeline_stage_create_infos;
   pipeline_config.stride = offset;
@@ -138,4 +153,21 @@ void VulkanShader::Bind() {
       &info.command_buffers[context->image_index];
 
   pipeline.Bind(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
+}
+
+void VulkanShader::PushConstant(void *value, uint64_t size, uint32_t offset,
+                                uint8_t stage_flags) {
+  VulkanContext *context = VulkanBackend::GetContext();
+
+  VulkanDeviceQueueInfo info =
+      context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_GRAPHICS);
+
+  VulkanCommandBuffer *command_buffer =
+      &info.command_buffers[context->image_index];
+
+  vkCmdPushConstants(
+      command_buffer->GetHandle(), pipeline.GetLayout(),
+      VK_SHADER_STAGE_FRAGMENT_BIT,
+      // VulkanUtils::GPUShaderStageFlagsToVulkanShaderStageFlags(stage_flags),
+      offset, size, value);
 }

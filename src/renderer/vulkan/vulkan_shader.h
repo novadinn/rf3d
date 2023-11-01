@@ -17,6 +17,8 @@ public:
   void Destroy() override;
 
   void Bind() override;
+  void PushConstant(void *value, uint64_t size, uint32_t offset,
+                    uint8_t stage_flags) override;
 
   inline VulkanPipeline &GetPipeline() { return pipeline; }
 

@@ -1,8 +1,8 @@
 #version 410 core
 
-in vec3 outWorldPos;
-in vec3 outNormal;
-in vec3 outCameraPosition;
+layout(location = 0) in vec3 outWorldPos;
+layout(location = 1) in vec3 outNormal;
+layout(location = 2) in vec3 outCameraPosition;
 
 layout(location = 0) out vec4 outColor;
 

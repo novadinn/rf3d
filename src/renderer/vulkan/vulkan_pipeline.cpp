@@ -124,8 +124,10 @@ bool VulkanPipeline::Create(VulkanPipelineConfig *config,
   pipeline_layout_create_info.setLayoutCount =
       config->descriptor_set_layouts.size();
   pipeline_layout_create_info.pSetLayouts = &config->descriptor_set_layouts[0];
-  pipeline_layout_create_info.pushConstantRangeCount = 0;
-  pipeline_layout_create_info.pPushConstantRanges = 0;
+  pipeline_layout_create_info.pushConstantRangeCount =
+      config->push_constant_ranges.size();
+  pipeline_layout_create_info.pPushConstantRanges =
+      config->push_constant_ranges.data();
 
   VK_CHECK(vkCreatePipelineLayout(context->device->GetLogicalDevice(),
                                   &pipeline_layout_create_info,

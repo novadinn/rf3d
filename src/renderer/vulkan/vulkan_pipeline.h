@@ -13,6 +13,7 @@ struct VulkanPipelineConfig {
   std::vector<VkDescriptorSetLayout> descriptor_set_layouts;
   std::vector<VkPipelineShaderStageCreateInfo> stages;
   std::vector<VkDynamicState> dynamic_states;
+  std::vector<VkPushConstantRange> push_constant_ranges;
   VkViewport viewport;
   VkRect2D scissor;
 };

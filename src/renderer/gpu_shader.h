@@ -5,6 +5,7 @@
 #include "gpu_render_pass.h"
 #include "gpu_shader_buffer.h"
 
+#include <list>
 #include <vector>
 
 enum GPUShaderStageType {
@@ -22,10 +23,17 @@ struct GPUShaderAttributeConfig {
   GPUFormat format;
 };
 
+struct GPUShaderPushConstantConfig {
+  uint8_t stage_flags;
+  uint32_t offset;
+  uint32_t size;
+};
+
 struct GPUShaderConfig {
   std::vector<GPUShaderStageConfig> stage_configs;
   std::vector<GPUShaderAttributeConfig> attribute_configs;
   std::vector<GPUShaderBuffer *> descriptors;
+  std::vector<GPUShaderPushConstantConfig> push_constant_configs;
 };
 
 class GPUShader {
@@ -37,6 +45,8 @@ public:
   virtual void Destroy() = 0;
 
   virtual void Bind() = 0;
+  virtual void PushConstant(void *value, uint64_t size, uint32_t offset,
+                            uint8_t stage_flags) = 0;
 
 protected:
 };

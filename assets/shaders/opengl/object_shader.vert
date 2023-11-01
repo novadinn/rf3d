@@ -10,9 +10,9 @@ layout(std140) uniform uniform_buffer_object {
   mat4 _pad0; /* some nvidia cards requires alignment of 256 bytes */
 };
 
-out vec3 outWorldPos;
-out vec3 outNormal;
-out vec3 outCameraPosition;
+layout(location = 0) out vec3 outWorldPos;
+layout(location = 1) out vec3 outNormal;
+layout(location = 2) out vec3 outCameraPosition;
 
 void main() {
   outWorldPos = vec3(model * vec4(inPosition, 1.0));

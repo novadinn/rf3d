@@ -20,7 +20,7 @@ void OpenGLShaderBuffer::Destroy() {
   buffer->Destroy();
   delete buffer;
   name = "";
-  type = GPU_DESCRIPTOR_TYPE_NONE;
+  type = GPU_SHADER_BUFFER_TYPE_NONE;
 }
 
 void OpenGLShaderBuffer::Bind(GPUShader *shader) {

@@ -98,7 +98,7 @@ VulkanUtils::GPUTextureUsageToVulkanAspectFlags(GPUTextureUsage usage) {
 VkDescriptorType VulkanUtils::GPUShaderBufferTypeToVulkanDescriptorType(
     GPUShaderBufferType type) {
   switch (type) {
-  case GPU_DESCRIPTOR_TYPE_UNIFORM_BUFFER: {
+  case GPU_SHADER_BUFFER_TYPE_UNIFORM_BUFFER: {
     return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
   } break;
   default: {

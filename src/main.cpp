@@ -84,7 +84,7 @@ int main(int argc, char **argv) {
   attribute_array->Create(vertex_buffer, 0, attributes);
 
   uniform_buffer->Create(
-      "uniform_buffer_object", GPU_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+      "uniform_buffer_object", GPU_SHADER_BUFFER_TYPE_UNIFORM_BUFFER,
       GPU_SHADER_STAGE_TYPE_VERTEX, sizeof(glm::mat4) * 4, 0);
 
   GPUShaderConfig shader_config = {};
@@ -108,6 +108,8 @@ int main(int argc, char **argv) {
       GPUShaderAttributeConfig{GPU_FORMAT_RGB32F});
   shader_config.attribute_configs.emplace_back(
       GPUShaderAttributeConfig{GPU_FORMAT_RGB32F});
+  shader_config.push_constant_configs.emplace_back(GPUShaderPushConstantConfig{
+      GPU_SHADER_STAGE_TYPE_FRAGMENT, 0, sizeof(float) * 5});
   if (!shader->Create(&shader_config, window_render_pass, width, height)) {
     FATAL("Failed to create a shader. Aborting...");
     exit(1);
@@ -155,6 +157,22 @@ int main(int argc, char **argv) {
       uniform_buffer->GetBuffer()->LoadData(
           0, uniform_buffer->GetBuffer()->GetSize(), &ubo);
       uniform_buffer->Bind(shader);
+
+      struct PushConsts {
+        float roughness;
+        float metallic;
+        float r;
+        float g;
+        float b;
+      };
+      PushConsts push_consts;
+      push_consts.roughness = 0.1f;
+      push_consts.metallic = 1.0f;
+      push_consts.r = 0.672411f;
+      push_consts.g = 0.637331f;
+      push_consts.b = 0.585456f;
+      shader->PushConstant(&push_consts, sizeof(PushConsts), 0,
+                           GPU_SHADER_STAGE_TYPE_FRAGMENT);
 
       attribute_array->Bind();
 
