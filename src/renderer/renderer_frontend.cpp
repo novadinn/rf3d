@@ -75,3 +75,7 @@ GPUAttributeArray *RendererFrontend::AttributeArrayAllocate() {
 GPUTexture *RendererFrontend::TextureAllocate() {
   return backend->TextureAllocate();
 }
+
+GPUDescriptor *RendererFrontend::DescriptorAllocate() {
+  return backend->DescriptorAllocate();
+}

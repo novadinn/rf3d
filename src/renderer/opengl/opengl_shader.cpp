@@ -90,51 +90,12 @@ bool OpenGLShader::Create(GPUShaderConfig *config, GPURenderPass *render_pass,
     glDetachShader(id, stages[i]);
   }
 
-  /* set uniform data */
-  for (int i = 0; i < config->descriptor_configs.size(); ++i) {
-    GPUShaderDescriptorConfig *descriptor_config =
-        &config->descriptor_configs[i];
-
-    OpenGLShaderDescriptor descriptor;
-    descriptor.type = descriptor_config->type;
-    /* TODO: only ubos are supported rn */
-
-    glUniformBlockBinding(
-        id, glGetUniformBlockIndex(id, descriptor_config->name), i);
-    descriptor.buffer = new OpenGLBuffer();
-    OpenGLBuffer *native_descriptor_buffer = (OpenGLBuffer *)descriptor.buffer;
-    descriptor.buffer->Create(GPU_BUFFER_TYPE_UNIFORM, descriptor_config->size);
-
-    descriptors.emplace(descriptor_config->name, descriptor);
-  }
-
   return true;
 }
 
 void OpenGLShader::Destroy() {
   glDeleteProgram(id);
   id = GL_NONE;
-  for (auto it = descriptors.begin(); it != descriptors.end(); ++it) {
-    it->second.buffer->Destroy();
-    delete it->second.buffer;
-  }
-
-  descriptors.clear();
 }
 
-void OpenGLShader::Bind() {
-  glUseProgram(id);
-  /* TODO: add descriptor index instead */
-  int i = 0;
-  for (auto it = descriptors.begin(); it != descriptors.end(); ++it) {
-    OpenGLBuffer *native_descriptor_buffer = (OpenGLBuffer *)it->second.buffer;
-    glBindBufferRange(native_descriptor_buffer->GetInternalType(), i,
-                      native_descriptor_buffer->GetID(), 0,
-                      native_descriptor_buffer->GetSize());
-    ++i;
-  }
-}
-
-GPUBuffer *OpenGLShader::GetDescriptorBuffer(const char *name) {
-  return descriptors[name].buffer;
-}
+void OpenGLShader::Bind() { glUseProgram(id); }

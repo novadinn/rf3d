@@ -2,6 +2,7 @@
 
 #include "renderer/gpu_attribute_array.h"
 #include "renderer/gpu_buffer.h"
+#include "renderer/gpu_descriptor.h"
 #include "renderer/gpu_render_pass.h"
 #include "renderer/gpu_render_target.h"
 #include "renderer/gpu_shader.h"
@@ -31,4 +32,5 @@ public:
   virtual GPUShader *ShaderAllocate() = 0;
   virtual GPUAttributeArray *AttributeArrayAllocate() = 0;
   virtual GPUTexture *TextureAllocate() = 0;
+  virtual GPUDescriptor *DescriptorAllocate() = 0;
 };

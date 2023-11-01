@@ -8,11 +8,6 @@
 #include <unordered_map>
 #include <vector>
 
-struct OpenGLShaderDescriptor {
-  GPUShaderDescriptorType type;
-  GPUBuffer *buffer;
-};
-
 class OpenGLShader : public GPUShader {
 public:
   OpenGLShader() = default;
@@ -24,9 +19,8 @@ public:
 
   void Bind() override;
 
-  GPUBuffer *GetDescriptorBuffer(const char *name) override;
+  inline GLuint GetID() { return id; }
 
 private:
-  std::unordered_map<const char *, OpenGLShaderDescriptor> descriptors;
   GLuint id;
 };

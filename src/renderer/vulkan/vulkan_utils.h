@@ -16,7 +16,7 @@ public:
   static VkImageAspectFlags
   GPUTextureUsageToVulkanAspectFlags(GPUTextureUsage usage);
   static VkDescriptorType
-  GPUShaderDescriptorTypeToVulkanDescriptorType(GPUShaderDescriptorType type);
+  GPUDescriptorTypeToVulkanDescriptorType(GPUDescriptorType type);
   /* TODO: not type, flags */
   static VkShaderStageFlags
   GPUShaderStageFlagsToVulkanShaderStageFlags(uint8_t stage_flags);

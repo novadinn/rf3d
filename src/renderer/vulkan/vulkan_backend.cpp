@@ -4,6 +4,7 @@
 #include "platform.h"
 #include "renderer/gpu_shader.h"
 #include "vulkan_attribute_array.h"
+#include "vulkan_descriptor.h"
 #include "vulkan_render_pass.h"
 #include "vulkan_texture.h"
 
@@ -338,6 +339,10 @@ GPUAttributeArray *VulkanBackend::AttributeArrayAllocate() {
 }
 
 GPUTexture *VulkanBackend::TextureAllocate() { return new VulkanTexture(); }
+
+GPUDescriptor *VulkanBackend::DescriptorAllocate() {
+  return new VulkanDescriptor();
+}
 
 VulkanContext *VulkanBackend::GetContext() { return context; }
 

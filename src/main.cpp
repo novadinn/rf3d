@@ -7,7 +7,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#define WITH_VULKAN_BACKEND 1
+#define WITH_VULKAN_BACKEND 0
 
 int main(int argc, char **argv) {
   if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
@@ -39,6 +39,7 @@ int main(int argc, char **argv) {
   GPUBuffer *vertex_buffer = frontend->BufferAllocate();
   GPUAttributeArray *attribute_array = frontend->AttributeArrayAllocate();
   GPUShader *shader = frontend->ShaderAllocate();
+  GPUDescriptor *uniform_buffer = frontend->DescriptorAllocate();
   GPURenderPass *window_render_pass = frontend->GetWindowRenderPass();
 
   std::vector<float> vertices = {
@@ -63,6 +64,10 @@ int main(int argc, char **argv) {
   attributes.emplace_back(GPUFormat{GPU_FORMAT_RGB32F});
   attribute_array->Create(vertex_buffer, 0, attributes);
 
+  uniform_buffer->Create(
+      "uniform_buffer_object", GPU_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+      GPU_SHADER_STAGE_TYPE_VERTEX, sizeof(glm::mat4) * 4, 0);
+
   GPUShaderConfig shader_config = {};
 #if WITH_VULKAN_BACKEND == 1
   shader_config.stage_configs.emplace_back(
@@ -79,12 +84,13 @@ int main(int argc, char **argv) {
       GPUShaderStageConfig{GPU_SHADER_STAGE_TYPE_FRAGMENT,
                            "assets/shaders/opengl/object_shader.frag"});
 #endif
-  shader_config.descriptor_configs.emplace_back(GPUShaderDescriptorConfig{
-      "uniform_buffer_object", GPU_SHADER_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-      GPU_SHADER_STAGE_TYPE_VERTEX, sizeof(glm::mat4) * 4});
+  shader_config.descriptors.emplace_back(uniform_buffer);
   shader_config.attribute_configs.emplace_back(
       GPUShaderAttributeConfig{GPU_FORMAT_RGB32F});
-  shader->Create(&shader_config, window_render_pass, width, height);
+  if (!shader->Create(&shader_config, window_render_pass, width, height)) {
+    FATAL("Failed to create a shader. Aborting...");
+    exit(1);
+  }
 
   bool running = true;
   while (running) {
@@ -125,9 +131,9 @@ int main(int argc, char **argv) {
       ubo.projection = glm::perspective(
           glm::radians(45.0f), (float)width / (float)height, 0.1f, 1000.0f);
       shader->Bind();
-      GPUBuffer *shader_ubo =
-          shader->GetDescriptorBuffer("uniform_buffer_object");
-      shader_ubo->LoadData(0, shader_ubo->GetSize(), &ubo);
+      uniform_buffer->GetBuffer()->LoadData(
+          0, uniform_buffer->GetBuffer()->GetSize(), &ubo);
+      uniform_buffer->Bind(shader);
 
       attribute_array->Bind();
 
@@ -141,6 +147,8 @@ int main(int argc, char **argv) {
 
   shader->Destroy();
   delete shader;
+  uniform_buffer->Destroy();
+  delete uniform_buffer;
   attribute_array->Destroy();
   delete attribute_array;
   vertex_buffer->Destroy();
