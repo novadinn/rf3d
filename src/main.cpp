@@ -65,16 +65,16 @@ int main(int argc, char **argv) {
 
 #if WITH_VULKAN_BACKEND == 1
   SDL_Window *window =
-      SDL_CreateWindow("Shade a Sphere", SDL_WINDOWPOS_UNDEFINED,
-                       SDL_WINDOWPOS_UNDEFINED, 800, 600, SDL_WINDOW_VULKAN);
+      SDL_CreateWindow("RF3D", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+                       800, 600, SDL_WINDOW_VULKAN);
   RendererFrontend *frontend = new RendererFrontend();
   if (!frontend->Initialize(window, RendererBackendType::RBT_VULKAN)) {
     exit(1);
   }
 #else
   SDL_Window *window =
-      SDL_CreateWindow("Shade a Sphere", SDL_WINDOWPOS_UNDEFINED,
-                       SDL_WINDOWPOS_UNDEFINED, 800, 600, SDL_WINDOW_OPENGL);
+      SDL_CreateWindow("RF3D", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+                       800, 600, SDL_WINDOW_OPENGL);
   RendererFrontend *frontend = new RendererFrontend();
   if (!frontend->Initialize(window, RendererBackendType::RBT_OPENGL)) {
     exit(1);
@@ -158,7 +158,7 @@ int main(int argc, char **argv) {
         GPU_SHADER_STAGE_TYPE_VERTEX, sizeof(glm::mat4) * 4, 0);
     meshes[i].lights_buffer->Create(
         "ubo_lights", GPU_SHADER_BUFFER_TYPE_UNIFORM_BUFFER,
-        GPU_SHADER_STAGE_TYPE_FRAGMENT, sizeof(glm::vec3) * 4, 0);
+        GPU_SHADER_STAGE_TYPE_FRAGMENT, sizeof(glm::vec3) * 4, 1);
   }
 
   GPUShaderConfig shader_config = {};

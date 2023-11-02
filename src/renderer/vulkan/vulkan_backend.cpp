@@ -39,9 +39,9 @@ bool VulkanBackend::Initialize(SDL_Window *sdl_window) {
   VkApplicationInfo application_info = {};
   application_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
   application_info.pNext = nullptr;
-  application_info.pApplicationName = "Shade a Sphere";
+  application_info.pApplicationName = "RF3D";
   application_info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-  application_info.pEngineName = "Shade a Sphere";
+  application_info.pEngineName = "RF3D";
   application_info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
   application_info.apiVersion = VK_API_VERSION_1_3;
 
