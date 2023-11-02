@@ -20,7 +20,7 @@ void loadTexture(GPUTexture *texture, const char *path) {
     FATAL("Failed to load image!");
   }
 
-  texture->Create(GPU_FORMAT_RGB8, GPU_TEXTURE_USAGE_NONE, texture_width,
+  texture->Create(GPU_FORMAT_RGB8, GPU_TEXTURE_TYPE_2D, texture_width,
                   texture_height);
   texture->WriteData(data, 0);
 

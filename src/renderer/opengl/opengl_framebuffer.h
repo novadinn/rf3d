@@ -1,8 +1,8 @@
 #pragma once
 
-#include "opengl_texture.h"
+#include "opengl_attachment.h"
+#include "renderer/gpu_attachment.h"
 #include "renderer/gpu_render_target.h"
-#include "renderer/gpu_texture.h"
 
 #include <glad/glad.h>
 #include <vector>
@@ -10,7 +10,7 @@
 class OpenGLFramebuffer : public GPURenderTarget {
 public:
   bool Create(GPURenderPass *target_render_pass,
-              std::vector<GPUTexture *> target_attachments,
+              std::vector<GPUAttachment *> target_attachments,
               uint32_t target_width, uint32_t target_height) override;
   void Destroy() override;
 

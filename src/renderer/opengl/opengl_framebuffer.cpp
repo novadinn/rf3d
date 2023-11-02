@@ -4,7 +4,7 @@
 #include "opengl_utils.h"
 
 bool OpenGLFramebuffer::Create(GPURenderPass *target_render_pass,
-                               std::vector<GPUTexture *> target_attachments,
+                               std::vector<GPUAttachment *> target_attachments,
                                uint32_t target_width, uint32_t target_height) {
   attachments = target_attachments;
   width = target_width;
@@ -45,10 +45,11 @@ bool OpenGLFramebuffer::Invalidate() {
   uint32_t color_attachment_count = 0;
   for (int i = 0; i < attachments.size(); ++i) {
     GPUFormat temp_format = attachments[i]->GetFormat();
-    GPUTextureUsage temp_aspect = attachments[i]->GetUsage();
+    GPUAttachmentUsage temp_aspect = attachments[i]->GetUsage();
     uint32_t temp_width = attachments[i]->GetWidth();
     uint32_t temp_height = attachments[i]->GetHeight();
-    /* recreate textures, since they are bound at framebuffer's creation time */
+    /* recreate attachments, since they are bound at framebuffer's creation time
+     */
     attachments[i]->Destroy();
     attachments[i]->Create(temp_format, temp_aspect, temp_width, temp_height);
 
@@ -96,11 +97,11 @@ void OpenGLFramebuffer::AttachColorTexture(GLenum internal_format,
                                            GLenum format, int index) {
   glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index,
                          GL_TEXTURE_2D,
-                         ((OpenGLTexture *)attachments[index])->GetID(), 0);
+                         ((OpenGLAttachment *)attachments[index])->GetID(), 0);
 }
 
 void OpenGLFramebuffer::AttachDepthTexture(GLenum format,
                                            GLenum attachment_type, int index) {
   glFramebufferTexture2D(GL_FRAMEBUFFER, attachment_type, GL_TEXTURE_2D,
-                         ((OpenGLTexture *)attachments[index])->GetID(), 0);
+                         ((OpenGLAttachment *)attachments[index])->GetID(), 0);
 }

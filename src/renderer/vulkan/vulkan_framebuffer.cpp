@@ -8,7 +8,7 @@
 #include "vulkan_texture.h"
 
 bool VulkanFramebuffer::Create(GPURenderPass *target_render_pass,
-                               std::vector<GPUTexture *> target_attachments,
+                               std::vector<GPUAttachment *> target_attachments,
                                uint32_t target_width, uint32_t target_height) {
   VulkanContext *context = VulkanBackend::GetContext();
 

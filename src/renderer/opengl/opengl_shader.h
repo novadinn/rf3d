@@ -2,6 +2,7 @@
 
 #include "renderer/gpu_buffer.h"
 #include "renderer/gpu_shader.h"
+#include "renderer/gpu_texture.h"
 
 #include <glad/glad.h>
 #include <glm/glm.hpp>

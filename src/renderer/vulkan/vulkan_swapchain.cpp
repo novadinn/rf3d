@@ -123,7 +123,7 @@ bool VulkanSwapchain::Create(uint32_t width, uint32_t height) {
   }
 
   depth_attachment.Create(GPU_FORMAT_D24_S8,
-                          GPU_TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT,
+                          GPU_ATTACHMENT_USAGE_DEPTH_STENCIL_ATTACHMENT,
                           extent.width, extent.height);
 
   return true;

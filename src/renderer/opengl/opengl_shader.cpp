@@ -2,6 +2,7 @@
 
 #include "logger.h"
 #include "opengl_backend.h"
+#include "opengl_texture.h"
 #include "opengl_utils.h"
 
 #include <cstdio>

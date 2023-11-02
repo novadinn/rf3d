@@ -1,24 +1,22 @@
-#include "vulkan_texture.h"
+#include "vulkan_attachment.h"
 
 #include "logger.h"
 #include "renderer/gpu_utils.h"
 #include "vulkan_backend.h"
-#include "vulkan_buffer.h"
-#include "vulkan_command_buffer.h"
 #include "vulkan_utils.h"
 
-void VulkanTexture::Create(GPUFormat texture_format,
-                           GPUTextureType texture_type, uint32_t texture_width,
-                           uint32_t texture_height) {
+void VulkanAttachment::Create(GPUFormat attachment_format,
+                              GPUAttachmentUsage attachment_usage,
+                              uint32_t texture_width, uint32_t texture_height) {
   VulkanContext *context = VulkanBackend::GetContext();
 
-  format = texture_format;
-  type = texture_type;
+  format = attachment_format;
+  aspect = attachment_usage;
   width = texture_width;
   height = texture_height;
-
   VkFormat native_format = VulkanUtils::GPUFormatToVulkanFormat(format);
-  VkImageAspectFlags native_aspect_flags = VK_IMAGE_ASPECT_NONE_KHR;
+  VkImageAspectFlags native_aspect_flags =
+      VulkanUtils::GPUTextureUsageToVulkanAspectFlags(aspect);
 
   VkImageUsageFlags usage;
   if (GPUUtils::IsDepthFormat(format)) {
@@ -95,68 +93,4 @@ void VulkanTexture::Create(GPUFormat texture_format,
                              &view_create_info, context->allocator, &view));
 }
 
-void VulkanTexture::Destroy() {
-  VulkanContext *context = VulkanBackend::GetContext();
-
-  vkDeviceWaitIdle(context->device->GetLogicalDevice());
-
-  vkDestroyImageView(context->device->GetLogicalDevice(), view,
-                     context->allocator);
-  vkFreeMemory(context->device->GetLogicalDevice(), memory, context->allocator);
-  vkDestroyImage(context->device->GetLogicalDevice(), handle,
-                 context->allocator);
-
-  format = GPU_FORMAT_NONE;
-  type = GPU_TEXTURE_TYPE_NONE;
-  handle = 0;
-  view = 0;
-  memory = 0;
-}
-
-void VulkanTexture::WriteData(uint8_t *pixels, uint32_t offset) {
-  VulkanContext *context = VulkanBackend::GetContext();
-
-  VkFormat native_format = VulkanUtils::GPUFormatToVulkanFormat(format);
-  VkImageAspectFlags native_aspect_flags = VK_IMAGE_ASPECT_NONE_KHR;
-
-  uint32_t channel_count = GPUUtils::GetGPUFormatCount(format);
-  uint32_t size = width * height * channel_count;
-
-  VkBufferUsageFlags usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-  VkMemoryPropertyFlags memory_prop_flags =
-      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-      VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-
-  VulkanBuffer staging;
-  staging.Create(GPU_BUFFER_TYPE_STAGING, size);
-  staging.LoadData(0, size, pixels);
-
-  VulkanDeviceQueueInfo queue_info =
-      context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_GRAPHICS);
-  VkCommandPool command_pool = queue_info.command_pool;
-  VkQueue queue = queue_info.queue;
-
-  VulkanCommandBuffer temp_command_buffer;
-  temp_command_buffer.AllocateAndBeginSingleUse(command_pool);
-
-  TransitionLayout(&temp_command_buffer, native_format,
-                   VK_IMAGE_LAYOUT_UNDEFINED,
-                   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-  CopyFromBuffer(&staging, &temp_command_buffer);
-  TransitionLayout(&temp_command_buffer, native_format,
-                   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                   VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-  temp_command_buffer.FreeAndEndSingleUse(command_pool, queue);
-  staging.Destroy();
-}
-
-void VulkanTexture::TransitionLayout(VulkanCommandBuffer *command_buffer,
-                                     VkFormat format, VkImageLayout old_layout,
-                                     VkImageLayout new_layout) {
-  /* TODO: */
-}
-
-void VulkanTexture::CopyFromBuffer(VulkanBuffer *buffer,
-                                   VulkanCommandBuffer *command_buffer) {
-  /* TODO: */
-}
+void VulkanAttachment::Destroy() {}

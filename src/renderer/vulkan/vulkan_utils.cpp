@@ -72,18 +72,18 @@ VulkanUtils::GPUShaderStageTypeToVulkanStage(GPUShaderStageType stage) {
 }
 
 VkImageAspectFlags
-VulkanUtils::GPUTextureUsageToVulkanAspectFlags(GPUTextureUsage usage) {
+VulkanUtils::GPUTextureUsageToVulkanAspectFlags(GPUAttachmentUsage usage) {
   switch (usage) {
-  case GPU_TEXTURE_USAGE_COLOR_ATTACHMENT: {
+  case GPU_ATTACHMENT_USAGE_COLOR_ATTACHMENT: {
     return VK_IMAGE_ASPECT_COLOR_BIT;
   } break;
-  case GPU_TEXTURE_USAGE_DEPTH_ATTACHMENT: {
+  case GPU_ATTACHMENT_USAGE_DEPTH_ATTACHMENT: {
     return VK_IMAGE_ASPECT_DEPTH_BIT;
   } break;
-  case GPU_TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT: {
+  case GPU_ATTACHMENT_USAGE_DEPTH_STENCIL_ATTACHMENT: {
     return VK_IMAGE_ASPECT_DEPTH_BIT; /* TODO: | VK_IMAGE_ASPECT_STENCIL_BIT */
   } break;
-  case GPU_TEXTURE_USAGE_NONE: {
+  case GPU_ATTACHMENT_USAGE_NONE: {
     return VK_IMAGE_ASPECT_NONE_KHR;
   } break;
   default: {

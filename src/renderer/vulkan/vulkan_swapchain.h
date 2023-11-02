@@ -1,8 +1,8 @@
 #pragma once
 
+#include "vulkan_attachment.h"
 #include "vulkan_framebuffer.h"
 #include "vulkan_render_pass.h"
-#include "vulkan_texture.h"
 
 #include <vector>
 #include <vulkan/vulkan.h>
@@ -22,7 +22,7 @@ public:
   inline VkSwapchainKHR &GetHandle() { return handle; }
   inline int GetMaxFramesInFlights() const { return max_frames_in_flight; }
   inline std::vector<VkImageView> &GetImageViews() { return image_views; }
-  inline VulkanTexture &GetDepthImage() { return depth_attachment; }
+  inline VulkanAttachment &GetDepthAttachment() { return depth_attachment; }
   inline VkSurfaceFormatKHR GetImageFormat() const { return image_format; }
   inline VkExtent2D GetExtent() const { return extent; }
 
@@ -36,5 +36,5 @@ private:
   VkSurfaceFormatKHR image_format;
   VkPresentModeKHR present_mode;
   VkExtent2D extent;
-  VulkanTexture depth_attachment;
+  VulkanAttachment depth_attachment;
 };

@@ -1,16 +1,14 @@
 #pragma once
 
-#include "renderer/gpu_texture.h"
+#include "renderer/gpu_attachment.h"
 
 #include <glad/glad.h>
 
-class OpenGLTexture : public GPUTexture {
+class OpenGLAttachment : public GPUAttachment {
 public:
-  void Create(GPUFormat texture_format, GPUTextureType texture_type,
+  void Create(GPUFormat image_format, GPUAttachmentUsage texture_usage,
               uint32_t texture_width, uint32_t texture_height) override;
   void Destroy() override;
-
-  void WriteData(uint8_t *pixels, uint32_t offset) override;
 
   inline GLuint GetID() const { return id; }
 
