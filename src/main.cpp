@@ -9,7 +9,34 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#define WITH_VULKAN_BACKEND 1
+#define WITH_VULKAN_BACKEND 0
+
+struct PushConsts {
+  float roughness;
+  float metallic;
+  float r;
+  float g;
+  float b;
+};
+
+struct MeshParams {
+  GPUShaderBuffer *shader_buffer;
+  GPUShaderBuffer *lights_buffer;
+  GPUTexture *texture;
+  glm::vec3 position;
+  PushConsts push_constants;
+};
+
+struct UniformBufferObject {
+  glm::mat4 model;
+  glm::mat4 view;
+  glm::mat4 projection;
+  glm::mat4 _pad0;
+};
+
+struct UBOLights {
+  glm::vec4 lights[4];
+};
 
 void loadTexture(GPUTexture *texture, const char *path) {
   int texture_width, texture_height, texture_num_channels;
@@ -57,17 +84,25 @@ int main(int argc, char **argv) {
   GPUBuffer *vertex_buffer = frontend->BufferAllocate();
   GPUAttributeArray *attribute_array = frontend->AttributeArrayAllocate();
   GPUShader *shader = frontend->ShaderAllocate();
-  GPUShaderBuffer *uniform_buffer = frontend->ShaderBufferAllocate();
-  GPUShaderBuffer *uniform_buffer2 = frontend->ShaderBufferAllocate();
-  GPUShaderBuffer *uniform_buffer3 = frontend->ShaderBufferAllocate();
   GPURenderPass *window_render_pass = frontend->GetWindowRenderPass();
-  GPUTexture *metal_texture = frontend->TextureAllocate();
-  GPUTexture *brick_texture = frontend->TextureAllocate();
-  GPUTexture *wood_texture = frontend->TextureAllocate();
 
-  loadTexture(metal_texture, "assets/textures/metal.png");
-  loadTexture(brick_texture, "assets/textures/brickwall.jpg");
-  loadTexture(wood_texture, "assets/textures/wood.png");
+  std::vector<MeshParams> meshes(3);
+  for (int i = 0; i < meshes.size(); ++i) {
+    meshes[i].shader_buffer = frontend->ShaderBufferAllocate();
+    meshes[i].lights_buffer = frontend->ShaderBufferAllocate();
+    meshes[i].texture = frontend->TextureAllocate();
+  }
+
+  loadTexture(meshes[0].texture, "assets/textures/metal.png");
+  meshes[0].position = glm::vec3(0, 0, -5.0f);
+  meshes[0].push_constants =
+      PushConsts{0.1f, 1.0f, 0.672411f, 0.637331f, 0.585456f};
+  loadTexture(meshes[1].texture, "assets/textures/brickwall.jpg");
+  meshes[1].position = glm::vec3(2, 0, -5.0f);
+  meshes[1].push_constants = PushConsts{0.8f, 0.2f, 1, 0, 0};
+  loadTexture(meshes[2].texture, "assets/textures/wood.png");
+  meshes[2].position = glm::vec3(-2, 0, -5.0f);
+  meshes[2].push_constants = PushConsts{0.5f, 0.5f, 0, 1, 0};
 
   std::vector<float> vertices = {
       -0.5f, -0.5f, -0.5f, 0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,  0.5f,  -0.5f,
@@ -117,15 +152,14 @@ int main(int argc, char **argv) {
   attributes.emplace_back(GPUFormat{GPU_FORMAT_RG32F});
   attribute_array->Create(vertex_buffer, 0, attributes);
 
-  uniform_buffer->Create(
-      "uniform_buffer_object", GPU_SHADER_BUFFER_TYPE_UNIFORM_BUFFER,
-      GPU_SHADER_STAGE_TYPE_VERTEX, sizeof(glm::mat4) * 4, 0);
-  uniform_buffer2->Create(
-      "uniform_buffer_object", GPU_SHADER_BUFFER_TYPE_UNIFORM_BUFFER,
-      GPU_SHADER_STAGE_TYPE_VERTEX, sizeof(glm::mat4) * 4, 0);
-  uniform_buffer3->Create(
-      "uniform_buffer_object", GPU_SHADER_BUFFER_TYPE_UNIFORM_BUFFER,
-      GPU_SHADER_STAGE_TYPE_VERTEX, sizeof(glm::mat4) * 4, 0);
+  for (int i = 0; i < meshes.size(); ++i) {
+    meshes[i].shader_buffer->Create(
+        "uniform_buffer_object", GPU_SHADER_BUFFER_TYPE_UNIFORM_BUFFER,
+        GPU_SHADER_STAGE_TYPE_VERTEX, sizeof(glm::mat4) * 4, 0);
+    meshes[i].lights_buffer->Create(
+        "ubo_lights", GPU_SHADER_BUFFER_TYPE_UNIFORM_BUFFER,
+        GPU_SHADER_STAGE_TYPE_FRAGMENT, sizeof(glm::vec3) * 4, 0);
+  }
 
   GPUShaderConfig shader_config = {};
 #if WITH_VULKAN_BACKEND == 1
@@ -143,7 +177,8 @@ int main(int argc, char **argv) {
       GPUShaderStageConfig{GPU_SHADER_STAGE_TYPE_FRAGMENT,
                            "assets/shaders/opengl/object_shader.frag"});
 #endif
-  shader_config.descriptors.emplace_back(uniform_buffer);
+  shader_config.descriptors.emplace_back(meshes[0].shader_buffer);
+  shader_config.descriptors.emplace_back(meshes[0].lights_buffer);
   shader_config.attribute_configs.emplace_back(
       GPUShaderAttributeConfig{GPU_FORMAT_RGB32F});
   shader_config.attribute_configs.emplace_back(
@@ -179,21 +214,6 @@ int main(int argc, char **argv) {
     if (frontend->BeginFrame()) {
       window_render_pass->Begin(frontend->GetCurrentWindowRenderTarget());
 
-      struct UniformBufferObject {
-        glm::mat4 model;
-        glm::mat4 view;
-        glm::mat4 projection;
-        glm::mat4 _pad0;
-      };
-
-      struct PushConsts {
-        float roughness;
-        float metallic;
-        float r;
-        float g;
-        float b;
-      };
-
       GPUShaderPushConstant push_constant;
       push_constant.name = "material";
       push_constant.values.emplace_back(GPUShaderPushConstantValue{
@@ -210,37 +230,36 @@ int main(int argc, char **argv) {
       push_constant.offset = 0;
       push_constant.stage_flags = GPU_SHADER_STAGE_TYPE_FRAGMENT;
 
-      std::vector<glm::vec3> cube_positions = {glm::vec3(0, 0, -5.0f),
-                                               glm::vec3(2, 0, -5.0f),
-                                               glm::vec3(-2, 0, -5.0f)};
-      std::vector<PushConsts> push_constants = {
-          PushConsts{0.1f, 1.0f, 0.672411f, 0.637331f, 0.585456f},
-          PushConsts{0.8f, 0.2f, 1, 0, 0}, PushConsts{0.5f, 0.5f, 0, 1, 0}};
-      std::vector<GPUShaderBuffer *> uniform_buffers = {
-          uniform_buffer, uniform_buffer2, uniform_buffer3};
-      std::vector<GPUTexture *> textures = {metal_texture, wood_texture,
-                                            brick_texture};
-
       static float angle = 0.0f;
       angle += 0.003f;
-      for (int i = 0; i < cube_positions.size(); ++i) {
+      for (int i = 0; i < meshes.size(); ++i) {
         UniformBufferObject ubo = {};
         ubo.model = glm::mat4(1.0f);
         ubo.model = glm::rotate(ubo.model, angle,
                                 glm::normalize(glm::vec3(0.0f, 1.0f, 1.0f)));
-        ubo.view = glm::translate(glm::mat4(1.0f), cube_positions[i]);
+        ubo.view = glm::translate(glm::mat4(1.0f), meshes[i].position);
         ubo.view = glm::inverse(ubo.view);
         ubo.projection = glm::perspective(
             glm::radians(45.0f), (float)width / (float)height, 0.1f, 1000.0f);
 
-        shader->Bind();
-        uniform_buffers[i]->GetBuffer()->LoadData(
-            0, uniform_buffers[i]->GetBuffer()->GetSize(), &ubo);
-        uniform_buffers[i]->Bind(shader);
+        UBOLights ubo_lights = {};
+        const float p = 5.0f;
+        ubo_lights.lights[0] = glm::vec4(-p * 0.8f, -p * 0.8f, p * 0.8f, 1.0f);
+        ubo_lights.lights[1] = glm::vec4(-p * 2, p * 2, p * 2, 1.0f);
+        ubo_lights.lights[2] = glm::vec4(p * 0.2f, -p * 0.2f, p * 0.2f, 1.0f);
+        ubo_lights.lights[3] = glm::vec4(p, p, p, 1.0f);
 
-        push_constant.value = &push_constants[i];
+        shader->Bind();
+        meshes[i].shader_buffer->GetBuffer()->LoadData(
+            0, meshes[i].shader_buffer->GetBuffer()->GetSize(), &ubo);
+        meshes[i].shader_buffer->Bind(shader);
+        meshes[i].lights_buffer->GetBuffer()->LoadData(
+            0, meshes[i].lights_buffer->GetBuffer()->GetSize(), &ubo_lights);
+        meshes[i].lights_buffer->Bind(shader);
+
+        push_constant.value = &meshes[i].push_constants;
         shader->PushConstant(&push_constant);
-        shader->SetTexture(0, textures[i]);
+        shader->SetTexture(0, meshes[i].texture);
 
         attribute_array->Bind();
 
@@ -253,20 +272,18 @@ int main(int argc, char **argv) {
     }
   }
 
-  metal_texture->Destroy();
-  delete metal_texture;
-  brick_texture->Destroy();
-  delete brick_texture;
-  wood_texture->Destroy();
-  delete wood_texture;
+  for (int i = 0; i < meshes.size(); ++i) {
+    meshes[i].texture->Destroy();
+    delete meshes[i].texture;
+  }
   shader->Destroy();
   delete shader;
-  uniform_buffer3->Destroy();
-  delete uniform_buffer3;
-  uniform_buffer2->Destroy();
-  delete uniform_buffer2;
-  uniform_buffer->Destroy();
-  delete uniform_buffer;
+  for (int i = 0; i < meshes.size(); ++i) {
+    meshes[i].shader_buffer->Destroy();
+    delete meshes[i].shader_buffer;
+    meshes[i].lights_buffer->Destroy();
+    delete meshes[i].lights_buffer;
+  }
   attribute_array->Destroy();
   delete attribute_array;
   vertex_buffer->Destroy();

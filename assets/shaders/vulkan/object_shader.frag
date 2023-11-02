@@ -7,8 +7,8 @@ layout(location = 2) in vec3 outCameraPosition;
 layout(location = 0) out vec4 outColor;
 
 /* TODO: */
-// layout(binding = 1) uniform UBOShared { vec4 lights[4]; }
-// uboParams;
+layout(binding = 0) uniform ubo_lights { vec4 lights[4]; }
+ubo_light;
 
 layout(push_constant) uniform PushConsts {
   layout(offset = 0) float roughness;
@@ -46,7 +46,6 @@ vec3 BRDF(vec3 L, vec3 V, vec3 N, float metallic, float roughness) {
   vec3 H = normalize(V + L);
   float dotNV = clamp(dot(N, V), 0.0, 1.0);
   float dotNL = clamp(dot(N, L), 0.0, 1.0);
-  float dotLH = clamp(dot(L, H), 0.0, 1.0);
   float dotNH = clamp(dot(N, H), 0.0, 1.0);
 
   vec3 lightColor = vec3(1.0);
@@ -73,15 +72,8 @@ void main() {
 
   vec3 Lo = vec3(0.0);
 
-  const float p = 5.0;
-  vec4 lights[4];
-  lights[0] = vec4(-p * 0.8, -p * 0.8, p * 0.8, 1.0);
-  lights[1] = vec4(-p * 2, p * 2, p * 2, 1.0);
-  lights[2] = vec4(p * 0.2, -p * 0.2, p * 0.2, 1.0);
-  lights[3] = vec4(p, p, p, 1.0);
-
-  for (int i = 0; i < lights.length(); i++) {
-    vec3 L = normalize(lights[i].xyz - outWorldPos);
+  for (int i = 0; i < ubo_light.lights.length(); i++) {
+    vec3 L = normalize(ubo_light.lights[i].xyz - outWorldPos);
     Lo += BRDF(L, V, N, material.metallic, material.roughness);
   }
 
