@@ -100,9 +100,28 @@ void OpenGLShader::Destroy() {
 
 void OpenGLShader::Bind() { glUseProgram(id); }
 
-void OpenGLShader::PushConstant(void *value, uint64_t size, uint32_t offset,
-                                uint8_t stage_flags) {
-  /* TODO: do nothing - unsupported in opengl. We can add support via making a
-   * pushconstant struct that holds a list of void *, but that will complicate a
-   * code a lot, so dont care for now */
+void OpenGLShader::PushConstant(GPUShaderPushConstant *push_constant) {
+  uint32_t attribute_offset = 0;
+  for (int i = 0; i < push_constant->values.size(); ++i) {
+    std::string push_constant_name = std::string(push_constant->name);
+    std::string value_name = std::string(push_constant->values[i].name);
+    GPUShaderGLSLValueType value_type = push_constant->values[i].type;
+
+    std::string attribute_name = push_constant_name + "." + value_name;
+    void *target_ptr = ((char *)push_constant->value) + attribute_offset;
+
+    switch (value_type) {
+    case GPU_SHADER_GLSL_VALUE_TYPE_FLOAT: {
+      float v = ((float *)target_ptr)[0];
+
+      glUniform1f(glGetUniformLocation(id, attribute_name.c_str()), v);
+
+      attribute_offset += 4;
+    } break;
+    default: {
+      ERROR("Unsupported glsl value type!");
+      return;
+    } break;
+    }
+  }
 }

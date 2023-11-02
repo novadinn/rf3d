@@ -155,8 +155,7 @@ void VulkanShader::Bind() {
   pipeline.Bind(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
 }
 
-void VulkanShader::PushConstant(void *value, uint64_t size, uint32_t offset,
-                                uint8_t stage_flags) {
+void VulkanShader::PushConstant(GPUShaderPushConstant *push_constant) {
   VulkanContext *context = VulkanBackend::GetContext();
 
   VulkanDeviceQueueInfo info =
@@ -165,8 +164,9 @@ void VulkanShader::PushConstant(void *value, uint64_t size, uint32_t offset,
   VulkanCommandBuffer *command_buffer =
       &info.command_buffers[context->image_index];
 
-  vkCmdPushConstants(
-      command_buffer->GetHandle(), pipeline.GetLayout(),
-      VulkanUtils::GPUShaderStageFlagsToVulkanShaderStageFlags(stage_flags),
-      offset, size, value);
+  vkCmdPushConstants(command_buffer->GetHandle(), pipeline.GetLayout(),
+                     VulkanUtils::GPUShaderStageFlagsToVulkanShaderStageFlags(
+                         push_constant->stage_flags),
+                     push_constant->offset, push_constant->size,
+                     push_constant->value);
 }

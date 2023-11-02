@@ -7,7 +7,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#define WITH_VULKAN_BACKEND 1
+#define WITH_VULKAN_BACKEND 0
 
 int main(int argc, char **argv) {
   if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
@@ -160,6 +160,22 @@ int main(int argc, char **argv) {
         float b;
       };
 
+      GPUShaderPushConstant push_constant;
+      push_constant.name = "material";
+      push_constant.values.emplace_back(GPUShaderPushConstantValue{
+          "roughness", GPU_SHADER_GLSL_VALUE_TYPE_FLOAT});
+      push_constant.values.emplace_back(GPUShaderPushConstantValue{
+          "metallic", GPU_SHADER_GLSL_VALUE_TYPE_FLOAT});
+      push_constant.values.emplace_back(
+          GPUShaderPushConstantValue{"r", GPU_SHADER_GLSL_VALUE_TYPE_FLOAT});
+      push_constant.values.emplace_back(
+          GPUShaderPushConstantValue{"g", GPU_SHADER_GLSL_VALUE_TYPE_FLOAT});
+      push_constant.values.emplace_back(
+          GPUShaderPushConstantValue{"b", GPU_SHADER_GLSL_VALUE_TYPE_FLOAT});
+      push_constant.size = sizeof(PushConsts);
+      push_constant.offset = 0;
+      push_constant.stage_flags = GPU_SHADER_STAGE_TYPE_FRAGMENT;
+
       std::vector<glm::vec3> cube_positions = {glm::vec3(0, 0, -5.0f),
                                                glm::vec3(2, 0, -5.0f),
                                                glm::vec3(-2, 0, -5.0f)};
@@ -186,8 +202,8 @@ int main(int argc, char **argv) {
             0, uniform_buffers[i]->GetBuffer()->GetSize(), &ubo);
         uniform_buffers[i]->Bind(shader);
 
-        shader->PushConstant(&push_constants[i], sizeof(PushConsts), 0,
-                             GPU_SHADER_STAGE_TYPE_FRAGMENT);
+        push_constant.value = &push_constants[i];
+        shader->PushConstant(&push_constant);
 
         attribute_array->Bind();
 

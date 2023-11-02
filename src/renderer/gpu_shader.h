@@ -8,6 +8,24 @@
 #include <list>
 #include <vector>
 
+enum GPUShaderGLSLValueType {
+  GPU_SHADER_GLSL_VALUE_TYPE_FLOAT,
+};
+
+struct GPUShaderPushConstantValue {
+  const char *name;
+  GPUShaderGLSLValueType type;
+};
+
+struct GPUShaderPushConstant {
+  const char *name;
+  std::vector<GPUShaderPushConstantValue> values;
+  void *value;
+  uint64_t size;
+  uint32_t offset;
+  uint8_t stage_flags;
+};
+
 enum GPUShaderStageType {
   GPU_SHADER_STAGE_TYPE_VERTEX,
   GPU_SHADER_STAGE_TYPE_FRAGMENT,
@@ -45,8 +63,7 @@ public:
   virtual void Destroy() = 0;
 
   virtual void Bind() = 0;
-  virtual void PushConstant(void *value, uint64_t size, uint32_t offset,
-                            uint8_t stage_flags) = 0;
+  virtual void PushConstant(GPUShaderPushConstant *push_constant) = 0;
 
 protected:
 };
