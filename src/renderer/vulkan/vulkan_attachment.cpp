@@ -93,4 +93,20 @@ void VulkanAttachment::Create(GPUFormat attachment_format,
                              &view_create_info, context->allocator, &view));
 }
 
-void VulkanAttachment::Destroy() {}
+void VulkanAttachment::Destroy() {
+  VulkanContext *context = VulkanBackend::GetContext();
+
+  vkDeviceWaitIdle(context->device->GetLogicalDevice());
+
+  vkDestroyImageView(context->device->GetLogicalDevice(), view,
+                     context->allocator);
+  vkFreeMemory(context->device->GetLogicalDevice(), memory, context->allocator);
+  vkDestroyImage(context->device->GetLogicalDevice(), handle,
+                 context->allocator);
+
+  format = GPU_FORMAT_NONE;
+  aspect = GPU_ATTACHMENT_USAGE_NONE;
+  handle = 0;
+  view = 0;
+  memory = 0;
+}

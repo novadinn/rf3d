@@ -16,14 +16,14 @@ public:
 
   void WriteData(uint8_t *pixels, uint32_t offset) override;
 
-  void TransitionLayout(VulkanCommandBuffer *command_buffer, VkFormat format,
-                        VkImageLayout old_layout, VkImageLayout new_layout);
-  void CopyFromBuffer(VulkanBuffer *buffer,
-                      VulkanCommandBuffer *command_buffer);
-
   inline VkImageView GetImageView() { return view; }
 
 private:
+  void TransitionLayout(VulkanCommandBuffer *command_buffer, VkFormat format,
+                        VkImageLayout old_layout, VkImageLayout new_layout);
+  void CopyFromBuffer(VulkanBuffer *buffer, VulkanCommandBuffer *command_buffer,
+                      uint64_t offset);
+
   VkImage handle;
   VkImageView view;
   VkDeviceMemory memory;

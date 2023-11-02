@@ -18,40 +18,47 @@ void VulkanTexture::Create(GPUFormat texture_format,
   height = texture_height;
 
   VkFormat native_format = VulkanUtils::GPUFormatToVulkanFormat(format);
-  VkImageAspectFlags native_aspect_flags = VK_IMAGE_ASPECT_NONE_KHR;
+  VkImageAspectFlags native_aspect_flags = VK_IMAGE_ASPECT_COLOR_BIT;
 
-  VkImageUsageFlags usage;
-  if (GPUUtils::IsDepthFormat(format)) {
-    usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-  } else {
-    usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-            VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+  VkImageType image_type = VK_IMAGE_TYPE_MAX_ENUM;
+  uint32_t array_layers = 0;
+  VkImageCreateFlags create_flags = 0;
+  switch (type) {
+  case GPU_TEXTURE_TYPE_2D: {
+    image_type = VK_IMAGE_TYPE_2D;
+    array_layers = 1;
+  } break;
+  default: {
+    ERROR("Unsupported image type!");
+  } break;
   }
 
   /* TODO: a lot of hardcoded stuff */
   VkImageCreateInfo image_create_info = {};
   image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
   image_create_info.pNext = 0;
-  image_create_info.flags = 0;
+  image_create_info.flags = create_flags;
   image_create_info.imageType = VK_IMAGE_TYPE_2D;
   image_create_info.format = native_format;
   image_create_info.extent.width = width;
   image_create_info.extent.height = height;
   image_create_info.extent.depth = 1;
   image_create_info.mipLevels = 4;
-  image_create_info.arrayLayers = 1;
+  image_create_info.arrayLayers = array_layers;
   image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
   image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-  image_create_info.usage = usage;
+  image_create_info.usage =
+      VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+      VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
   image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
   image_create_info.queueFamilyIndexCount = 0;
   image_create_info.pQueueFamilyIndices = 0;
   image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-  VkMemoryRequirements memory_requirements = {};
-
   VK_CHECK(vkCreateImage(context->device->GetLogicalDevice(),
                          &image_create_info, context->allocator, &handle));
+
+  VkMemoryRequirements memory_requirements = {};
 
   vkGetImageMemoryRequirements(context->device->GetLogicalDevice(), handle,
                                &memory_requirements);
@@ -120,7 +127,7 @@ void VulkanTexture::WriteData(uint8_t *pixels, uint32_t offset) {
   VkImageAspectFlags native_aspect_flags = VK_IMAGE_ASPECT_NONE_KHR;
 
   uint32_t channel_count = GPUUtils::GetGPUFormatCount(format);
-  uint32_t size = width * height * channel_count;
+  uint32_t size = width * height * 4;
 
   VkBufferUsageFlags usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
   VkMemoryPropertyFlags memory_prop_flags =
@@ -131,6 +138,7 @@ void VulkanTexture::WriteData(uint8_t *pixels, uint32_t offset) {
   staging.Create(GPU_BUFFER_TYPE_STAGING, size);
   staging.LoadData(0, size, pixels);
 
+  /* TODO: or transfer? */
   VulkanDeviceQueueInfo queue_info =
       context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_GRAPHICS);
   VkCommandPool command_pool = queue_info.command_pool;
@@ -142,7 +150,7 @@ void VulkanTexture::WriteData(uint8_t *pixels, uint32_t offset) {
   TransitionLayout(&temp_command_buffer, native_format,
                    VK_IMAGE_LAYOUT_UNDEFINED,
                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-  CopyFromBuffer(&staging, &temp_command_buffer);
+  CopyFromBuffer(&staging, &temp_command_buffer, 0);
   TransitionLayout(&temp_command_buffer, native_format,
                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -153,10 +161,110 @@ void VulkanTexture::WriteData(uint8_t *pixels, uint32_t offset) {
 void VulkanTexture::TransitionLayout(VulkanCommandBuffer *command_buffer,
                                      VkFormat format, VkImageLayout old_layout,
                                      VkImageLayout new_layout) {
-  /* TODO: */
+  VulkanContext *context = VulkanBackend::GetContext();
+
+  /* TODO: or transfer? */
+  VulkanDeviceQueueInfo graphics_queue_info =
+      context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_GRAPHICS);
+
+  uint32_t array_layers = 0;
+  switch (type) {
+  case GPU_TEXTURE_TYPE_2D: {
+    array_layers = 1;
+  } break;
+  default: {
+    ERROR("Unsupported image type!");
+  } break;
+  }
+
+  VkImageMemoryBarrier barrier = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+  barrier.oldLayout = old_layout;
+  barrier.newLayout = new_layout;
+  barrier.srcQueueFamilyIndex = graphics_queue_info.family_index;
+  barrier.dstQueueFamilyIndex = graphics_queue_info.family_index;
+  barrier.image = handle;
+  barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+  barrier.subresourceRange.baseMipLevel = 0;
+  barrier.subresourceRange.levelCount = 1;
+  barrier.subresourceRange.baseArrayLayer = 0;
+  barrier.subresourceRange.layerCount = array_layers;
+
+  VkPipelineStageFlags source_stage;
+  VkPipelineStageFlags dest_stage;
+
+  if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED &&
+      new_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+    barrier.srcAccessMask = 0;
+    barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+    source_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+
+    dest_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+  } else if (old_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL &&
+             new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+    barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+    source_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+
+    dest_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+  } else if (old_layout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL &&
+             new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+    barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+    source_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+
+    dest_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+  } else if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED &&
+             new_layout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL) {
+    barrier.srcAccessMask = 0;
+    barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+    source_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+
+    dest_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+  } else {
+    FATAL("Unsupported layout transition!");
+    return;
+  }
+
+  vkCmdPipelineBarrier(command_buffer->GetHandle(), source_stage, dest_stage, 0,
+                       0, 0, 0, 0, 1, &barrier);
 }
 
 void VulkanTexture::CopyFromBuffer(VulkanBuffer *buffer,
-                                   VulkanCommandBuffer *command_buffer) {
-  /* TODO: */
+                                   VulkanCommandBuffer *command_buffer,
+                                   uint64_t offset) {
+  VulkanContext *context = VulkanBackend::GetContext();
+
+  uint32_t array_layers = 0;
+  switch (type) {
+  case GPU_TEXTURE_TYPE_2D: {
+    array_layers = 1;
+  } break;
+  default: {
+    ERROR("Unsupported image type!");
+  } break;
+  }
+
+  VkBufferImageCopy region = {};
+  region.bufferOffset = offset;
+  region.bufferRowLength = 0;
+  region.bufferImageHeight = 0;
+
+  region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+  region.imageSubresource.mipLevel = 0;
+  region.imageSubresource.baseArrayLayer = 0;
+  region.imageSubresource.layerCount = array_layers;
+
+  region.imageExtent.width = width;
+  region.imageExtent.height = height;
+  region.imageExtent.depth = 1;
+
+  VK_CHECK(vkBindBufferMemory(context->device->GetLogicalDevice(),
+                              buffer->GetHandle(), memory, 0));
+  vkCmdCopyBufferToImage(command_buffer->GetHandle(), buffer->GetHandle(),
+                         handle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
+                         &region);
 }

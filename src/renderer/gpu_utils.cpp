@@ -36,10 +36,10 @@ int GPUUtils::GetGPUFormatCount(GPUFormat format) {
     return 3;
   } break;
   case GPU_FORMAT_RGB8: {
-    return 2;
+    return 3;
   } break;
   case GPU_FORMAT_RGBA8: {
-    return 3;
+    return 4;
   } break;
   case GPU_FORMAT_D24_S8: {
     return 2;

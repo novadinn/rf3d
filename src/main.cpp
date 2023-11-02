@@ -9,7 +9,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#define WITH_VULKAN_BACKEND 0
+#define WITH_VULKAN_BACKEND 1
 
 void loadTexture(GPUTexture *texture, const char *path) {
   int texture_width, texture_height, texture_num_channels;
