@@ -3,11 +3,29 @@
 #include "logger.h"
 #include "renderer/renderer_frontend.h"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb/stb_image.h"
 #include <SDL2/SDL.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
 #define WITH_VULKAN_BACKEND 0
+
+void loadTexture(GPUTexture *texture, const char *path) {
+  int texture_width, texture_height, texture_num_channels;
+  stbi_set_flip_vertically_on_load(true);
+  unsigned char *data = stbi_load(path, &texture_width, &texture_height,
+                                  &texture_num_channels, 0);
+  if (!data) {
+    FATAL("Failed to load image!");
+  }
+
+  texture->Create(GPU_FORMAT_RGB8, GPU_TEXTURE_USAGE_NONE, texture_width,
+                  texture_height);
+  texture->WriteData(data, 0);
+
+  stbi_image_free(data);
+}
 
 int main(int argc, char **argv) {
   if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
@@ -43,37 +61,50 @@ int main(int argc, char **argv) {
   GPUShaderBuffer *uniform_buffer2 = frontend->ShaderBufferAllocate();
   GPUShaderBuffer *uniform_buffer3 = frontend->ShaderBufferAllocate();
   GPURenderPass *window_render_pass = frontend->GetWindowRenderPass();
+  GPUTexture *metal_texture = frontend->TextureAllocate();
+  GPUTexture *brick_texture = frontend->TextureAllocate();
+  GPUTexture *wood_texture = frontend->TextureAllocate();
+
+  loadTexture(metal_texture, "assets/textures/metal.png");
+  loadTexture(brick_texture, "assets/textures/brickwall.jpg");
+  loadTexture(wood_texture, "assets/textures/wood.png");
 
   std::vector<float> vertices = {
-      -0.5f, -0.5f, -0.5f, 0.0f,  0.0f,  -1.0f, 0.5f,  -0.5f, -0.5f,
-      0.0f,  0.0f,  -1.0f, 0.5f,  0.5f,  -0.5f, 0.0f,  0.0f,  -1.0f,
-      0.5f,  0.5f,  -0.5f, 0.0f,  0.0f,  -1.0f, -0.5f, 0.5f,  -0.5f,
-      0.0f,  0.0f,  -1.0f, -0.5f, -0.5f, -0.5f, 0.0f,  0.0f,  -1.0f,
+      -0.5f, -0.5f, -0.5f, 0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,  0.5f,  -0.5f,
+      -0.5f, 0.0f,  0.0f,  -1.0f, 1.0f,  0.0f,  0.5f,  0.5f,  -0.5f, 0.0f,
+      0.0f,  -1.0f, 1.0f,  1.0f,  0.5f,  0.5f,  -0.5f, 0.0f,  0.0f,  -1.0f,
+      1.0f,  1.0f,  -0.5f, 0.5f,  -0.5f, 0.0f,  0.0f,  -1.0f, 0.0f,  1.0f,
+      -0.5f, -0.5f, -0.5f, 0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,
 
-      -0.5f, -0.5f, 0.5f,  0.0f,  0.0f,  1.0f,  0.5f,  -0.5f, 0.5f,
-      0.0f,  0.0f,  1.0f,  0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
-      0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  -0.5f, 0.5f,  0.5f,
-      0.0f,  0.0f,  1.0f,  -0.5f, -0.5f, 0.5f,  0.0f,  0.0f,  1.0f,
+      -0.5f, -0.5f, 0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,  0.5f,  -0.5f,
+      0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  0.0f,  0.5f,  0.5f,  0.5f,  0.0f,
+      0.0f,  1.0f,  1.0f,  1.0f,  0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+      1.0f,  1.0f,  -0.5f, 0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  1.0f,
+      -0.5f, -0.5f, 0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,
 
-      -0.5f, 0.5f,  0.5f,  -1.0f, 0.0f,  0.0f,  -0.5f, 0.5f,  -0.5f,
-      -1.0f, 0.0f,  0.0f,  -0.5f, -0.5f, -0.5f, -1.0f, 0.0f,  0.0f,
-      -0.5f, -0.5f, -0.5f, -1.0f, 0.0f,  0.0f,  -0.5f, -0.5f, 0.5f,
-      -1.0f, 0.0f,  0.0f,  -0.5f, 0.5f,  0.5f,  -1.0f, 0.0f,  0.0f,
+      -0.5f, 0.5f,  0.5f,  -1.0f, 0.0f,  0.0f,  1.0f,  0.0f,  -0.5f, 0.5f,
+      -0.5f, -1.0f, 0.0f,  0.0f,  1.0f,  1.0f,  -0.5f, -0.5f, -0.5f, -1.0f,
+      0.0f,  0.0f,  0.0f,  1.0f,  -0.5f, -0.5f, -0.5f, -1.0f, 0.0f,  0.0f,
+      0.0f,  1.0f,  -0.5f, -0.5f, 0.5f,  -1.0f, 0.0f,  0.0f,  0.0f,  0.0f,
+      -0.5f, 0.5f,  0.5f,  -1.0f, 0.0f,  0.0f,  1.0f,  0.0f,
 
-      0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.5f,  0.5f,  -0.5f,
-      1.0f,  0.0f,  0.0f,  0.5f,  -0.5f, -0.5f, 1.0f,  0.0f,  0.0f,
-      0.5f,  -0.5f, -0.5f, 1.0f,  0.0f,  0.0f,  0.5f,  -0.5f, 0.5f,
-      1.0f,  0.0f,  0.0f,  0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+      0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,  0.5f,  0.5f,
+      -0.5f, 1.0f,  0.0f,  0.0f,  1.0f,  1.0f,  0.5f,  -0.5f, -0.5f, 1.0f,
+      0.0f,  0.0f,  0.0f,  1.0f,  0.5f,  -0.5f, -0.5f, 1.0f,  0.0f,  0.0f,
+      0.0f,  1.0f,  0.5f,  -0.5f, 0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  0.0f,
+      0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
 
-      -0.5f, -0.5f, -0.5f, 0.0f,  -1.0f, 0.0f,  0.5f,  -0.5f, -0.5f,
-      0.0f,  -1.0f, 0.0f,  0.5f,  -0.5f, 0.5f,  0.0f,  -1.0f, 0.0f,
-      0.5f,  -0.5f, 0.5f,  0.0f,  -1.0f, 0.0f,  -0.5f, -0.5f, 0.5f,
-      0.0f,  -1.0f, 0.0f,  -0.5f, -0.5f, -0.5f, 0.0f,  -1.0f, 0.0f,
+      -0.5f, -0.5f, -0.5f, 0.0f,  -1.0f, 0.0f,  0.0f,  1.0f,  0.5f,  -0.5f,
+      -0.5f, 0.0f,  -1.0f, 0.0f,  1.0f,  1.0f,  0.5f,  -0.5f, 0.5f,  0.0f,
+      -1.0f, 0.0f,  1.0f,  0.0f,  0.5f,  -0.5f, 0.5f,  0.0f,  -1.0f, 0.0f,
+      1.0f,  0.0f,  -0.5f, -0.5f, 0.5f,  0.0f,  -1.0f, 0.0f,  0.0f,  0.0f,
+      -0.5f, -0.5f, -0.5f, 0.0f,  -1.0f, 0.0f,  0.0f,  1.0f,
 
-      -0.5f, 0.5f,  -0.5f, 0.0f,  1.0f,  0.0f,  0.5f,  0.5f,  -0.5f,
-      0.0f,  1.0f,  0.0f,  0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-      0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  -0.5f, 0.5f,  0.5f,
-      0.0f,  1.0f,  0.0f,  -0.5f, 0.5f,  -0.5f, 0.0f,  1.0f,  0.0f};
+      -0.5f, 0.5f,  -0.5f, 0.0f,  1.0f,  0.0f,  0.0f,  1.0f,  0.5f,  0.5f,
+      -0.5f, 0.0f,  1.0f,  0.0f,  1.0f,  1.0f,  0.5f,  0.5f,  0.5f,  0.0f,
+      1.0f,  0.0f,  1.0f,  0.0f,  0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+      1.0f,  0.0f,  -0.5f, 0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  0.0f,
+      -0.5f, 0.5f,  -0.5f, 0.0f,  1.0f,  0.0f,  0.0f,  1.0f};
 
   vertex_buffer->Create(GPU_BUFFER_TYPE_VERTEX,
                         vertices.size() * sizeof(vertices[0]));
@@ -83,6 +114,7 @@ int main(int argc, char **argv) {
   std::vector<GPUFormat> attributes;
   attributes.emplace_back(GPUFormat{GPU_FORMAT_RGB32F});
   attributes.emplace_back(GPUFormat{GPU_FORMAT_RGB32F});
+  attributes.emplace_back(GPUFormat{GPU_FORMAT_RG32F});
   attribute_array->Create(vertex_buffer, 0, attributes);
 
   uniform_buffer->Create(
@@ -116,6 +148,8 @@ int main(int argc, char **argv) {
       GPUShaderAttributeConfig{GPU_FORMAT_RGB32F});
   shader_config.attribute_configs.emplace_back(
       GPUShaderAttributeConfig{GPU_FORMAT_RGB32F});
+  shader_config.attribute_configs.emplace_back(
+      GPUShaderAttributeConfig{GPU_FORMAT_RG32F});
   shader_config.push_constant_configs.emplace_back(GPUShaderPushConstantConfig{
       GPU_SHADER_STAGE_TYPE_FRAGMENT, 0, sizeof(float) * 5});
   if (!shader->Create(&shader_config, window_render_pass, width, height)) {
@@ -184,6 +218,8 @@ int main(int argc, char **argv) {
           PushConsts{0.8f, 0.2f, 1, 0, 0}, PushConsts{0.5f, 0.5f, 0, 1, 0}};
       std::vector<GPUShaderBuffer *> uniform_buffers = {
           uniform_buffer, uniform_buffer2, uniform_buffer3};
+      std::vector<GPUTexture *> textures = {metal_texture, wood_texture,
+                                            brick_texture};
 
       static float angle = 0.0f;
       angle += 0.003f;
@@ -204,6 +240,7 @@ int main(int argc, char **argv) {
 
         push_constant.value = &push_constants[i];
         shader->PushConstant(&push_constant);
+        shader->SetTexture(0, textures[i]);
 
         attribute_array->Bind();
 
@@ -216,6 +253,12 @@ int main(int argc, char **argv) {
     }
   }
 
+  metal_texture->Destroy();
+  delete metal_texture;
+  brick_texture->Destroy();
+  delete brick_texture;
+  wood_texture->Destroy();
+  delete wood_texture;
   shader->Destroy();
   delete shader;
   uniform_buffer3->Destroy();

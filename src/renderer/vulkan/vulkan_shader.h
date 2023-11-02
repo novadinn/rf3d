@@ -18,6 +18,7 @@ public:
 
   void Bind() override;
   void PushConstant(GPUShaderPushConstant *push_constant) override;
+  void SetTexture(uint32_t index, GPUTexture *texture) override;
 
   inline VulkanPipeline &GetPipeline() { return pipeline; }
 

@@ -18,7 +18,9 @@ void OpenGLTexture::Create(GPUFormat image_format,
   GLenum native_format = OpenGLUtils::GPUFormatToOpenGLFormat(format);
   switch (texture_usage) {
   case GPU_TEXTURE_USAGE_COLOR_ATTACHMENT: {
-    glTexImage2D(GL_TEXTURE_2D, 0, native_format, width, height, 0,
+    glTexImage2D(GL_TEXTURE_2D, 0,
+                 OpenGLUtils::OpenGLInternalFormatToDataFormat(native_format),
+                 width, height, 0,
                  OpenGLUtils::OpenGLInternalFormatToDataFormat(native_format),
                  GL_UNSIGNED_BYTE, 0);
   } break;
@@ -27,7 +29,7 @@ void OpenGLTexture::Create(GPUFormat image_format,
     glTexStorage2D(GL_TEXTURE_2D, 1, native_format, width, height);
   } break;
   default: {
-    /* do nothing */
+    /* do nothing - texture used as a sampler */
   } break;
   }
 
@@ -51,9 +53,11 @@ void OpenGLTexture::WriteData(uint8_t *pixels, uint32_t offset) {
   glBindTexture(GL_TEXTURE_2D, id);
 
   GLuint internal_format = OpenGLUtils::GPUFormatToOpenGLFormat(format);
-  glTexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0,
-               OpenGLUtils::OpenGLInternalFormatToDataFormat(internal_format),
+  GLuint data_format =
+      OpenGLUtils::OpenGLInternalFormatToDataFormat(internal_format);
+  glTexImage2D(GL_TEXTURE_2D, 0, data_format, width, height, 0, data_format,
                GL_UNSIGNED_BYTE, pixels);
+  glGenerateMipmap(GL_TEXTURE_2D);
 
   glBindTexture(GL_TEXTURE_2D, 0);
 }

@@ -36,7 +36,11 @@ bool OpenGLBackend::Initialize(SDL_Window *sdl_window) {
   SDL_GL_SetSwapInterval(1);
   SDL_GL_MakeCurrent(window, gl_context);
 
+  SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+  SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 16);
+
   glEnable(GL_DEPTH_TEST);
+  glEnable(GL_MULTISAMPLE);
 
   int width, height;
   SDL_GetWindowSize(window, &width, &height);

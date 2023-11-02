@@ -45,6 +45,10 @@ bool VulkanBackend::Initialize(SDL_Window *sdl_window) {
   application_info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
   application_info.apiVersion = VK_API_VERSION_1_3;
 
+#ifndef PLATFORM_APPLE
+  setenv("MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS", "0", 1);
+#endif
+
   if (!createVulkanInstance(application_info, window, &context->instance)) {
     return false;
   }

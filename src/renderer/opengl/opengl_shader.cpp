@@ -125,3 +125,8 @@ void OpenGLShader::PushConstant(GPUShaderPushConstant *push_constant) {
     }
   }
 }
+
+void OpenGLShader::SetTexture(uint32_t index, GPUTexture *texture) {
+  glActiveTexture(GL_TEXTURE0 + index);
+  glBindTexture(GL_TEXTURE_2D, ((OpenGLTexture *)texture)->GetID());
+}

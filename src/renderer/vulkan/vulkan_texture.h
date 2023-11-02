@@ -17,8 +17,6 @@ public:
   void WriteData(uint8_t *pixels, uint32_t offset) override;
   void Resize(uint32_t new_width, uint32_t new_height) override;
 
-  void CreateImageView(VkFormat format, VkImageAspectFlags aspect_flags);
-
   void TransitionLayout(VulkanCommandBuffer *command_buffer, VkFormat format,
                         VkImageLayout old_layout, VkImageLayout new_layout);
   void CopyFromBuffer(VulkanBuffer *buffer,

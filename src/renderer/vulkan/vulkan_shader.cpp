@@ -170,3 +170,5 @@ void VulkanShader::PushConstant(GPUShaderPushConstant *push_constant) {
                      push_constant->offset, push_constant->size,
                      push_constant->value);
 }
+
+void VulkanShader::SetTexture(uint32_t index, GPUTexture *texture) {}

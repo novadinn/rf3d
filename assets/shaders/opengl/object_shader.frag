@@ -3,6 +3,7 @@
 layout(location = 0) in vec3 outWorldPos;
 layout(location = 1) in vec3 outNormal;
 layout(location = 2) in vec3 outCameraPosition;
+layout(location = 3) in vec2 outTexCoords;
 
 layout(location = 0) out vec4 outColor;
 
@@ -19,6 +20,7 @@ struct Material {
 };
 
 uniform Material material;
+uniform sampler2D textureSampler;
 
 const float PI = 3.14159265359;
 
@@ -38,7 +40,8 @@ float G_SchlicksmithGGX(float dotNL, float dotNV, float roughness) {
 }
 
 vec3 F_Schlick(float cosTheta, float metallic) {
-  vec3 F0 = mix(vec3(0.04), vec3(material.r, material.g, material.b), metallic);
+  vec3 objectColor = vec3(texture(textureSampler, outTexCoords));
+  vec3 F0 = mix(vec3(0.04), objectColor, metallic);
   vec3 F = F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
   return F;
 }
@@ -86,7 +89,8 @@ void main() {
     Lo += BRDF(L, V, N, material.metallic, material.roughness);
   }
 
-  vec3 color = vec3(material.r, material.g, material.b) * 0.02;
+  vec3 objectColor = vec3(texture(textureSampler, outTexCoords));
+  vec3 color = objectColor * 0.1;
   color += Lo;
 
   color = pow(color, vec3(0.4545));

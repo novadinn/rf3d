@@ -119,5 +119,15 @@ foreach(GLSL ${GL_GLSL_SOURCE_FILES})
   file(COPY ${GLSL} DESTINATION "${PROJECT_BINARY_DIR}/assets/shaders/opengl/")
 endforeach(GLSL)
 
+file(GLOB TEXTURES
+  "assets/textures/brickwall.jpg"
+  "assets/textures/metal.png"
+  "assets/textures/wood.png"
+)
+foreach(TEXTURE ${TEXTURES})
+  get_filename_component(FILE_NAME ${TEXTURE} NAME)
+  file(COPY ${TEXTURE} DESTINATION "${PROJECT_BINARY_DIR}/assets/textures/")
+endforeach(TEXTURE)
+
 add_custom_target(compile_shaders DEPENDS ${SPIRV_BINARY_FILES})
 add_dependencies(${PROJECT_NAME} compile_shaders)

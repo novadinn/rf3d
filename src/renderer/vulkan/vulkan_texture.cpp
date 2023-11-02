@@ -27,8 +27,6 @@ void VulkanTexture::Create(GPUFormat image_format,
             VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
   }
 
-  VkMemoryRequirements memory_requirements;
-
   /* TODO: a lot of hardcoded stuff */
   VkImageCreateInfo image_create_info = {};
   image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -48,6 +46,8 @@ void VulkanTexture::Create(GPUFormat image_format,
   image_create_info.queueFamilyIndexCount = 0;
   image_create_info.pQueueFamilyIndices = 0;
   image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+  VkMemoryRequirements memory_requirements = {};
 
   VK_CHECK(vkCreateImage(context->device->GetLogicalDevice(),
                          &image_create_info, context->allocator, &handle));

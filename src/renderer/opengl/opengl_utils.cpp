@@ -28,7 +28,7 @@ GLuint OpenGLUtils::GPUFormatToOpenGLFormat(GPUFormat format) {
     return GL_RGB32F;
   } break;
   case GPU_FORMAT_RGB8: {
-    return GL_RG8;
+    return GL_RGB8;
   } break;
   case GPU_FORMAT_RGBA8: {
     return GL_RGBA8;

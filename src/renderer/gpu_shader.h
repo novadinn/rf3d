@@ -4,6 +4,7 @@
 #include "gpu_core.h"
 #include "gpu_render_pass.h"
 #include "gpu_shader_buffer.h"
+#include "gpu_texture.h"
 
 #include <list>
 #include <vector>
@@ -64,6 +65,7 @@ public:
 
   virtual void Bind() = 0;
   virtual void PushConstant(GPUShaderPushConstant *push_constant) = 0;
+  virtual void SetTexture(uint32_t index, GPUTexture *texture) = 0;
 
 protected:
 };
