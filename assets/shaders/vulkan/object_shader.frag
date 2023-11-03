@@ -7,7 +7,7 @@ layout(location = 2) in vec3 outCameraPosition;
 layout(location = 0) out vec4 outColor;
 
 /* TODO: */
-layout(binding = 0) uniform ubo_lights { vec4 lights[4]; }
+layout(binding = 0) uniform uniform_buffer_object_lights { vec4 lights[4]; }
 ubo_light;
 
 layout(push_constant) uniform PushConsts {
@@ -72,8 +72,15 @@ void main() {
 
   vec3 Lo = vec3(0.0);
 
-  for (int i = 0; i < ubo_light.lights.length(); i++) {
-    vec3 L = normalize(ubo_light.lights[i].xyz - outWorldPos);
+  const float p = 5.0f;
+  vec4 lights[4];
+  lights[0] = vec4(-p * 0.8f, -p * 0.8f, p * 0.8f, 1.0f);
+  lights[1] = vec4(-p * 2, p * 2, p * 2, 1.0f);
+  lights[2] = vec4(p * 0.2f, -p * 0.2f, p * 0.2f, 1.0f);
+  lights[3] = vec4(p, p, p, 1.0f);
+
+  for (int i = 0; i < lights.length(); i++) {
+    vec3 L = normalize(lights[i].xyz - outWorldPos);
     Lo += BRDF(L, V, N, material.metallic, material.roughness);
   }
 

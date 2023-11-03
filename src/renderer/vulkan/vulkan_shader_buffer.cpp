@@ -34,6 +34,9 @@ void VulkanShaderBuffer::Create(const char *descriptor_name,
                                   &pool_create_info, context->allocator,
                                   &pool));
 
+  /* TODO: purely wrong, we need another index (binding index), since there is 2
+   * of them: set and binding. Moreother that that, there can be more that 1
+   * binding for each descriprotsetlayout */
   VkDescriptorSetLayoutBinding layout_binding = {};
   layout_binding.binding = descriptor_index;
   layout_binding.descriptorType =
@@ -54,28 +57,22 @@ void VulkanShaderBuffer::Create(const char *descriptor_name,
 
   VK_CHECK(vkCreateDescriptorSetLayout(context->device->GetLogicalDevice(),
                                        &layout_create_info, context->allocator,
-                                       &set_layout))
-
-  std::vector<VkDescriptorSetLayout> layouts;
-  layouts.resize(context->swapchain->GetImagesCount());
-  for (int j = 0; j < layouts.size(); ++j) {
-    layouts[j] = set_layout;
-  }
-
-  VkDescriptorSetAllocateInfo set_allocate_info = {};
-  set_allocate_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-  set_allocate_info.pNext = 0;
-  set_allocate_info.descriptorPool = pool;
-  set_allocate_info.descriptorSetCount = layouts.size();
-  set_allocate_info.pSetLayouts = layouts.data();
+                                       &set_layout));
 
   sets.resize(context->swapchain->GetImagesCount());
-  VK_CHECK(vkAllocateDescriptorSets(context->device->GetLogicalDevice(),
-                                    &set_allocate_info, sets.data()));
-
   buffers.resize(context->swapchain->GetImagesCount());
 
   for (int i = 0; i < context->swapchain->GetImagesCount(); ++i) {
+    VkDescriptorSetAllocateInfo set_allocate_info = {};
+    set_allocate_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    set_allocate_info.pNext = 0;
+    set_allocate_info.descriptorPool = pool;
+    set_allocate_info.descriptorSetCount = 1;
+    set_allocate_info.pSetLayouts = &set_layout;
+
+    VK_CHECK(vkAllocateDescriptorSets(context->device->GetLogicalDevice(),
+                                      &set_allocate_info, &sets[i]));
+
     buffers[i] = new VulkanBuffer();
     buffers[i]->Create(GPU_BUFFER_TYPE_UNIFORM, descriptor_size);
 

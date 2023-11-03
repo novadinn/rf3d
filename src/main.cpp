@@ -9,7 +9,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#define WITH_VULKAN_BACKEND 0
+#define WITH_VULKAN_BACKEND 1
 
 struct PushConsts {
   float roughness;
@@ -22,7 +22,7 @@ struct PushConsts {
 struct MeshParams {
   GPUShaderBuffer *shader_buffer;
   GPUShaderBuffer *lights_buffer;
-  GPUTexture *texture;
+  // GPUTexture *texture;
   glm::vec3 position;
   PushConsts push_constants;
 };
@@ -90,17 +90,17 @@ int main(int argc, char **argv) {
   for (int i = 0; i < meshes.size(); ++i) {
     meshes[i].shader_buffer = frontend->ShaderBufferAllocate();
     meshes[i].lights_buffer = frontend->ShaderBufferAllocate();
-    meshes[i].texture = frontend->TextureAllocate();
+    // meshes[i].texture = frontend->TextureAllocate();
   }
 
-  loadTexture(meshes[0].texture, "assets/textures/metal.png");
+  // loadTexture(meshes[0].texture, "assets/textures/metal.png");
   meshes[0].position = glm::vec3(0, 0, -5.0f);
   meshes[0].push_constants =
       PushConsts{0.1f, 1.0f, 0.672411f, 0.637331f, 0.585456f};
-  loadTexture(meshes[1].texture, "assets/textures/brickwall.jpg");
+  // loadTexture(meshes[1].texture, "assets/textures/brickwall.jpg");
   meshes[1].position = glm::vec3(2, 0, -5.0f);
   meshes[1].push_constants = PushConsts{0.8f, 0.2f, 1, 0, 0};
-  loadTexture(meshes[2].texture, "assets/textures/wood.png");
+  // loadTexture(meshes[2].texture, "assets/textures/wood.png");
   meshes[2].position = glm::vec3(-2, 0, -5.0f);
   meshes[2].push_constants = PushConsts{0.5f, 0.5f, 0, 1, 0};
 
@@ -178,7 +178,7 @@ int main(int argc, char **argv) {
                            "assets/shaders/opengl/object_shader.frag"});
 #endif
   shader_config.descriptors.emplace_back(meshes[0].shader_buffer);
-  shader_config.descriptors.emplace_back(meshes[0].lights_buffer);
+  // shader_config.descriptors.emplace_back(meshes[0].lights_buffer);
   shader_config.attribute_configs.emplace_back(
       GPUShaderAttributeConfig{GPU_FORMAT_RGB32F});
   shader_config.attribute_configs.emplace_back(
@@ -253,13 +253,13 @@ int main(int argc, char **argv) {
         meshes[i].shader_buffer->GetBuffer()->LoadData(
             0, meshes[i].shader_buffer->GetBuffer()->GetSize(), &ubo);
         meshes[i].shader_buffer->Bind(shader);
-        meshes[i].lights_buffer->GetBuffer()->LoadData(
-            0, meshes[i].lights_buffer->GetBuffer()->GetSize(), &ubo_lights);
-        meshes[i].lights_buffer->Bind(shader);
+        // meshes[i].lights_buffer->GetBuffer()->LoadData(
+        //     0, meshes[i].lights_buffer->GetBuffer()->GetSize(), &ubo_lights);
+        // meshes[i].lights_buffer->Bind(shader);
 
         push_constant.value = &meshes[i].push_constants;
         shader->PushConstant(&push_constant);
-        shader->SetTexture(0, meshes[i].texture);
+        // shader->SetTexture(0, meshes[i].texture);
 
         attribute_array->Bind();
 
@@ -273,8 +273,8 @@ int main(int argc, char **argv) {
   }
 
   for (int i = 0; i < meshes.size(); ++i) {
-    meshes[i].texture->Destroy();
-    delete meshes[i].texture;
+    // meshes[i].texture->Destroy();
+    // delete meshes[i].texture;
   }
   shader->Destroy();
   delete shader;
