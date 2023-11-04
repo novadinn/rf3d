@@ -7,7 +7,7 @@
 class VulkanAttachment : public GPUAttachment {
 public:
   void Create(GPUFormat attachment_format, GPUAttachmentUsage attachment_usage,
-              uint32_t texture_width, uint32_t texture_height) override;
+              uint32_t attachment_width, uint32_t attachment_height) override;
   void Destroy() override;
 
   void SetImageView(VkImageView new_view) { /* TODO: copy construcor */

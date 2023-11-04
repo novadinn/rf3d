@@ -8,10 +8,6 @@
 #include <set>
 #include <string.h>
 
-static bool vulkanDeviceExtensionsAvailable(VkPhysicalDevice physical_device,
-                                            int required_extension_count,
-                                            const char **required_extensions);
-
 bool VulkanDevice::Create(VulkanPhysicalDeviceRequirements *requirements) {
   VulkanContext *context = VulkanBackend::GetContext();
 
@@ -199,6 +195,23 @@ void VulkanDevice::UpdateCommandBuffers() {
   }
 }
 
+bool VulkanDevice::SupportsDeviceLocalHostVisible() const {
+  for (int i = 0; i < memory.memoryTypeCount; ++i) {
+    if (((memory.memoryTypes[i].propertyFlags &
+          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0) &&
+        ((memory.memoryTypes[i].propertyFlags &
+          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) != 0)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool VulkanDevice::DeviceIsIntegrated() const {
+  return properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
+}
+
 bool VulkanDevice::SelectPhysicalDevice(
     VulkanPhysicalDeviceRequirements *requirements) {
   VulkanContext *context = VulkanBackend::GetContext();
@@ -290,7 +303,7 @@ bool VulkanDevice::SelectPhysicalDevice(
          (requirements->transfer &&
           temp_queue_infos[VULKAN_DEVICE_QUEUE_TYPE_TRANSFER].family_index !=
               -1))) {
-      if (!vulkanDeviceExtensionsAvailable(
+      if (!DeviceExtensionsAvailable(
               current_physical_device,
               requirements->device_extension_names.size(),
               requirements->device_extension_names.data())) {
@@ -354,9 +367,9 @@ bool VulkanDevice::SelectPhysicalDevice(
   return false;
 }
 
-static bool vulkanDeviceExtensionsAvailable(VkPhysicalDevice physical_device,
-                                            int required_extension_count,
-                                            const char **required_extensions) {
+bool VulkanDevice::DeviceExtensionsAvailable(VkPhysicalDevice physical_device,
+                                             int required_extension_count,
+                                             const char **required_extensions) {
   uint32_t available_extension_count = 0;
   std::vector<VkExtensionProperties> available_extensions;
 
@@ -388,17 +401,4 @@ static bool vulkanDeviceExtensionsAvailable(VkPhysicalDevice physical_device,
   }
 
   return true;
-}
-
-bool VulkanDevice::SupportsDeviceLocalHostVisible() const {
-  for (int i = 0; i < memory.memoryTypeCount; ++i) {
-    if (((memory.memoryTypes[i].propertyFlags &
-          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0) &&
-        ((memory.memoryTypes[i].propertyFlags &
-          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) != 0)) {
-      return true;
-    }
-  }
-
-  return false;
 }

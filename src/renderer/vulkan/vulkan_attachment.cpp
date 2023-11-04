@@ -7,13 +7,14 @@
 
 void VulkanAttachment::Create(GPUFormat attachment_format,
                               GPUAttachmentUsage attachment_usage,
-                              uint32_t texture_width, uint32_t texture_height) {
+                              uint32_t attachment_width,
+                              uint32_t attachment_height) {
   VulkanContext *context = VulkanBackend::GetContext();
 
   format = attachment_format;
   aspect = attachment_usage;
-  width = texture_width;
-  height = texture_height;
+  width = attachment_width;
+  height = attachment_height;
   VkFormat native_format = VulkanUtils::GPUFormatToVulkanFormat(format);
   VkImageAspectFlags native_aspect_flags =
       VulkanUtils::GPUTextureUsageToVulkanAspectFlags(aspect);

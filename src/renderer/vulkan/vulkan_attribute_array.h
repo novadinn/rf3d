@@ -6,7 +6,8 @@
 
 class VulkanAttributeArray : public GPUAttributeArray {
 public:
-  void Create(GPUBuffer *target_vertex_buffer, GPUBuffer *target_index_buffer,
+  void Create(GPUBuffer *attribute_vertex_buffer,
+              GPUBuffer *attribute_index_buffer,
               std::vector<GPUFormat> &attribute_formats) override;
   void Destroy() override;
 

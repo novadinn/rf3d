@@ -16,14 +16,6 @@
 
 VulkanContext *VulkanBackend::context;
 
-static bool createVulkanInstance(VkApplicationInfo application_info,
-                                 SDL_Window *window, VkInstance *out_instance);
-static bool createVulkanSurface(SDL_Window *window, VkSurfaceKHR *out_surface);
-static bool
-createVulkanDebugMessanger(VkDebugUtilsMessengerEXT *out_debug_messenger);
-static bool requiredLayersAvailable(std::vector<const char *> required_layers);
-static bool
-requiredExtensionsAvailable(std::vector<const char *> required_extensions);
 VKAPI_ATTR VkBool32 VKAPI_CALL vulkanDebugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
     VkDebugUtilsMessageTypeFlagsEXT message_types,
@@ -49,15 +41,15 @@ bool VulkanBackend::Initialize(SDL_Window *sdl_window) {
   setenv("MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS", "0", 1);
 #endif
 
-  if (!createVulkanInstance(application_info, window, &context->instance)) {
+  if (!CreateInstance(application_info, window, &context->instance)) {
     return false;
   }
 
 #ifndef NDEBUG
-  createVulkanDebugMessanger(&context->debug_messenger);
+  CreateDebugMessanger(&context->debug_messenger);
 #endif
 
-  if (!createVulkanSurface(window, &context->surface)) {
+  if (!CreateSurface(window, &context->surface)) {
     return false;
   }
 
@@ -367,8 +359,9 @@ void VulkanBackend::RegenerateFramebuffers() {
   }
 }
 
-static bool createVulkanInstance(VkApplicationInfo application_info,
-                                 SDL_Window *window, VkInstance *out_instance) {
+bool VulkanBackend::CreateInstance(VkApplicationInfo application_info,
+                                   SDL_Window *window,
+                                   VkInstance *out_instance) {
   VulkanContext *context = VulkanBackend::GetContext();
 
   std::vector<const char *> required_layers;
@@ -379,7 +372,7 @@ static bool createVulkanInstance(VkApplicationInfo application_info,
     DEBUG("%s", required_layers[i]);
   }
 #endif
-  if (!requiredLayersAvailable(required_layers)) {
+  if (!RequiredLayersAvailable(required_layers)) {
     return false;
   }
 
@@ -405,7 +398,7 @@ static bool createVulkanInstance(VkApplicationInfo application_info,
     DEBUG(required_extensions[i]);
   }
 
-  if (!requiredExtensionsAvailable(required_extensions)) {
+  if (!RequiredExtensionsAvailable(required_extensions)) {
     return false;
   }
 
@@ -428,7 +421,8 @@ static bool createVulkanInstance(VkApplicationInfo application_info,
   return true;
 }
 
-static bool createVulkanSurface(SDL_Window *window, VkSurfaceKHR *out_surface) {
+bool VulkanBackend::CreateSurface(SDL_Window *window,
+                                  VkSurfaceKHR *out_surface) {
   VulkanContext *context = VulkanBackend::GetContext();
 
   if (!SDL_Vulkan_CreateSurface(window, context->instance, out_surface)) {
@@ -439,8 +433,8 @@ static bool createVulkanSurface(SDL_Window *window, VkSurfaceKHR *out_surface) {
   return true;
 }
 
-static bool
-createVulkanDebugMessanger(VkDebugUtilsMessengerEXT *out_debug_messenger) {
+bool VulkanBackend::CreateDebugMessanger(
+    VkDebugUtilsMessengerEXT *out_debug_messenger) {
   VulkanContext *context = VulkanBackend::GetContext();
 
   uint32_t log_severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT |
@@ -473,7 +467,8 @@ createVulkanDebugMessanger(VkDebugUtilsMessengerEXT *out_debug_messenger) {
   return true;
 }
 
-static bool requiredLayersAvailable(std::vector<const char *> required_layers) {
+bool VulkanBackend::RequiredLayersAvailable(
+    std::vector<const char *> required_layers) {
   uint32_t available_layer_count = 0;
   std::vector<VkLayerProperties> available_layers;
 
@@ -501,8 +496,8 @@ static bool requiredLayersAvailable(std::vector<const char *> required_layers) {
   return true;
 }
 
-static bool
-requiredExtensionsAvailable(std::vector<const char *> required_extensions) {
+bool VulkanBackend::RequiredExtensionsAvailable(
+    std::vector<const char *> required_extensions) {
   uint32_t available_extension_count = 0;
   std::vector<VkExtensionProperties> available_extensions;
 

@@ -10,6 +10,9 @@
 bool VulkanBuffer::Create(GPUBufferType buffer_type, uint64_t buffer_size) {
   VulkanContext *context = VulkanBackend::GetContext();
 
+  total_size = buffer_size;
+  type = buffer_type;
+
   VkBufferUsageFlags buffer_usage;
   VkMemoryPropertyFlags memory_property_flags;
 
@@ -48,8 +51,6 @@ bool VulkanBuffer::Create(GPUBufferType buffer_type, uint64_t buffer_size) {
   }
   }
 
-  total_size = buffer_size;
-  type = buffer_type;
   usage = buffer_usage;
 
   VkBufferCreateInfo buffer_create_info = {};

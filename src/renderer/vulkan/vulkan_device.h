@@ -53,9 +53,15 @@ public:
   }
   inline VkFormat GetDepthFormat() const { return depth_format; }
   bool SupportsDeviceLocalHostVisible() const;
+  /* TODO: this is unused rn. Possible uses includes getting rid of staging copy
+   * and copying via memcpy */
+  bool DeviceIsIntegrated() const;
 
 private:
   bool SelectPhysicalDevice(VulkanPhysicalDeviceRequirements *requirements);
+  bool DeviceExtensionsAvailable(VkPhysicalDevice physical_device,
+                                 int required_extension_count,
+                                 const char **required_extensions);
 
   VkPhysicalDevice physical_device;
   VkDevice logical_device;

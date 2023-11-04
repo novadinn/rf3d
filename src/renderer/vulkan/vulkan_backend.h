@@ -33,6 +33,14 @@ public:
   static VulkanContext *GetContext();
 
 private:
+  bool CreateInstance(VkApplicationInfo application_info, SDL_Window *window,
+                      VkInstance *out_instance);
+  bool CreateSurface(SDL_Window *window, VkSurfaceKHR *out_surface);
+  bool CreateDebugMessanger(VkDebugUtilsMessengerEXT *out_debug_messenger);
+  bool RequiredLayersAvailable(std::vector<const char *> required_layers);
+  bool
+  RequiredExtensionsAvailable(std::vector<const char *> required_extensions);
+
   void RegenerateFramebuffers();
 
   static VulkanContext *context;

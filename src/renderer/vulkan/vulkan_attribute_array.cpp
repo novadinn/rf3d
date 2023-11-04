@@ -1,10 +1,10 @@
 #include "vulkan_attribute_array.h"
 
-void VulkanAttributeArray::Create(GPUBuffer *target_vertex_buffer,
-                                  GPUBuffer *target_index_buffer,
+void VulkanAttributeArray::Create(GPUBuffer *attribute_vertex_buffer,
+                                  GPUBuffer *attribute_index_buffer,
                                   std::vector<GPUFormat> &attribute_formats) {
-  vertex_buffer = target_vertex_buffer;
-  index_buffer = target_index_buffer;
+  vertex_buffer = attribute_vertex_buffer;
+  index_buffer = attribute_index_buffer;
 }
 
 void VulkanAttributeArray::Destroy() {
