@@ -1,7 +1,6 @@
 #include "renderer_frontend.h"
 
 #include "logger.h"
-#include "opengl/opengl_backend.h"
 #include "vulkan/vulkan_backend.h"
 
 bool RendererFrontend::Initialize(SDL_Window *window,
@@ -11,10 +10,6 @@ bool RendererFrontend::Initialize(SDL_Window *window,
     backend = new VulkanBackend();
     return backend->Initialize(window);
   } break;
-  case RendererBackendType::RBT_OPENGL: {
-    backend = new OpenGLBackend();
-    return backend->Initialize(window);
-  }
   default: {
     ERROR("Renderer backend type is not supported!");
     return false;
@@ -66,10 +61,6 @@ GPURenderTarget *RendererFrontend::RenderTargetAllocate() {
 
 GPUShader *RendererFrontend::ShaderAllocate() {
   return backend->ShaderAllocate();
-}
-
-GPUAttributeArray *RendererFrontend::AttributeArrayAllocate() {
-  return backend->AttributeArrayAllocate();
 }
 
 GPUTexture *RendererFrontend::TextureAllocate() {

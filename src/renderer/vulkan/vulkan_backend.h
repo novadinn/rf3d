@@ -26,7 +26,6 @@ public:
   GPURenderTarget *RenderTargetAllocate() override;
   GPURenderPass *RenderPassAllocate() override;
   GPUShader *ShaderAllocate() override;
-  GPUAttributeArray *AttributeArrayAllocate() override;
   GPUTexture *TextureAllocate() override;
   GPUShaderBuffer *ShaderBufferAllocate() override;
 

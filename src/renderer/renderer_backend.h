@@ -1,6 +1,5 @@
 #pragma once
 
-#include "renderer/gpu_attribute_array.h"
 #include "renderer/gpu_buffer.h"
 #include "renderer/gpu_render_pass.h"
 #include "renderer/gpu_render_target.h"
@@ -30,7 +29,6 @@ public:
   virtual GPURenderPass *RenderPassAllocate() = 0;
   virtual GPURenderTarget *RenderTargetAllocate() = 0;
   virtual GPUShader *ShaderAllocate() = 0;
-  virtual GPUAttributeArray *AttributeArrayAllocate() = 0;
   virtual GPUTexture *TextureAllocate() = 0;
   virtual GPUShaderBuffer *ShaderBufferAllocate() = 0;
 };

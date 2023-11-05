@@ -9,8 +9,6 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#define WITH_VULKAN_BACKEND 1
-
 struct PushConsts {
   float roughness;
   float metallic;
@@ -27,6 +25,7 @@ struct MeshParams {
   PushConsts push_constants;
 };
 
+/* TODO: use push constants for model matrices */
 struct UniformBufferObject {
   glm::mat4 model;
   glm::mat4 view;
@@ -63,7 +62,6 @@ int main(int argc, char **argv) {
   uint32_t width = 800;
   uint32_t height = 600;
 
-#if WITH_VULKAN_BACKEND == 1
   SDL_Window *window =
       SDL_CreateWindow("RF3D", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
                        800, 600, SDL_WINDOW_VULKAN);
@@ -71,18 +69,8 @@ int main(int argc, char **argv) {
   if (!frontend->Initialize(window, RendererBackendType::RBT_VULKAN)) {
     exit(1);
   }
-#else
-  SDL_Window *window =
-      SDL_CreateWindow("RF3D", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-                       800, 600, SDL_WINDOW_OPENGL);
-  RendererFrontend *frontend = new RendererFrontend();
-  if (!frontend->Initialize(window, RendererBackendType::RBT_OPENGL)) {
-    exit(1);
-  }
-#endif
 
   GPUBuffer *vertex_buffer = frontend->BufferAllocate();
-  GPUAttributeArray *attribute_array = frontend->AttributeArrayAllocate();
   GPUShader *shader = frontend->ShaderAllocate();
   GPURenderPass *window_render_pass = frontend->GetWindowRenderPass();
 
@@ -146,12 +134,6 @@ int main(int argc, char **argv) {
   vertex_buffer->LoadData(0, vertices.size() * sizeof(vertices[0]),
                           vertices.data());
 
-  std::vector<GPUFormat> attributes;
-  attributes.emplace_back(GPUFormat{GPU_FORMAT_RGB32F});
-  attributes.emplace_back(GPUFormat{GPU_FORMAT_RGB32F});
-  attributes.emplace_back(GPUFormat{GPU_FORMAT_RG32F});
-  attribute_array->Create(vertex_buffer, 0, attributes);
-
   for (int i = 0; i < meshes.size(); ++i) {
     meshes[i].shader_buffer->Create(
         "uniform_buffer_object", GPU_SHADER_BUFFER_TYPE_UNIFORM_BUFFER,
@@ -162,21 +144,10 @@ int main(int argc, char **argv) {
   }
 
   GPUShaderConfig shader_config = {};
-#if WITH_VULKAN_BACKEND == 1
-  shader_config.stage_configs.emplace_back(
-      GPUShaderStageConfig{GPU_SHADER_STAGE_TYPE_VERTEX,
-                           "assets/shaders/vulkan/object_shader.vert.spv"});
-  shader_config.stage_configs.emplace_back(
-      GPUShaderStageConfig{GPU_SHADER_STAGE_TYPE_FRAGMENT,
-                           "assets/shaders/vulkan/object_shader.frag.spv"});
-#else
-  shader_config.stage_configs.emplace_back(
-      GPUShaderStageConfig{GPU_SHADER_STAGE_TYPE_VERTEX,
-                           "assets/shaders/opengl/object_shader.vert"});
-  shader_config.stage_configs.emplace_back(
-      GPUShaderStageConfig{GPU_SHADER_STAGE_TYPE_FRAGMENT,
-                           "assets/shaders/opengl/object_shader.frag"});
-#endif
+  shader_config.stage_configs.emplace_back(GPUShaderStageConfig{
+      GPU_SHADER_STAGE_TYPE_VERTEX, "assets/shaders/object_shader.vert.spv"});
+  shader_config.stage_configs.emplace_back(GPUShaderStageConfig{
+      GPU_SHADER_STAGE_TYPE_FRAGMENT, "assets/shaders/object_shader.frag.spv"});
   shader_config.descriptors.emplace_back(meshes[0].shader_buffer);
   // shader_config.descriptors.emplace_back(meshes[0].lights_buffer);
   shader_config.attribute_configs.emplace_back(
@@ -261,7 +232,7 @@ int main(int argc, char **argv) {
         shader->PushConstant(&push_constant);
         // shader->SetTexture(0, meshes[i].texture);
 
-        attribute_array->Bind();
+        vertex_buffer->Bind(0);
 
         frontend->Draw(vertices.size());
       }
@@ -284,8 +255,6 @@ int main(int argc, char **argv) {
     meshes[i].lights_buffer->Destroy();
     delete meshes[i].lights_buffer;
   }
-  attribute_array->Destroy();
-  delete attribute_array;
   vertex_buffer->Destroy();
   delete vertex_buffer;
 

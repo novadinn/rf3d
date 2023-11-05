@@ -3,7 +3,6 @@
 #include "logger.h"
 #include "platform.h"
 #include "renderer/gpu_shader.h"
-#include "vulkan_attribute_array.h"
 #include "vulkan_render_pass.h"
 #include "vulkan_shader_buffer.h"
 #include "vulkan_texture.h"
@@ -326,10 +325,6 @@ GPURenderPass *VulkanBackend::RenderPassAllocate() {
 }
 
 GPUShader *VulkanBackend::ShaderAllocate() { return new VulkanShader(); }
-
-GPUAttributeArray *VulkanBackend::AttributeArrayAllocate() {
-  return new VulkanAttributeArray();
-}
 
 GPUTexture *VulkanBackend::TextureAllocate() { return new VulkanTexture(); }
 

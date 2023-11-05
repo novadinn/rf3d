@@ -18,8 +18,6 @@ struct GPURenderPassAttachment {
   GPUAttachmentUsage usage;
 };
 
-/* there is no concept of a render pass in opengl, but we still need to do smth
- * with a framebuffers */
 class GPURenderPass {
 public:
   virtual ~GPURenderPass() {}

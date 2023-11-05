@@ -58,28 +58,12 @@ set(SRC
   src/renderer/vulkan/vulkan_buffer.cpp
   src/renderer/vulkan/vulkan_texture.cpp
   src/renderer/vulkan/vulkan_attachment.cpp
-  src/renderer/vulkan/vulkan_attribute_array.cpp
   src/renderer/vulkan/vulkan_shader_buffer.cpp
-  src/renderer/opengl/opengl_backend.cpp
-  src/renderer/opengl/opengl_buffer.cpp
-  src/renderer/opengl/opengl_shader.cpp
-  src/renderer/opengl/opengl_utils.cpp
-  src/renderer/opengl/opengl_framebuffer.cpp
-  src/renderer/opengl/opengl_vertex_array.cpp
-  src/renderer/opengl/opengl_attachment.cpp
-  src/renderer/opengl/opengl_texture.cpp
-  src/renderer/opengl/opengl_render_pass.cpp
-  src/renderer/opengl/opengl_shader_buffer.cpp
-)
-
-set(GLAD_SRC 
-  vendor/glad/src/glad.c
 )
 
 add_executable(
   ${PROJECT_NAME}
   ${SRC}
-  ${GLAD_SRC}
 )
 
 add_subdirectory(vendor/glm EXCLUDE_FROM_ALL)
@@ -91,36 +75,6 @@ target_link_libraries(
     glm
 )
 
-file(GLOB VK_GLSL_SOURCE_FILES
-  "assets/shaders/vulkan/*.frag"
-  "assets/shaders/vulkan/*.vert"
-)
-set(GLSLANG "glslangValidator")
-foreach(GLSL ${VK_GLSL_SOURCE_FILES})
-  get_filename_component(FILE_NAME ${GLSL} NAME)
-  set(SPIRV "${PROJECT_BINARY_DIR}/assets/shaders/vulkan/${FILE_NAME}.spv")
-  add_custom_command(
-    OUTPUT ${SPIRV}
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_BINARY_DIR}/assets/shaders/vulkan/"
-    COMMAND ${GLSLANG} --target-env vulkan1.2 ${GLSL} -o ${SPIRV}
-    DEPENDS ${GLSL})
-  list(APPEND SPIRV_BINARY_FILES ${SPIRV})
-endforeach(GLSL)
-
-add_custom_target(
-  shaders
-  DEPENDS ${SPIRV_BINARY_FILES}
-)
-
-file(GLOB GL_GLSL_SOURCE_FILES
-  "assets/shaders/opengl/*.frag"
-  "assets/shaders/opengl/*.vert"
-)
-foreach(GLSL ${GL_GLSL_SOURCE_FILES})
-  get_filename_component(FILE_NAME ${GLSL} NAME)
-  file(COPY ${GLSL} DESTINATION "${PROJECT_BINARY_DIR}/assets/shaders/opengl/")
-endforeach(GLSL)
-
 file(GLOB TEXTURES
   "assets/textures/brickwall.jpg"
   "assets/textures/metal.png"
@@ -130,6 +84,27 @@ foreach(TEXTURE ${TEXTURES})
   get_filename_component(FILE_NAME ${TEXTURE} NAME)
   file(COPY ${TEXTURE} DESTINATION "${PROJECT_BINARY_DIR}/assets/textures/")
 endforeach(TEXTURE)
+
+file(GLOB VK_GLSL_SOURCE_FILES
+  "assets/shaders/*.frag"
+  "assets/shaders/*.vert"
+)
+set(GLSLANG "glslangValidator")
+foreach(GLSL ${VK_GLSL_SOURCE_FILES})
+  get_filename_component(FILE_NAME ${GLSL} NAME)
+  set(SPIRV "${PROJECT_BINARY_DIR}/assets/shaders/${FILE_NAME}.spv")
+  add_custom_command(
+    OUTPUT ${SPIRV}
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_BINARY_DIR}/assets/shaders/"
+    COMMAND ${GLSLANG} --target-env vulkan1.2 ${GLSL} -o ${SPIRV}
+    DEPENDS ${GLSL})
+  list(APPEND SPIRV_BINARY_FILES ${SPIRV})
+endforeach(GLSL)
+
+add_custom_target(
+  shaders
+  DEPENDS ${SPIRV_BINARY_FILES}
+)
 
 add_custom_target(compile_shaders DEPENDS ${SPIRV_BINARY_FILES})
 add_dependencies(${PROJECT_NAME} compile_shaders)

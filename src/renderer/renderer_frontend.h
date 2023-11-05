@@ -6,7 +6,6 @@ struct SDL_Window;
 
 enum RendererBackendType {
   RBT_VULKAN,
-  RBT_OPENGL,
   RBT_METAL,
   RBT_DIRECTX,
 };
@@ -29,7 +28,6 @@ public:
   GPURenderPass *RenderPassAllocate();
   GPURenderTarget *RenderTargetAllocate();
   GPUShader *ShaderAllocate();
-  GPUAttributeArray *AttributeArrayAllocate();
   GPUTexture *TextureAllocate();
   GPUShaderBuffer *ShaderBufferAllocate();
 
