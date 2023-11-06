@@ -7,6 +7,9 @@
 #include "vulkan_shader_buffer.h"
 #include "vulkan_utils.h"
 
+#include <map>
+#include <spirv_cross/spirv.hpp>
+#include <spirv_cross/spirv_glsl.hpp>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -19,6 +22,11 @@ bool VulkanShader::Create(GPUShaderConfig *config, GPURenderPass *render_pass,
   stages.resize(config->stage_configs.size());
   std::vector<VkPipelineShaderStageCreateInfo> pipeline_stage_create_infos;
   pipeline_stage_create_infos.resize(config->stage_configs.size());
+
+  std::vector<VkDescriptorPoolSize> pool_sizes;
+  std::vector<VkPushConstantRange> push_constant_ranges;
+  std::vector<VkVertexInputAttributeDescription> attributes;
+  uint64_t attributes_stride = 0;
 
   for (int i = 0; i < stages.size(); ++i) {
     GPUShaderStageConfig *stage_config = &config->stage_configs[i];
@@ -43,6 +51,16 @@ bool VulkanShader::Create(GPUShaderConfig *config, GPURenderPass *render_pass,
     create_info.flags = 0;
     create_info.codeSize = file_size;
     create_info.pCode = &file_data[0];
+
+    /* reflect the spirv binary */
+    spirv_cross::Compiler compiler(file_data.data(),
+                                   file_data.size() / sizeof(uint32_t));
+    spirv_cross::ShaderResources resources = compiler.get_shader_resources();
+    GetStagePoolSizes(compiler, resources, pool_sizes);
+    GetStagePushConstantRanges(compiler, resources, push_constant_ranges);
+    if (stage_config->type == GPU_SHADER_STAGE_TYPE_VERTEX) {
+      GetVertexAttributes(compiler, resources, attributes, &attributes_stride);
+    }
 
     file_data.clear();
 
@@ -73,42 +91,11 @@ bool VulkanShader::Create(GPUShaderConfig *config, GPURenderPass *render_pass,
   scissor.extent.width = viewport_width;
   scissor.extent.height = viewport_height;
 
-  std::vector<VkVertexInputAttributeDescription> attributes;
-  attributes.resize(config->attribute_configs.size());
-
-  uint64_t offset = 0;
-  for (int i = 0; i < config->attribute_configs.size(); ++i) {
-    GPUShaderAttributeConfig *attr_config = &config->attribute_configs[i];
-
-    attributes[i].location = i;
-    attributes[i].binding = 0;
-    attributes[i].format =
-        VulkanUtils::GPUFormatToVulkanFormat(attr_config->format);
-    attributes[i].offset = offset;
-
-    offset += GPUUtils::GetGPUFormatSize(attr_config->format) *
-              GPUUtils::GetGPUFormatCount(attr_config->format);
-  }
-
   std::vector<VkDescriptorSetLayout> descriptor_set_layouts;
   descriptor_set_layouts.resize(config->descriptors.size());
   for (int i = 0; i < descriptor_set_layouts.size(); ++i) {
     descriptor_set_layouts[i] =
         ((VulkanShaderBuffer *)config->descriptors[i])->GetSetLayout();
-  }
-
-  std::vector<VkPushConstantRange> push_constant_ranges;
-  push_constant_ranges.resize(config->push_constant_configs.size());
-  for (int i = 0; i < push_constant_ranges.size(); ++i) {
-    GPUShaderPushConstantConfig *push_constant_config =
-        &config->push_constant_configs[i];
-    VkPushConstantRange range = {};
-    range.stageFlags = VulkanUtils::GPUShaderStageFlagsToVulkanShaderStageFlags(
-        push_constant_config->stage_flags);
-    range.offset = push_constant_config->offset;
-    range.size = push_constant_config->size;
-
-    push_constant_ranges[i] = range;
   }
 
   /* TODO: empty for now */
@@ -121,7 +108,7 @@ bool VulkanShader::Create(GPUShaderConfig *config, GPURenderPass *render_pass,
   pipeline_config.push_constant_ranges = push_constant_ranges;
   pipeline_config.scissor = scissor;
   pipeline_config.stages = pipeline_stage_create_infos;
-  pipeline_config.stride = offset;
+  pipeline_config.stride = attributes_stride;
   pipeline_config.viewport = viewport;
 
   if (!pipeline.Create(&pipeline_config, native_pass)) {
@@ -138,6 +125,10 @@ bool VulkanShader::Create(GPUShaderConfig *config, GPURenderPass *render_pass,
 
 void VulkanShader::Destroy() {
   VulkanContext *context = VulkanBackend::GetContext();
+
+  vkDestroyDescriptorPool(context->device->GetLogicalDevice(), pool,
+                          context->allocator);
+  pool = 0;
 
   pipeline.Destroy();
   pipeline = {};
@@ -172,3 +163,126 @@ void VulkanShader::PushConstant(GPUShaderPushConstant *push_constant) {
 }
 
 void VulkanShader::SetTexture(uint32_t index, GPUTexture *texture) {}
+
+void VulkanShader::GetStagePoolSizes(
+    spirv_cross::Compiler &compiler, spirv_cross::ShaderResources &resources,
+    std::vector<VkDescriptorPoolSize> &pool_sizes) {
+  if (!resources.uniform_buffers.empty()) {
+    VkDescriptorPoolSize pool_size = {};
+    pool_size.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    pool_size.descriptorCount =
+        1024; /* TODO: HACK! max number of descriptors in a pool */
+    pool_sizes.emplace_back(pool_size);
+  }
+}
+
+// void VulkanShader::GetStageSetsAndBindings(
+//     spirv_cross::Compiler &compiler, spirv_cross::ShaderResources &resources,
+//     std::unordered_map<uint32_t, std::vector<VkDescriptorSetLayoutBinding>>
+//         &layout_bindings) {
+//   for (auto &buffer : resources.uniform_buffers) {
+//     uint32_t set =
+//         compiler.get_decoration(buffer.id, spv::DecorationDescriptorSet);
+//     uint32_t binding =
+//         compiler.get_decoration(buffer.id, spv::DecorationBinding);
+
+//     if (layout_bindings.count(set) == 0) {
+//       layout_bindings.emplace(set,
+//       std::vector<VkDescriptorSetLayoutBinding>{});
+//     } else {
+//       for (int i = 0; i < layout_bindings[set].size(); ++i) {
+//         if (layout_bindings[set][i].binding == binding) {
+//           /* buffer is duplicated in shader stages */
+//           return;
+//         }
+//       }
+//     }
+
+//     VkDescriptorSetLayoutBinding layout_binding = {};
+//     layout_binding.binding = binding;
+//     layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+//     layout_binding.descriptorCount = 1; /* for array of uniforms */
+//     layout_binding.stageFlags =
+//         VK_SHADER_STAGE_ALL_GRAPHICS;      /* TODO: we are not checking in
+//         which
+//                                               stages this is presented */
+//     layout_binding.pImmutableSamplers = 0; /* texture samplers */
+
+//     layout_bindings[set].emplace_back(layout_binding);
+//   }
+// }
+
+void VulkanShader::GetStagePushConstantRanges(
+    spirv_cross::Compiler &compiler, spirv_cross::ShaderResources &resources,
+    std::vector<VkPushConstantRange> &push_constant_ranges) {
+  for (auto &push_constant : resources.push_constant_buffers) {
+    /* TODO: is a range represented as a full push_constant block, or it is a
+     * every member of a block? */
+    uint32_t min_offset = UINT32_MAX;
+    uint32_t total_size = 0;
+    auto ranges = compiler.get_active_buffer_ranges(push_constant.id);
+    for (auto &range : ranges) {
+      if (range.offset < min_offset) {
+        min_offset = range.offset;
+      }
+      total_size += range.range;
+    }
+
+    VkPushConstantRange range = {};
+    range.stageFlags =
+        VK_SHADER_STAGE_ALL_GRAPHICS; /* TODO: we are not checking in which
+                                         stages this is presented */
+    range.offset = min_offset;
+    range.size = total_size;
+
+    push_constant_ranges.emplace_back(range);
+  }
+}
+
+void VulkanShader::GetVertexAttributes(
+    spirv_cross::Compiler &compiler, spirv_cross::ShaderResources &resources,
+    std::vector<VkVertexInputAttributeDescription> &attributes,
+    uint64_t *out_stride) {
+  uint32_t offset = 0;
+  for (auto &attrib : resources.stage_inputs) {
+    uint32_t location =
+        compiler.get_decoration(attrib.id, spv::DecorationLocation);
+
+    spirv_cross::SPIRType type = compiler.get_type(attrib.base_type_id);
+    VkFormat attribute_format;
+    uint32_t attribute_size = 0;
+
+    switch (type.basetype) {
+    case spirv_cross::SPIRType::Float: {
+      switch (type.vecsize) {
+      case 2: {
+        attribute_format = VK_FORMAT_R32G32_SFLOAT;
+        attribute_size = sizeof(float) * 2;
+      } break;
+      case 3: {
+        attribute_format = VK_FORMAT_R32G32B32_SFLOAT;
+        attribute_size = sizeof(float) * 3;
+      } break;
+      default: {
+        ERROR("Unknown spirv vector type size!");
+      } break;
+      };
+    } break;
+    default: {
+      ERROR("Unknown spirv type!");
+    } break;
+    }
+
+    VkVertexInputAttributeDescription attribute_description = {};
+    attribute_description.location = location;
+    attribute_description.binding = 0;
+    attribute_description.format = attribute_format;
+    attribute_description.offset = offset;
+
+    offset += attribute_size;
+
+    attributes.emplace_back(attribute_description);
+  }
+
+  *out_stride = offset;
+}

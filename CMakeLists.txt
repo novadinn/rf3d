@@ -68,11 +68,19 @@ add_executable(
 
 add_subdirectory(vendor/glm EXCLUDE_FROM_ALL)
 
+target_link_directories(
+  ${PROJECT_NAME}
+  PRIVATE vendor/SPIRV-Cross
+)
+
 target_link_libraries(
-    ${PROJECT_NAME}
-    ${Vulkan_LIBRARIES}
-    ${SDL2_LIBRARIES}
-    glm
+  ${PROJECT_NAME}
+  ${Vulkan_LIBRARIES}
+  ${SDL2_LIBRARIES}
+  glm
+  SPIRV
+  spirv-cross-core
+  spirv-cross-glsl
 )
 
 file(GLOB TEXTURES

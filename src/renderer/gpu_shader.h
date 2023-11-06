@@ -9,18 +9,7 @@
 #include <list>
 #include <vector>
 
-enum GPUShaderGLSLValueType {
-  GPU_SHADER_GLSL_VALUE_TYPE_FLOAT,
-};
-
-struct GPUShaderPushConstantValue {
-  const char *name;
-  GPUShaderGLSLValueType type;
-};
-
 struct GPUShaderPushConstant {
-  const char *name;
-  std::vector<GPUShaderPushConstantValue> values;
   void *value;
   uint64_t size;
   uint32_t offset;
@@ -38,21 +27,9 @@ struct GPUShaderStageConfig {
   const char *file_path;
 };
 
-struct GPUShaderAttributeConfig {
-  GPUFormat format;
-};
-
-struct GPUShaderPushConstantConfig {
-  uint8_t stage_flags;
-  uint32_t offset;
-  uint32_t size;
-};
-
 struct GPUShaderConfig {
   std::vector<GPUShaderStageConfig> stage_configs;
-  std::vector<GPUShaderAttributeConfig> attribute_configs;
   std::vector<GPUShaderBuffer *> descriptors;
-  std::vector<GPUShaderPushConstantConfig> push_constant_configs;
 };
 
 class GPUShader {

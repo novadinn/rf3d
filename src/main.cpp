@@ -150,14 +150,6 @@ int main(int argc, char **argv) {
       GPU_SHADER_STAGE_TYPE_FRAGMENT, "assets/shaders/object_shader.frag.spv"});
   shader_config.descriptors.emplace_back(meshes[0].shader_buffer);
   // shader_config.descriptors.emplace_back(meshes[0].lights_buffer);
-  shader_config.attribute_configs.emplace_back(
-      GPUShaderAttributeConfig{GPU_FORMAT_RGB32F});
-  shader_config.attribute_configs.emplace_back(
-      GPUShaderAttributeConfig{GPU_FORMAT_RGB32F});
-  shader_config.attribute_configs.emplace_back(
-      GPUShaderAttributeConfig{GPU_FORMAT_RG32F});
-  shader_config.push_constant_configs.emplace_back(GPUShaderPushConstantConfig{
-      GPU_SHADER_STAGE_TYPE_FRAGMENT, 0, sizeof(float) * 5});
   if (!shader->Create(&shader_config, window_render_pass, width, height)) {
     FATAL("Failed to create a shader. Aborting...");
     exit(1);
@@ -186,17 +178,6 @@ int main(int argc, char **argv) {
       window_render_pass->Begin(frontend->GetCurrentWindowRenderTarget());
 
       GPUShaderPushConstant push_constant;
-      push_constant.name = "material";
-      push_constant.values.emplace_back(GPUShaderPushConstantValue{
-          "roughness", GPU_SHADER_GLSL_VALUE_TYPE_FLOAT});
-      push_constant.values.emplace_back(GPUShaderPushConstantValue{
-          "metallic", GPU_SHADER_GLSL_VALUE_TYPE_FLOAT});
-      push_constant.values.emplace_back(
-          GPUShaderPushConstantValue{"r", GPU_SHADER_GLSL_VALUE_TYPE_FLOAT});
-      push_constant.values.emplace_back(
-          GPUShaderPushConstantValue{"g", GPU_SHADER_GLSL_VALUE_TYPE_FLOAT});
-      push_constant.values.emplace_back(
-          GPUShaderPushConstantValue{"b", GPU_SHADER_GLSL_VALUE_TYPE_FLOAT});
       push_constant.size = sizeof(PushConsts);
       push_constant.offset = 0;
       push_constant.stage_flags = GPU_SHADER_STAGE_TYPE_FRAGMENT;

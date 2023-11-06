@@ -7,8 +7,8 @@ layout(location = 2) in vec3 outCameraPosition;
 layout(location = 0) out vec4 outColor;
 
 /* TODO: */
-layout(binding = 0) uniform uniform_buffer_object_lights { vec4 lights[4]; }
-ubo_light;
+// layout(binding = 0) uniform uniform_buffer_object_lights { vec4 lights[4]; }
+// ubo_light;
 
 layout(push_constant) uniform PushConsts {
   layout(offset = 0) float roughness;

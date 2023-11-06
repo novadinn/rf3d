@@ -4,3 +4,6 @@
 [submodule "vendor/stb"]
 	path = vendor/stb
 	url = git@github.com:nothings/stb.git
+[submodule "vendor/SPIRV-Cross"]
+	path = vendor/SPIRV-Cross
+	url = git@github.com:KhronosGroup/SPIRV-Cross.git
