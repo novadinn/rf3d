@@ -27,7 +27,6 @@ public:
   GPURenderPass *RenderPassAllocate() override;
   GPUShader *ShaderAllocate() override;
   GPUTexture *TextureAllocate() override;
-  GPUShaderBuffer *ShaderBufferAllocate() override;
 
   static VulkanContext *GetContext();
 

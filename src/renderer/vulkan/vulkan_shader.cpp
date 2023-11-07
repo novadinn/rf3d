@@ -4,7 +4,6 @@
 #include "renderer/gpu_utils.h"
 #include "vulkan_backend.h"
 #include "vulkan_context.h"
-#include "vulkan_shader_buffer.h"
 #include "vulkan_utils.h"
 
 #include <map>
@@ -25,6 +24,8 @@ bool VulkanShader::Create(GPUShaderConfig *config, GPURenderPass *render_pass,
 
   std::vector<VkDescriptorPoolSize> pool_sizes;
   std::vector<VkPushConstantRange> push_constant_ranges;
+  std::unordered_map<uint32_t, std::vector<VkDescriptorSetLayoutBinding>>
+      sets_and_bindings;
   std::vector<VkVertexInputAttributeDescription> attributes;
   uint64_t attributes_stride = 0;
 
@@ -56,10 +57,12 @@ bool VulkanShader::Create(GPUShaderConfig *config, GPURenderPass *render_pass,
     spirv_cross::Compiler compiler(file_data.data(),
                                    file_data.size() / sizeof(uint32_t));
     spirv_cross::ShaderResources resources = compiler.get_shader_resources();
-    GetStagePoolSizes(compiler, resources, pool_sizes);
-    GetStagePushConstantRanges(compiler, resources, push_constant_ranges);
+    ReflectStagePoolSizes(compiler, resources, pool_sizes);
+    ReflectStagePushConstantRanges(compiler, resources, push_constant_ranges);
+    ReflectStageBuffers(compiler, resources, sets_and_bindings);
     if (stage_config->type == GPU_SHADER_STAGE_TYPE_VERTEX) {
-      GetVertexAttributes(compiler, resources, attributes, &attributes_stride);
+      ReflectVertexAttributes(compiler, resources, attributes,
+                              &attributes_stride);
     }
 
     file_data.clear();
@@ -91,12 +94,97 @@ bool VulkanShader::Create(GPUShaderConfig *config, GPURenderPass *render_pass,
   scissor.extent.width = viewport_width;
   scissor.extent.height = viewport_height;
 
-  std::vector<VkDescriptorSetLayout> descriptor_set_layouts;
-  descriptor_set_layouts.resize(config->descriptors.size());
-  for (int i = 0; i < descriptor_set_layouts.size(); ++i) {
-    descriptor_set_layouts[i] =
-        ((VulkanShaderBuffer *)config->descriptors[i])->GetSetLayout();
+  VkDescriptorPoolCreateInfo pool_create_info = {};
+  pool_create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+  pool_create_info.pNext = 0;
+  pool_create_info.flags = 0;
+  pool_create_info.maxSets = 1024; /* TODO: HACK! */
+  pool_create_info.poolSizeCount = pool_sizes.size();
+  pool_create_info.pPoolSizes = pool_sizes.data();
+
+  VK_CHECK(vkCreateDescriptorPool(context->device->GetLogicalDevice(),
+                                  &pool_create_info, context->allocator,
+                                  &descriptor_pool));
+
+  std::vector<VkDescriptorSetLayout> set_layouts;
+  for (auto it = sets_and_bindings.begin(); it != sets_and_bindings.end();
+       ++it) {
+    VkDescriptorSetLayout set_layout;
+
+    VkDescriptorSetLayoutCreateInfo layout_create_info = {};
+    layout_create_info.sType =
+        VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layout_create_info.pNext = 0;
+    layout_create_info.flags = 0;
+    layout_create_info.bindingCount = it->second.size();
+    layout_create_info.pBindings = it->second.data();
+
+    VK_CHECK(vkCreateDescriptorSetLayout(context->device->GetLogicalDevice(),
+                                         &layout_create_info,
+                                         context->allocator, &set_layout));
+    set_layouts.emplace_back(set_layout);
+
+    /* one per frame */
+    std::vector<VkDescriptorSetLayout> set_layouts;
+    set_layouts.resize(context->swapchain->GetImageCount());
+    std::vector<VkDescriptorSet> sets;
+    sets.resize(context->swapchain->GetImageCount());
+    std::vector<VulkanBuffer> buffers;
+    buffers.resize(context->swapchain->GetImageCount());
+
+    for (int i = 0; i < set_layouts.size(); ++i) {
+      set_layouts[i] =
+          set_layout; /* no need to create it multiple times, just copy them */
+    }
+
+    VkDescriptorSetAllocateInfo set_allocate_info = {};
+    set_allocate_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    set_allocate_info.pNext = 0;
+    set_allocate_info.descriptorPool = descriptor_pool;
+    set_allocate_info.descriptorSetCount = sets.size();
+    set_allocate_info.pSetLayouts = set_layouts.data();
+
+    VK_CHECK(vkAllocateDescriptorSets(context->device->GetLogicalDevice(),
+                                      &set_allocate_info, sets.data()));
+
+    for (int i = 0; i < context->swapchain->GetImageCount(); ++i) {
+      /* TODO: temp */
+      buffers[i].Create(GPU_BUFFER_TYPE_UNIFORM, 192);
+
+      VkDescriptorBufferInfo buffer_info = {};
+      buffer_info.buffer = buffers[i].GetHandle();
+      buffer_info.offset = 0;
+      buffer_info.range = 192;
+
+      VkWriteDescriptorSet write_descriptor_set = {};
+      write_descriptor_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+      write_descriptor_set.pNext = 0;
+      write_descriptor_set.dstSet = sets[i];
+      write_descriptor_set.dstBinding = it->first;
+      write_descriptor_set.dstArrayElement = 0;
+      write_descriptor_set.descriptorCount = 1;
+      write_descriptor_set.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+      write_descriptor_set.pImageInfo = 0;
+      write_descriptor_set.pBufferInfo = &buffer_info;
+      write_descriptor_set.pTexelBufferView = 0;
+
+      VK_CHECK(vkBindBufferMemory(context->device->GetLogicalDevice(),
+                                  buffers[i].GetHandle(),
+                                  buffers[i].GetMemory(), 0));
+
+      vkUpdateDescriptorSets(context->device->GetLogicalDevice(), 1,
+                             &write_descriptor_set, 0, 0);
+    }
+
+    ubo = {};
+    ubo.layout = set_layout;
+    ubo.sets = sets;
+    ubo.buffers = buffers;
   }
+
+  std::vector<VkDescriptorSetLayout> descriptor_set_layouts;
+  descriptor_set_layouts.resize(1);
+  descriptor_set_layouts[0] = ubo.layout;
 
   /* TODO: empty for now */
   std::vector<VkDynamicState> dynamic_states;
@@ -126,12 +214,26 @@ bool VulkanShader::Create(GPUShaderConfig *config, GPURenderPass *render_pass,
 void VulkanShader::Destroy() {
   VulkanContext *context = VulkanBackend::GetContext();
 
-  vkDestroyDescriptorPool(context->device->GetLogicalDevice(), pool,
+  vkDeviceWaitIdle(context->device->GetLogicalDevice());
+
+  vkDestroyDescriptorPool(context->device->GetLogicalDevice(), descriptor_pool,
                           context->allocator);
-  pool = 0;
+  descriptor_pool = 0;
+  for (int i = 0; i < ubo.buffers.size(); ++i) {
+    ubo.buffers[i].Destroy();
+  }
+  vkDestroyDescriptorSetLayout(context->device->GetLogicalDevice(), ubo.layout,
+                               context->allocator);
+  ubo = {};
 
   pipeline.Destroy();
   pipeline = {};
+}
+
+GPUBuffer *VulkanShader::GetShaderBuffer(uint32_t set, uint32_t binding) {
+  VulkanContext *context = VulkanBackend::GetContext();
+
+  return &(ubo.buffers[context->image_index]);
 }
 
 void VulkanShader::Bind() {
@@ -144,6 +246,20 @@ void VulkanShader::Bind() {
       &info.command_buffers[context->image_index];
 
   pipeline.Bind(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
+}
+
+void VulkanShader::BindShaderBuffer(uint32_t set, uint32_t binding) {
+  VulkanContext *context = VulkanBackend::GetContext();
+
+  VulkanDeviceQueueInfo info =
+      context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_GRAPHICS);
+
+  VulkanCommandBuffer *command_buffer =
+      &info.command_buffers[context->image_index];
+
+  vkCmdBindDescriptorSets(command_buffer->GetHandle(),
+                          VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.GetLayout(),
+                          0, 1, &ubo.sets[context->image_index], 0, 0);
 }
 
 void VulkanShader::PushConstant(GPUShaderPushConstant *push_constant) {
@@ -164,7 +280,7 @@ void VulkanShader::PushConstant(GPUShaderPushConstant *push_constant) {
 
 void VulkanShader::SetTexture(uint32_t index, GPUTexture *texture) {}
 
-void VulkanShader::GetStagePoolSizes(
+void VulkanShader::ReflectStagePoolSizes(
     spirv_cross::Compiler &compiler, spirv_cross::ShaderResources &resources,
     std::vector<VkDescriptorPoolSize> &pool_sizes) {
   if (!resources.uniform_buffers.empty()) {
@@ -176,43 +292,47 @@ void VulkanShader::GetStagePoolSizes(
   }
 }
 
-// void VulkanShader::GetStageSetsAndBindings(
-//     spirv_cross::Compiler &compiler, spirv_cross::ShaderResources &resources,
-//     std::unordered_map<uint32_t, std::vector<VkDescriptorSetLayoutBinding>>
-//         &layout_bindings) {
-//   for (auto &buffer : resources.uniform_buffers) {
-//     uint32_t set =
-//         compiler.get_decoration(buffer.id, spv::DecorationDescriptorSet);
-//     uint32_t binding =
-//         compiler.get_decoration(buffer.id, spv::DecorationBinding);
+void VulkanShader::ReflectStageBuffers(
+    spirv_cross::Compiler &compiler, spirv_cross::ShaderResources &resources,
+    std::unordered_map<uint32_t, std::vector<VkDescriptorSetLayoutBinding>>
+        &sets_and_bindings) {
+  for (auto &buffer : resources.uniform_buffers) {
+    uint32_t set =
+        compiler.get_decoration(buffer.id, spv::DecorationDescriptorSet);
+    uint32_t binding =
+        compiler.get_decoration(buffer.id, spv::DecorationBinding);
 
-//     if (layout_bindings.count(set) == 0) {
-//       layout_bindings.emplace(set,
-//       std::vector<VkDescriptorSetLayoutBinding>{});
-//     } else {
-//       for (int i = 0; i < layout_bindings[set].size(); ++i) {
-//         if (layout_bindings[set][i].binding == binding) {
-//           /* buffer is duplicated in shader stages */
-//           return;
-//         }
-//       }
-//     }
+    if (sets_and_bindings.count(set) == 0) {
+      sets_and_bindings.emplace(set,
+                                std::vector<VkDescriptorSetLayoutBinding>{});
+    } else {
+      for (int i = 0; i < sets_and_bindings[set].size(); ++i) {
+        if (sets_and_bindings[set][i].binding == binding) {
+          /* buffer is duplicated in shader stages */
+          return;
+        }
+      }
+    }
 
-//     VkDescriptorSetLayoutBinding layout_binding = {};
-//     layout_binding.binding = binding;
-//     layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-//     layout_binding.descriptorCount = 1; /* for array of uniforms */
-//     layout_binding.stageFlags =
-//         VK_SHADER_STAGE_ALL_GRAPHICS;      /* TODO: we are not checking in
-//         which
-//                                               stages this is presented */
-//     layout_binding.pImmutableSamplers = 0; /* texture samplers */
+    uint32_t ubo_size = 0;
+    auto ranges = compiler.get_active_buffer_ranges(buffer.id);
+    for (auto &range : ranges) {
+      ubo_size += range.range;
+    }
 
-//     layout_bindings[set].emplace_back(layout_binding);
-//   }
-// }
+    VkDescriptorSetLayoutBinding layout_binding = {};
+    layout_binding.binding = binding;
+    layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    layout_binding.descriptorCount = 1; /* for array of uniforms */
+    layout_binding.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS; /* TODO: we are
+                           not checking in which stages this is presented */
+    layout_binding.pImmutableSamplers = 0; /* texture samplers */
 
-void VulkanShader::GetStagePushConstantRanges(
+    sets_and_bindings[set].emplace_back(layout_binding);
+  }
+}
+
+void VulkanShader::ReflectStagePushConstantRanges(
     spirv_cross::Compiler &compiler, spirv_cross::ShaderResources &resources,
     std::vector<VkPushConstantRange> &push_constant_ranges) {
   for (auto &push_constant : resources.push_constant_buffers) {
@@ -239,7 +359,7 @@ void VulkanShader::GetStagePushConstantRanges(
   }
 }
 
-void VulkanShader::GetVertexAttributes(
+void VulkanShader::ReflectVertexAttributes(
     spirv_cross::Compiler &compiler, spirv_cross::ShaderResources &resources,
     std::vector<VkVertexInputAttributeDescription> &attributes,
     uint64_t *out_stride) {

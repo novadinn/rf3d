@@ -66,7 +66,3 @@ GPUShader *RendererFrontend::ShaderAllocate() {
 GPUTexture *RendererFrontend::TextureAllocate() {
   return backend->TextureAllocate();
 }
-
-GPUShaderBuffer *RendererFrontend::ShaderBufferAllocate() {
-  return backend->ShaderBufferAllocate();
-}

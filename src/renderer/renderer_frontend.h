@@ -29,7 +29,6 @@ public:
   GPURenderTarget *RenderTargetAllocate();
   GPUShader *ShaderAllocate();
   GPUTexture *TextureAllocate();
-  GPUShaderBuffer *ShaderBufferAllocate();
 
 private:
   RendererBackend *backend;

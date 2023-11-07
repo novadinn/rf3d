@@ -4,7 +4,6 @@
 #include "renderer/gpu_render_pass.h"
 #include "renderer/gpu_render_target.h"
 #include "renderer/gpu_shader.h"
-#include "renderer/gpu_shader_buffer.h"
 
 #include <stdint.h>
 
@@ -30,5 +29,4 @@ public:
   virtual GPURenderTarget *RenderTargetAllocate() = 0;
   virtual GPUShader *ShaderAllocate() = 0;
   virtual GPUTexture *TextureAllocate() = 0;
-  virtual GPUShaderBuffer *ShaderBufferAllocate() = 0;
 };

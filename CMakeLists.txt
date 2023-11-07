@@ -58,7 +58,6 @@ set(SRC
   src/renderer/vulkan/vulkan_buffer.cpp
   src/renderer/vulkan/vulkan_texture.cpp
   src/renderer/vulkan/vulkan_attachment.cpp
-  src/renderer/vulkan/vulkan_shader_buffer.cpp
 )
 
 add_executable(
@@ -71,6 +70,7 @@ add_subdirectory(vendor/glm EXCLUDE_FROM_ALL)
 target_link_directories(
   ${PROJECT_NAME}
   PRIVATE vendor/SPIRV-Cross
+  PRIVATE /usr/local/lib
 )
 
 target_link_libraries(
@@ -78,7 +78,6 @@ target_link_libraries(
   ${Vulkan_LIBRARIES}
   ${SDL2_LIBRARIES}
   glm
-  SPIRV
   spirv-cross-core
   spirv-cross-glsl
 )

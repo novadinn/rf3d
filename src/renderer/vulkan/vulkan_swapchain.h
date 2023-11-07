@@ -26,7 +26,7 @@ public:
   inline VkSurfaceFormatKHR GetImageFormat() const { return image_format; }
   inline VkExtent2D GetExtent() const { return extent; }
 
-  inline int GetImagesCount() const { return images.size(); }
+  inline int GetImageCount() const { return images.size(); }
 
 private:
   VkSwapchainKHR handle;

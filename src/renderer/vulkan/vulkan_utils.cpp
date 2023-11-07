@@ -96,21 +96,6 @@ VulkanUtils::GPUTextureUsageToVulkanAspectFlags(GPUAttachmentUsage usage) {
   return VK_IMAGE_ASPECT_NONE_KHR;
 }
 
-VkDescriptorType VulkanUtils::GPUShaderBufferTypeToVulkanDescriptorType(
-    GPUShaderBufferType type) {
-  switch (type) {
-  case GPU_SHADER_BUFFER_TYPE_UNIFORM_BUFFER: {
-    return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-  } break;
-  default: {
-    ERROR("Unsupported shader descriptor type!")
-    return VK_DESCRIPTOR_TYPE_MAX_ENUM;
-  } break;
-  }
-
-  return VK_DESCRIPTOR_TYPE_MAX_ENUM;
-}
-
 VkShaderStageFlags
 VulkanUtils::GPUShaderStageFlagsToVulkanShaderStageFlags(uint8_t stage_flags) {
   /* TODO: */

@@ -3,7 +3,6 @@
 #include "gpu_buffer.h"
 #include "gpu_core.h"
 #include "gpu_render_pass.h"
-#include "gpu_shader_buffer.h"
 #include "gpu_texture.h"
 
 #include <list>
@@ -29,7 +28,6 @@ struct GPUShaderStageConfig {
 
 struct GPUShaderConfig {
   std::vector<GPUShaderStageConfig> stage_configs;
-  std::vector<GPUShaderBuffer *> descriptors;
 };
 
 class GPUShader {
@@ -40,7 +38,10 @@ public:
                       float viewport_width, float viewport_height) = 0;
   virtual void Destroy() = 0;
 
+  virtual GPUBuffer *GetShaderBuffer(uint32_t set, uint32_t binding) = 0;
+
   virtual void Bind() = 0;
+  virtual void BindShaderBuffer(uint32_t set, uint32_t binding) = 0;
   virtual void PushConstant(GPUShaderPushConstant *push_constant) = 0;
   virtual void SetTexture(uint32_t index, GPUTexture *texture) = 0;
 

@@ -4,7 +4,6 @@
 #include "platform.h"
 #include "renderer/gpu_shader.h"
 #include "vulkan_render_pass.h"
-#include "vulkan_shader_buffer.h"
 #include "vulkan_texture.h"
 
 #include <SDL2/SDL.h>
@@ -115,7 +114,7 @@ bool VulkanBackend::Initialize(SDL_Window *sdl_window) {
     context->in_flight_fences[i]->Create(true);
   }
 
-  context->images_in_flight.resize(context->swapchain->GetImagesCount());
+  context->images_in_flight.resize(context->swapchain->GetImageCount());
   for (int i = 0; i < context->images_in_flight.size(); ++i) {
     context->images_in_flight[i] = 0;
   }
@@ -327,10 +326,6 @@ GPURenderPass *VulkanBackend::RenderPassAllocate() {
 GPUShader *VulkanBackend::ShaderAllocate() { return new VulkanShader(); }
 
 GPUTexture *VulkanBackend::TextureAllocate() { return new VulkanTexture(); }
-
-GPUShaderBuffer *VulkanBackend::ShaderBufferAllocate() {
-  return new VulkanShaderBuffer();
-}
 
 VulkanContext *VulkanBackend::GetContext() { return context; }
 

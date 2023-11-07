@@ -18,8 +18,7 @@ struct PushConsts {
 };
 
 struct MeshParams {
-  GPUShaderBuffer *shader_buffer;
-  GPUShaderBuffer *lights_buffer;
+  GPUBuffer *shader_buffer;
   // GPUTexture *texture;
   glm::vec3 position;
   PushConsts push_constants;
@@ -76,8 +75,6 @@ int main(int argc, char **argv) {
 
   std::vector<MeshParams> meshes(3);
   for (int i = 0; i < meshes.size(); ++i) {
-    meshes[i].shader_buffer = frontend->ShaderBufferAllocate();
-    meshes[i].lights_buffer = frontend->ShaderBufferAllocate();
     // meshes[i].texture = frontend->TextureAllocate();
   }
 
@@ -134,22 +131,11 @@ int main(int argc, char **argv) {
   vertex_buffer->LoadData(0, vertices.size() * sizeof(vertices[0]),
                           vertices.data());
 
-  for (int i = 0; i < meshes.size(); ++i) {
-    meshes[i].shader_buffer->Create(
-        "uniform_buffer_object", GPU_SHADER_BUFFER_TYPE_UNIFORM_BUFFER,
-        GPU_SHADER_STAGE_TYPE_VERTEX, sizeof(glm::mat4) * 4, 0);
-    meshes[i].lights_buffer->Create(
-        "ubo_lights", GPU_SHADER_BUFFER_TYPE_UNIFORM_BUFFER,
-        GPU_SHADER_STAGE_TYPE_FRAGMENT, sizeof(glm::vec3) * 4, 1);
-  }
-
   GPUShaderConfig shader_config = {};
   shader_config.stage_configs.emplace_back(GPUShaderStageConfig{
       GPU_SHADER_STAGE_TYPE_VERTEX, "assets/shaders/object_shader.vert.spv"});
   shader_config.stage_configs.emplace_back(GPUShaderStageConfig{
       GPU_SHADER_STAGE_TYPE_FRAGMENT, "assets/shaders/object_shader.frag.spv"});
-  shader_config.descriptors.emplace_back(meshes[0].shader_buffer);
-  // shader_config.descriptors.emplace_back(meshes[0].lights_buffer);
   if (!shader->Create(&shader_config, window_render_pass, width, height)) {
     FATAL("Failed to create a shader. Aborting...");
     exit(1);
@@ -202,9 +188,9 @@ int main(int argc, char **argv) {
         ubo_lights.lights[3] = glm::vec4(p, p, p, 1.0f);
 
         shader->Bind();
-        meshes[i].shader_buffer->GetBuffer()->LoadData(
-            0, meshes[i].shader_buffer->GetBuffer()->GetSize(), &ubo);
-        meshes[i].shader_buffer->Bind(shader);
+        shader->GetShaderBuffer(0, 0)->LoadData(
+            0, shader->GetShaderBuffer(0, 0)->GetSize(), &ubo);
+        shader->BindShaderBuffer(0, 0);
         // meshes[i].lights_buffer->GetBuffer()->LoadData(
         //     0, meshes[i].lights_buffer->GetBuffer()->GetSize(), &ubo_lights);
         // meshes[i].lights_buffer->Bind(shader);
@@ -233,8 +219,6 @@ int main(int argc, char **argv) {
   for (int i = 0; i < meshes.size(); ++i) {
     meshes[i].shader_buffer->Destroy();
     delete meshes[i].shader_buffer;
-    meshes[i].lights_buffer->Destroy();
-    delete meshes[i].lights_buffer;
   }
   vertex_buffer->Destroy();
   delete vertex_buffer;

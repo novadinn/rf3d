@@ -187,7 +187,7 @@ void VulkanDevice::UpdateCommandBuffers() {
   VulkanContext *context = VulkanBackend::GetContext();
 
   for (auto it = queue_infos.begin(); it != queue_infos.end(); ++it) {
-    it->second.command_buffers.resize(context->swapchain->GetImagesCount());
+    it->second.command_buffers.resize(context->swapchain->GetImageCount());
     for (int i = 0; i < it->second.command_buffers.size(); ++i) {
       it->second.command_buffers[i].Allocate(it->second.command_pool,
                                              VK_COMMAND_BUFFER_LEVEL_PRIMARY);
