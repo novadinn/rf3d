@@ -18,18 +18,20 @@ public:
               float viewport_width, float viewport_height) override;
   void Destroy() override;
 
-  GPUBuffer *GetShaderBuffer(uint32_t set, uint32_t binding) override;
+  /* TODO: we dont need these function at all, we can just use reflection to get
+   * the correct buffer sizes */
+  void PrepareShaderBuffer(GPUShaderBufferIndex index, uint64_t size) override;
+  GPUBuffer *GetShaderBuffer(GPUShaderBufferIndex index) override;
 
   void Bind() override;
-  void BindShaderBuffer(uint32_t set, uint32_t binding) override;
+  void BindShaderBuffer(GPUShaderBufferIndex index) override;
   void PushConstant(GPUShaderPushConstant *push_constant) override;
   void SetTexture(uint32_t index, GPUTexture *texture) override;
 
   inline VulkanPipeline &GetPipeline() { return pipeline; }
 
 private:
-  /* TODO: rename */
-  struct VulkanUBO {
+  struct VulkanShaderBuffer {
     VkDescriptorSetLayout layout;
     std::vector<VkDescriptorSet> sets;
     std::vector<VulkanBuffer> buffers;
@@ -55,5 +57,5 @@ private:
   VkDescriptorPool descriptor_pool;
   /* TODO: instead of storing it here, it is better to have a global buffer
    * storage */
-  VulkanUBO ubo;
+  std::unordered_map<GPUShaderBufferIndex, VulkanShaderBuffer> uniform_buffers;
 };

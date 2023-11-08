@@ -1,5 +1,6 @@
 #include "vulkan_pipeline.h"
 
+#include "logger.h"
 #include "vulkan_backend.h"
 #include "vulkan_context.h"
 
@@ -123,7 +124,8 @@ bool VulkanPipeline::Create(VulkanPipelineConfig *config,
   pipeline_layout_create_info.flags = 0;
   pipeline_layout_create_info.setLayoutCount =
       config->descriptor_set_layouts.size();
-  pipeline_layout_create_info.pSetLayouts = &config->descriptor_set_layouts[0];
+  pipeline_layout_create_info.pSetLayouts =
+      config->descriptor_set_layouts.data();
   pipeline_layout_create_info.pushConstantRangeCount =
       config->push_constant_ranges.size();
   pipeline_layout_create_info.pPushConstantRanges =

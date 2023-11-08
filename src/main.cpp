@@ -18,22 +18,19 @@ struct PushConsts {
 };
 
 struct MeshParams {
-  GPUBuffer *shader_buffer;
   // GPUTexture *texture;
   glm::vec3 position;
   PushConsts push_constants;
 };
 
 /* TODO: use push constants for model matrices */
-struct UniformBufferObject {
-  glm::mat4 model;
+struct GlobalUBO {
   glm::mat4 view;
   glm::mat4 projection;
-  glm::mat4 _pad0;
 };
 
-struct UBOLights {
-  glm::vec4 lights[4];
+struct InstanceUBO {
+  glm::mat4 model;
 };
 
 void loadTexture(GPUTexture *texture, const char *path) {
@@ -141,6 +138,9 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
+  shader->PrepareShaderBuffer({0, 0}, sizeof(GlobalUBO));
+  shader->PrepareShaderBuffer({1, 0}, sizeof(InstanceUBO) * meshes.size());
+
   bool running = true;
   while (running) {
     SDL_Event event;
@@ -170,27 +170,37 @@ int main(int argc, char **argv) {
 
       static float angle = 0.0f;
       angle += 0.003f;
+
+      shader->Bind();
+      vertex_buffer->Bind(0);
+
+      glm::vec3 camera_position = glm::vec3(0, 0, -5.0f);
+      GlobalUBO global_ubo = {};
+      global_ubo.view = glm::translate(glm::mat4(1.0f), camera_position);
+      global_ubo.view = glm::inverse(global_ubo.view);
+      global_ubo.projection = glm::perspective(
+          glm::radians(45.0f), (float)width / (float)height, 0.1f, 1000.0f);
+      shader->GetShaderBuffer({0, 0})->LoadData(
+          0, shader->GetShaderBuffer({0, 0})->GetSize(), &global_ubo);
+      shader->BindShaderBuffer({0, 0});
+
       for (int i = 0; i < meshes.size(); ++i) {
-        UniformBufferObject ubo = {};
-        ubo.model = glm::mat4(1.0f);
-        ubo.model = glm::rotate(ubo.model, angle,
-                                glm::normalize(glm::vec3(0.0f, 1.0f, 1.0f)));
-        ubo.view = glm::translate(glm::mat4(1.0f), meshes[i].position);
-        ubo.view = glm::inverse(ubo.view);
-        ubo.projection = glm::perspective(
-            glm::radians(45.0f), (float)width / (float)height, 0.1f, 1000.0f);
+        InstanceUBO instance_ubo = {};
+        instance_ubo.model = glm::mat4(1.0f);
+        instance_ubo.model =
+            glm::rotate(instance_ubo.model, angle,
+                        glm::normalize(glm::vec3(0.0f, 1.0f, 1.0f)));
 
-        UBOLights ubo_lights = {};
-        const float p = 5.0f;
-        ubo_lights.lights[0] = glm::vec4(-p * 0.8f, -p * 0.8f, p * 0.8f, 1.0f);
-        ubo_lights.lights[1] = glm::vec4(-p * 2, p * 2, p * 2, 1.0f);
-        ubo_lights.lights[2] = glm::vec4(p * 0.2f, -p * 0.2f, p * 0.2f, 1.0f);
-        ubo_lights.lights[3] = glm::vec4(p, p, p, 1.0f);
+        // UBOLights ubo_lights = {};
+        // const float p = 5.0f;
+        // ubo_lights.lights[0] = glm::vec4(-p * 0.8f, -p * 0.8f, p *
+        // 0.8f, 1.0f); ubo_lights.lights[1] = glm::vec4(-p * 2, p * 2, p *
+        // 2, 1.0f); ubo_lights.lights[2] = glm::vec4(p * 0.2f, -p * 0.2f, p *
+        // 0.2f, 1.0f); ubo_lights.lights[3] = glm::vec4(p, p, p, 1.0f);
 
-        shader->Bind();
-        shader->GetShaderBuffer(0, 0)->LoadData(
-            0, shader->GetShaderBuffer(0, 0)->GetSize(), &ubo);
-        shader->BindShaderBuffer(0, 0);
+        shader->GetShaderBuffer({1, 0})->LoadData(
+            0, shader->GetShaderBuffer({1, 0})->GetSize(), &instance_ubo);
+        shader->BindShaderBuffer({1, 0});
         // meshes[i].lights_buffer->GetBuffer()->LoadData(
         //     0, meshes[i].lights_buffer->GetBuffer()->GetSize(), &ubo_lights);
         // meshes[i].lights_buffer->Bind(shader);
@@ -198,8 +208,6 @@ int main(int argc, char **argv) {
         push_constant.value = &meshes[i].push_constants;
         shader->PushConstant(&push_constant);
         // shader->SetTexture(0, meshes[i].texture);
-
-        vertex_buffer->Bind(0);
 
         frontend->Draw(vertices.size());
       }
@@ -216,10 +224,6 @@ int main(int argc, char **argv) {
   }
   shader->Destroy();
   delete shader;
-  for (int i = 0; i < meshes.size(); ++i) {
-    meshes[i].shader_buffer->Destroy();
-    delete meshes[i].shader_buffer;
-  }
   vertex_buffer->Destroy();
   delete vertex_buffer;
 

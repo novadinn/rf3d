@@ -106,7 +106,6 @@ bool VulkanShader::Create(GPUShaderConfig *config, GPURenderPass *render_pass,
                                   &pool_create_info, context->allocator,
                                   &descriptor_pool));
 
-  std::vector<VkDescriptorSetLayout> set_layouts;
   for (auto it = sets_and_bindings.begin(); it != sets_and_bindings.end();
        ++it) {
     VkDescriptorSetLayout set_layout;
@@ -122,20 +121,20 @@ bool VulkanShader::Create(GPUShaderConfig *config, GPURenderPass *render_pass,
     VK_CHECK(vkCreateDescriptorSetLayout(context->device->GetLogicalDevice(),
                                          &layout_create_info,
                                          context->allocator, &set_layout));
-    set_layouts.emplace_back(set_layout);
 
     /* one per frame */
     std::vector<VkDescriptorSetLayout> set_layouts;
     set_layouts.resize(context->swapchain->GetImageCount());
-    std::vector<VkDescriptorSet> sets;
-    sets.resize(context->swapchain->GetImageCount());
-    std::vector<VulkanBuffer> buffers;
-    buffers.resize(context->swapchain->GetImageCount());
 
     for (int i = 0; i < set_layouts.size(); ++i) {
       set_layouts[i] =
           set_layout; /* no need to create it multiple times, just copy them */
     }
+
+    std::vector<VkDescriptorSet> sets;
+    sets.resize(context->swapchain->GetImageCount());
+    std::vector<VulkanBuffer> buffers;
+    buffers.resize(context->swapchain->GetImageCount());
 
     VkDescriptorSetAllocateInfo set_allocate_info = {};
     set_allocate_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -147,44 +146,23 @@ bool VulkanShader::Create(GPUShaderConfig *config, GPURenderPass *render_pass,
     VK_CHECK(vkAllocateDescriptorSets(context->device->GetLogicalDevice(),
                                       &set_allocate_info, sets.data()));
 
-    for (int i = 0; i < context->swapchain->GetImageCount(); ++i) {
-      /* TODO: temp */
-      buffers[i].Create(GPU_BUFFER_TYPE_UNIFORM, 192);
+    GPUShaderBufferIndex index;
+    index.set = it->first;
+    /* TODO: */
+    index.binding = 0;
 
-      VkDescriptorBufferInfo buffer_info = {};
-      buffer_info.buffer = buffers[i].GetHandle();
-      buffer_info.offset = 0;
-      buffer_info.range = 192;
+    VulkanShaderBuffer shader_buffer;
+    shader_buffer.layout = set_layout;
+    shader_buffer.sets = sets;
+    shader_buffer.buffers = buffers;
 
-      VkWriteDescriptorSet write_descriptor_set = {};
-      write_descriptor_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-      write_descriptor_set.pNext = 0;
-      write_descriptor_set.dstSet = sets[i];
-      write_descriptor_set.dstBinding = it->first;
-      write_descriptor_set.dstArrayElement = 0;
-      write_descriptor_set.descriptorCount = 1;
-      write_descriptor_set.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-      write_descriptor_set.pImageInfo = 0;
-      write_descriptor_set.pBufferInfo = &buffer_info;
-      write_descriptor_set.pTexelBufferView = 0;
-
-      VK_CHECK(vkBindBufferMemory(context->device->GetLogicalDevice(),
-                                  buffers[i].GetHandle(),
-                                  buffers[i].GetMemory(), 0));
-
-      vkUpdateDescriptorSets(context->device->GetLogicalDevice(), 1,
-                             &write_descriptor_set, 0, 0);
-    }
-
-    ubo = {};
-    ubo.layout = set_layout;
-    ubo.sets = sets;
-    ubo.buffers = buffers;
+    uniform_buffers.emplace(index, shader_buffer);
   }
 
   std::vector<VkDescriptorSetLayout> descriptor_set_layouts;
-  descriptor_set_layouts.resize(1);
-  descriptor_set_layouts[0] = ubo.layout;
+  for (auto it = uniform_buffers.begin(); it != uniform_buffers.end(); ++it) {
+    descriptor_set_layouts.emplace_back(it->second.layout);
+  }
 
   /* TODO: empty for now */
   std::vector<VkDynamicState> dynamic_states;
@@ -219,21 +197,60 @@ void VulkanShader::Destroy() {
   vkDestroyDescriptorPool(context->device->GetLogicalDevice(), descriptor_pool,
                           context->allocator);
   descriptor_pool = 0;
-  for (int i = 0; i < ubo.buffers.size(); ++i) {
-    ubo.buffers[i].Destroy();
+  for (auto it = uniform_buffers.begin(); it != uniform_buffers.end(); ++it) {
+    /* TODO: those may not be created, assert on that */
+    for (int i = 0; i < it->second.buffers.size(); ++i) {
+      it->second.buffers[i].Destroy();
+    }
+    vkDestroyDescriptorSetLayout(context->device->GetLogicalDevice(),
+                                 it->second.layout, context->allocator);
   }
-  vkDestroyDescriptorSetLayout(context->device->GetLogicalDevice(), ubo.layout,
-                               context->allocator);
-  ubo = {};
 
   pipeline.Destroy();
   pipeline = {};
 }
 
-GPUBuffer *VulkanShader::GetShaderBuffer(uint32_t set, uint32_t binding) {
+void VulkanShader::PrepareShaderBuffer(GPUShaderBufferIndex index,
+                                       uint64_t size) {
   VulkanContext *context = VulkanBackend::GetContext();
 
-  return &(ubo.buffers[context->image_index]);
+  VulkanShaderBuffer *shader_buffer = &uniform_buffers[index];
+
+  for (int i = 0; i < context->swapchain->GetImageCount(); ++i) {
+    /* TODO: temp */
+    shader_buffer->buffers[i].Create(GPU_BUFFER_TYPE_UNIFORM, size);
+
+    VkDescriptorBufferInfo buffer_info = {};
+    buffer_info.buffer = shader_buffer->buffers[i].GetHandle();
+    buffer_info.offset = 0;
+    /* TODO: temp */
+    buffer_info.range = size;
+
+    VkWriteDescriptorSet write_descriptor_set = {};
+    write_descriptor_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    write_descriptor_set.pNext = 0;
+    write_descriptor_set.dstSet = shader_buffer->sets[i];
+    write_descriptor_set.dstBinding = index.binding;
+    write_descriptor_set.dstArrayElement = 0;
+    write_descriptor_set.descriptorCount = 1;
+    write_descriptor_set.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    write_descriptor_set.pImageInfo = 0;
+    write_descriptor_set.pBufferInfo = &buffer_info;
+    write_descriptor_set.pTexelBufferView = 0;
+
+    VK_CHECK(vkBindBufferMemory(context->device->GetLogicalDevice(),
+                                shader_buffer->buffers[i].GetHandle(),
+                                shader_buffer->buffers[i].GetMemory(), 0));
+
+    vkUpdateDescriptorSets(context->device->GetLogicalDevice(), 1,
+                           &write_descriptor_set, 0, 0);
+  }
+}
+
+GPUBuffer *VulkanShader::GetShaderBuffer(GPUShaderBufferIndex index) {
+  VulkanContext *context = VulkanBackend::GetContext();
+
+  return &(uniform_buffers[index].buffers[context->image_index]);
 }
 
 void VulkanShader::Bind() {
@@ -248,7 +265,7 @@ void VulkanShader::Bind() {
   pipeline.Bind(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
 }
 
-void VulkanShader::BindShaderBuffer(uint32_t set, uint32_t binding) {
+void VulkanShader::BindShaderBuffer(GPUShaderBufferIndex index) {
   VulkanContext *context = VulkanBackend::GetContext();
 
   VulkanDeviceQueueInfo info =
@@ -257,9 +274,10 @@ void VulkanShader::BindShaderBuffer(uint32_t set, uint32_t binding) {
   VulkanCommandBuffer *command_buffer =
       &info.command_buffers[context->image_index];
 
-  vkCmdBindDescriptorSets(command_buffer->GetHandle(),
-                          VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.GetLayout(),
-                          0, 1, &ubo.sets[context->image_index], 0, 0);
+  vkCmdBindDescriptorSets(
+      command_buffer->GetHandle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
+      pipeline.GetLayout(), index.set, 1,
+      &uniform_buffers[index].sets[context->image_index], 0, 0);
 }
 
 void VulkanShader::PushConstant(GPUShaderPushConstant *push_constant) {

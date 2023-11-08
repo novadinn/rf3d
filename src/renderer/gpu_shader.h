@@ -30,6 +30,22 @@ struct GPUShaderConfig {
   std::vector<GPUShaderStageConfig> stage_configs;
 };
 
+struct GPUShaderBufferIndex {
+  uint32_t set, binding;
+
+  bool operator==(const GPUShaderBufferIndex &other) const {
+    return (set == other.set && binding == other.binding);
+  }
+};
+
+template <> struct std::hash<GPUShaderBufferIndex> {
+  std::size_t operator()(const GPUShaderBufferIndex &index) const {
+    return ((std::hash<uint32_t>()(index.set) ^
+             (std::hash<uint32_t>()(index.binding) << 1)) >>
+            1);
+  }
+};
+
 class GPUShader {
 public:
   virtual ~GPUShader(){};
@@ -38,10 +54,12 @@ public:
                       float viewport_width, float viewport_height) = 0;
   virtual void Destroy() = 0;
 
-  virtual GPUBuffer *GetShaderBuffer(uint32_t set, uint32_t binding) = 0;
+  virtual void PrepareShaderBuffer(GPUShaderBufferIndex index,
+                                   uint64_t size) = 0;
+  virtual GPUBuffer *GetShaderBuffer(GPUShaderBufferIndex index) = 0;
 
   virtual void Bind() = 0;
-  virtual void BindShaderBuffer(uint32_t set, uint32_t binding) = 0;
+  virtual void BindShaderBuffer(GPUShaderBufferIndex index) = 0;
   virtual void PushConstant(GPUShaderPushConstant *push_constant) = 0;
   virtual void SetTexture(uint32_t index, GPUTexture *texture) = 0;
 
