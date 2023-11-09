@@ -23,7 +23,6 @@ struct MeshParams {
   PushConsts push_constants;
 };
 
-/* TODO: use push constants for model matrices */
 struct GlobalUBO {
   glm::mat4 view;
   glm::mat4 projection;
@@ -33,7 +32,7 @@ struct InstanceUBO {
   glm::mat4 model;
 };
 
-void loadTexture(GPUTexture *texture, const char *path) {
+void load_texture(GPUTexture *texture, const char *path) {
   int texture_width, texture_height, texture_num_channels;
   stbi_set_flip_vertically_on_load(true);
   unsigned char *data = stbi_load(path, &texture_width, &texture_height,
@@ -76,14 +75,14 @@ int main(int argc, char **argv) {
   }
 
   // loadTexture(meshes[0].texture, "assets/textures/metal.png");
-  meshes[0].position = glm::vec3(0, 0, -5.0f);
+  meshes[0].position = glm::vec3(0, 0, 0.0f);
   meshes[0].push_constants =
       PushConsts{0.1f, 1.0f, 0.672411f, 0.637331f, 0.585456f};
   // loadTexture(meshes[1].texture, "assets/textures/brickwall.jpg");
-  meshes[1].position = glm::vec3(2, 0, -5.0f);
+  meshes[1].position = glm::vec3(2, 0, 0.0f);
   meshes[1].push_constants = PushConsts{0.8f, 0.2f, 1, 0, 0};
   // loadTexture(meshes[2].texture, "assets/textures/wood.png");
-  meshes[2].position = glm::vec3(-2, 0, -5.0f);
+  meshes[2].position = glm::vec3(-2, 0, 0.0f);
   meshes[2].push_constants = PushConsts{0.5f, 0.5f, 0, 1, 0};
 
   std::vector<float> vertices = {
@@ -138,8 +137,8 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
-  shader->PrepareShaderBuffer({0, 0}, sizeof(GlobalUBO));
-  shader->PrepareShaderBuffer({1, 0}, sizeof(InstanceUBO) * meshes.size());
+  shader->PrepareShaderBuffer({0, 0}, sizeof(GlobalUBO), 1);
+  shader->PrepareShaderBuffer({1, 0}, sizeof(InstanceUBO), meshes.size());
 
   bool running = true;
   while (running) {
@@ -182,14 +181,20 @@ int main(int argc, char **argv) {
           glm::radians(45.0f), (float)width / (float)height, 0.1f, 1000.0f);
       shader->GetShaderBuffer({0, 0})->LoadData(
           0, shader->GetShaderBuffer({0, 0})->GetSize(), &global_ubo);
-      shader->BindShaderBuffer({0, 0});
+      shader->BindShaderBuffer({0, 0}, 0, sizeof(GlobalUBO));
 
       for (int i = 0; i < meshes.size(); ++i) {
-        InstanceUBO instance_ubo = {};
-        instance_ubo.model = glm::mat4(1.0f);
-        instance_ubo.model =
-            glm::rotate(instance_ubo.model, angle,
-                        glm::normalize(glm::vec3(0.0f, 1.0f, 1.0f)));
+        std::vector<InstanceUBO> instance_ubos;
+        for (int j = 0; j < meshes.size(); ++j) {
+          InstanceUBO instance_ubo = {};
+          instance_ubo.model = glm::mat4(1.0f);
+          instance_ubo.model =
+              glm::translate(instance_ubo.model, meshes[j].position) *
+              glm::rotate(instance_ubo.model, angle,
+                          glm::normalize(glm::vec3(0.0f, 1.0f, 1.0f)));
+
+          instance_ubos.emplace_back(instance_ubo);
+        }
 
         // UBOLights ubo_lights = {};
         // const float p = 5.0f;
@@ -199,8 +204,9 @@ int main(int argc, char **argv) {
         // 0.2f, 1.0f); ubo_lights.lights[3] = glm::vec4(p, p, p, 1.0f);
 
         shader->GetShaderBuffer({1, 0})->LoadData(
-            0, shader->GetShaderBuffer({1, 0})->GetSize(), &instance_ubo);
-        shader->BindShaderBuffer({1, 0});
+            0, shader->GetShaderBuffer({1, 0})->GetSize(),
+            instance_ubos.data());
+        shader->BindShaderBuffer({1, 0}, i, sizeof(InstanceUBO));
         // meshes[i].lights_buffer->GetBuffer()->LoadData(
         //     0, meshes[i].lights_buffer->GetBuffer()->GetSize(), &ubo_lights);
         // meshes[i].lights_buffer->Bind(shader);

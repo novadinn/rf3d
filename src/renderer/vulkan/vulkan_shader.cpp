@@ -211,20 +211,24 @@ void VulkanShader::Destroy() {
 }
 
 void VulkanShader::PrepareShaderBuffer(GPUShaderBufferIndex index,
-                                       uint64_t size) {
+                                       uint64_t size, uint32_t element_count) {
   VulkanContext *context = VulkanBackend::GetContext();
+
+  size_t dynamic_alignment =
+      size; /* TODO: VulkanUtils::GetDynamicAlignment(size); */
+  size_t buffer_size = element_count * dynamic_alignment;
 
   VulkanShaderBuffer *shader_buffer = &uniform_buffers[index];
 
   for (int i = 0; i < context->swapchain->GetImageCount(); ++i) {
     /* TODO: temp */
-    shader_buffer->buffers[i].Create(GPU_BUFFER_TYPE_UNIFORM, size);
+    shader_buffer->buffers[i].Create(GPU_BUFFER_TYPE_UNIFORM, buffer_size);
 
     VkDescriptorBufferInfo buffer_info = {};
     buffer_info.buffer = shader_buffer->buffers[i].GetHandle();
     buffer_info.offset = 0;
     /* TODO: temp */
-    buffer_info.range = size;
+    buffer_info.range = dynamic_alignment;
 
     VkWriteDescriptorSet write_descriptor_set = {};
     write_descriptor_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -233,7 +237,8 @@ void VulkanShader::PrepareShaderBuffer(GPUShaderBufferIndex index,
     write_descriptor_set.dstBinding = index.binding;
     write_descriptor_set.dstArrayElement = 0;
     write_descriptor_set.descriptorCount = 1;
-    write_descriptor_set.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    write_descriptor_set.descriptorType =
+        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     write_descriptor_set.pImageInfo = 0;
     write_descriptor_set.pBufferInfo = &buffer_info;
     write_descriptor_set.pTexelBufferView = 0;
@@ -265,7 +270,8 @@ void VulkanShader::Bind() {
   pipeline.Bind(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
 }
 
-void VulkanShader::BindShaderBuffer(GPUShaderBufferIndex index) {
+void VulkanShader::BindShaderBuffer(GPUShaderBufferIndex index,
+                                    uint32_t draw_index, uint64_t size) {
   VulkanContext *context = VulkanBackend::GetContext();
 
   VulkanDeviceQueueInfo info =
@@ -274,10 +280,13 @@ void VulkanShader::BindShaderBuffer(GPUShaderBufferIndex index) {
   VulkanCommandBuffer *command_buffer =
       &info.command_buffers[context->image_index];
 
+  size_t dynamic_alignment =
+      size; /* TODO: VulkanUtils::GetDynamicAlignment(size); */
+  uint32_t dynamic_offsets = draw_index * dynamic_alignment;
   vkCmdBindDescriptorSets(
       command_buffer->GetHandle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
       pipeline.GetLayout(), index.set, 1,
-      &uniform_buffers[index].sets[context->image_index], 0, 0);
+      &uniform_buffers[index].sets[context->image_index], 1, &dynamic_offsets);
 }
 
 void VulkanShader::PushConstant(GPUShaderPushConstant *push_constant) {
@@ -303,7 +312,7 @@ void VulkanShader::ReflectStagePoolSizes(
     std::vector<VkDescriptorPoolSize> &pool_sizes) {
   if (!resources.uniform_buffers.empty()) {
     VkDescriptorPoolSize pool_size = {};
-    pool_size.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    pool_size.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     pool_size.descriptorCount =
         1024; /* TODO: HACK! max number of descriptors in a pool */
     pool_sizes.emplace_back(pool_size);
@@ -340,7 +349,7 @@ void VulkanShader::ReflectStageBuffers(
 
     VkDescriptorSetLayoutBinding layout_binding = {};
     layout_binding.binding = binding;
-    layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     layout_binding.descriptorCount = 1; /* for array of uniforms */
     layout_binding.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS; /* TODO: we are
                            not checking in which stages this is presented */

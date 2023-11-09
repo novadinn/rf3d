@@ -52,9 +52,13 @@ public:
     return swapchain_support_info;
   }
   inline VkFormat GetDepthFormat() const { return depth_format; }
+  inline size_t GetMinUBOAlignment() const {
+    return properties.limits.minUniformBufferOffsetAlignment;
+  }
+
   bool SupportsDeviceLocalHostVisible() const;
-  /* TODO: this is unused rn. Possible uses includes getting rid of staging copy
-   * and copying via memcpy */
+  /* TODO: this is unused rn. Possible uses includes getting rid of staging
+   * copy and copying via memcpy */
   bool DeviceIsIntegrated() const;
 
 private:

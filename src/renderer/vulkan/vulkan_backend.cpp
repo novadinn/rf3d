@@ -258,8 +258,6 @@ bool VulkanBackend::EndFrame() {
 
   VulkanDeviceQueueInfo graphics_queue_info =
       context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_GRAPHICS);
-  VulkanDeviceQueueInfo present_queue_info =
-      context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_PRESENT);
 
   VkResult result = vkQueueSubmit(
       graphics_queue_info.queue, 1, &submit_info,
@@ -268,6 +266,9 @@ bool VulkanBackend::EndFrame() {
     ERROR("Vulkan queue submit failed.");
     return false;
   }
+
+  VulkanDeviceQueueInfo present_queue_info =
+      context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_PRESENT);
 
   VkPresentInfoKHR present_info = {};
   present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;

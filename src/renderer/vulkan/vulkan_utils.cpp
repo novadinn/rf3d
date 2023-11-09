@@ -22,6 +22,19 @@ int VulkanUtils::FindMemoryIndex(VkPhysicalDevice physical_device,
   return -1;
 }
 
+size_t VulkanUtils::GetDynamicAlignment(size_t element_size) {
+  VulkanContext *context = VulkanBackend::GetContext();
+
+  size_t min_ubo_alignment = context->device->GetMinUBOAlignment();
+  size_t dynamic_alignment = element_size;
+  if (min_ubo_alignment > 0) {
+    dynamic_alignment =
+        (dynamic_alignment + min_ubo_alignment - 1) & ~(min_ubo_alignment - 1);
+  }
+
+  return dynamic_alignment;
+}
+
 VkFormat VulkanUtils::GPUFormatToVulkanFormat(GPUFormat format) {
   VulkanContext *context = VulkanBackend::GetContext();
 

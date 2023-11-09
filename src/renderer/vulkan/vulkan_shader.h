@@ -20,11 +20,13 @@ public:
 
   /* TODO: we dont need these function at all, we can just use reflection to get
    * the correct buffer sizes */
-  void PrepareShaderBuffer(GPUShaderBufferIndex index, uint64_t size) override;
+  void PrepareShaderBuffer(GPUShaderBufferIndex index, uint64_t size,
+                           uint32_t element_count) override;
   GPUBuffer *GetShaderBuffer(GPUShaderBufferIndex index) override;
 
   void Bind() override;
-  void BindShaderBuffer(GPUShaderBufferIndex index) override;
+  void BindShaderBuffer(GPUShaderBufferIndex index, uint32_t draw_index,
+                        uint64_t size) override;
   void PushConstant(GPUShaderPushConstant *push_constant) override;
   void SetTexture(uint32_t index, GPUTexture *texture) override;
 

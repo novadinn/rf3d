@@ -10,6 +10,7 @@ public:
   static int FindMemoryIndex(VkPhysicalDevice physical_device,
                              uint32_t type_filter,
                              VkMemoryPropertyFlags property_flags);
+  static size_t GetDynamicAlignment(size_t element_size);
   static VkFormat GPUFormatToVulkanFormat(GPUFormat format);
   static VkShaderStageFlagBits
   GPUShaderStageTypeToVulkanStage(GPUShaderStageType stage);
