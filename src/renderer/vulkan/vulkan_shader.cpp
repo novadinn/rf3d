@@ -214,20 +214,18 @@ void VulkanShader::PrepareShaderBuffer(GPUShaderBufferIndex index,
                                        uint64_t size, uint32_t element_count) {
   VulkanContext *context = VulkanBackend::GetContext();
 
-  size_t dynamic_alignment =
-      size; /* TODO: VulkanUtils::GetDynamicAlignment(size); */
+  size_t dynamic_alignment = VulkanUtils::GetDynamicAlignment(size);
   size_t buffer_size = element_count * dynamic_alignment;
 
   VulkanShaderBuffer *shader_buffer = &uniform_buffers[index];
+  shader_buffer->dynamic_alignment = dynamic_alignment;
 
   for (int i = 0; i < context->swapchain->GetImageCount(); ++i) {
-    /* TODO: temp */
     shader_buffer->buffers[i].Create(GPU_BUFFER_TYPE_UNIFORM, buffer_size);
 
     VkDescriptorBufferInfo buffer_info = {};
     buffer_info.buffer = shader_buffer->buffers[i].GetHandle();
     buffer_info.offset = 0;
-    /* TODO: temp */
     buffer_info.range = dynamic_alignment;
 
     VkWriteDescriptorSet write_descriptor_set = {};
@@ -258,6 +256,10 @@ GPUBuffer *VulkanShader::GetShaderBuffer(GPUShaderBufferIndex index) {
   return &(uniform_buffers[index].buffers[context->image_index]);
 }
 
+uint32_t VulkanShader::GetShaderBufferAlignment(GPUShaderBufferIndex index) {
+  return uniform_buffers[index].dynamic_alignment;
+}
+
 void VulkanShader::Bind() {
   VulkanContext *context = VulkanBackend::GetContext();
 
@@ -271,7 +273,7 @@ void VulkanShader::Bind() {
 }
 
 void VulkanShader::BindShaderBuffer(GPUShaderBufferIndex index,
-                                    uint32_t draw_index, uint64_t size) {
+                                    uint32_t draw_index) {
   VulkanContext *context = VulkanBackend::GetContext();
 
   VulkanDeviceQueueInfo info =
@@ -280,9 +282,8 @@ void VulkanShader::BindShaderBuffer(GPUShaderBufferIndex index,
   VulkanCommandBuffer *command_buffer =
       &info.command_buffers[context->image_index];
 
-  size_t dynamic_alignment =
-      size; /* TODO: VulkanUtils::GetDynamicAlignment(size); */
-  uint32_t dynamic_offsets = draw_index * dynamic_alignment;
+  uint32_t dynamic_offsets =
+      draw_index * uniform_buffers[index].dynamic_alignment;
   vkCmdBindDescriptorSets(
       command_buffer->GetHandle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
       pipeline.GetLayout(), index.set, 1,

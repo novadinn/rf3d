@@ -21,12 +21,13 @@ public:
   /* TODO: we dont need these function at all, we can just use reflection to get
    * the correct buffer sizes */
   void PrepareShaderBuffer(GPUShaderBufferIndex index, uint64_t size,
-                           uint32_t element_count) override;
+                           uint32_t element_count = 1) override;
   GPUBuffer *GetShaderBuffer(GPUShaderBufferIndex index) override;
+  uint32_t GetShaderBufferAlignment(GPUShaderBufferIndex index) override;
 
   void Bind() override;
-  void BindShaderBuffer(GPUShaderBufferIndex index, uint32_t draw_index,
-                        uint64_t size) override;
+  void BindShaderBuffer(GPUShaderBufferIndex index,
+                        uint32_t draw_index = 0) override;
   void PushConstant(GPUShaderPushConstant *push_constant) override;
   void SetTexture(uint32_t index, GPUTexture *texture) override;
 
@@ -37,6 +38,8 @@ private:
     VkDescriptorSetLayout layout;
     std::vector<VkDescriptorSet> sets;
     std::vector<VulkanBuffer> buffers;
+    /* for dynamic unifoms/storage buffers */
+    uint32_t dynamic_alignment;
   };
 
   void ReflectStagePoolSizes(spirv_cross::Compiler &compiler,

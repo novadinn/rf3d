@@ -137,7 +137,7 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
-  shader->PrepareShaderBuffer({0, 0}, sizeof(GlobalUBO), 1);
+  shader->PrepareShaderBuffer({0, 0}, sizeof(GlobalUBO));
   shader->PrepareShaderBuffer({1, 0}, sizeof(InstanceUBO), meshes.size());
 
   bool running = true;
@@ -181,7 +181,7 @@ int main(int argc, char **argv) {
           glm::radians(45.0f), (float)width / (float)height, 0.1f, 1000.0f);
       shader->GetShaderBuffer({0, 0})->LoadData(
           0, shader->GetShaderBuffer({0, 0})->GetSize(), &global_ubo);
-      shader->BindShaderBuffer({0, 0}, 0, sizeof(GlobalUBO));
+      shader->BindShaderBuffer({0, 0});
 
       for (int i = 0; i < meshes.size(); ++i) {
         std::vector<InstanceUBO> instance_ubos;
@@ -206,7 +206,7 @@ int main(int argc, char **argv) {
         shader->GetShaderBuffer({1, 0})->LoadData(
             0, shader->GetShaderBuffer({1, 0})->GetSize(),
             instance_ubos.data());
-        shader->BindShaderBuffer({1, 0}, i, sizeof(InstanceUBO));
+        shader->BindShaderBuffer({1, 0}, i);
         // meshes[i].lights_buffer->GetBuffer()->LoadData(
         //     0, meshes[i].lights_buffer->GetBuffer()->GetSize(), &ubo_lights);
         // meshes[i].lights_buffer->Bind(shader);

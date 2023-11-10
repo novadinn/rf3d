@@ -54,13 +54,15 @@ public:
                       float viewport_width, float viewport_height) = 0;
   virtual void Destroy() = 0;
 
-  virtual void PrepareShaderBuffer(GPUShaderBufferIndex index, uint64_t size,
-                                   uint32_t element_count) = 0;
+  virtual void PrepareShaderBuffer(GPUShaderBufferIndex index,
+                                   uint64_t element_size,
+                                   uint32_t element_count = 1) = 0;
   virtual GPUBuffer *GetShaderBuffer(GPUShaderBufferIndex index) = 0;
+  virtual uint32_t GetShaderBufferAlignment(GPUShaderBufferIndex index) = 0;
 
   virtual void Bind() = 0;
-  virtual void BindShaderBuffer(GPUShaderBufferIndex index, uint32_t draw_index,
-                                uint64_t size) = 0;
+  virtual void BindShaderBuffer(GPUShaderBufferIndex index,
+                                uint32_t draw_index = 0) = 0;
   virtual void PushConstant(GPUShaderPushConstant *push_constant) = 0;
   virtual void SetTexture(uint32_t index, GPUTexture *texture) = 0;
 
