@@ -38,14 +38,11 @@ public:
   virtual void Destroy() = 0;
 
   /* TODO: */
-  // virtual void AttachShaderBuffer() = 0;
-  virtual void PrepareShaderBuffer(GPUShaderBufferIndex index,
-                                   uint64_t element_size,
-                                   uint32_t element_count = 1) = 0;
-  virtual GPUUniformBuffer *GetShaderBuffer(GPUShaderBufferIndex index) = 0;
+  virtual void AttachShaderBuffer(GPUUniformBuffer *uniform_buffer,
+                                  uint32_t set, uint32_t binding) = 0;
 
   virtual void Bind() = 0;
-  virtual void BindShaderBuffer(GPUShaderBufferIndex index,
+  virtual void BindShaderBuffer(GPUUniformBuffer *uniform_buffer, uint32_t set,
                                 uint32_t draw_index = 0) = 0;
   virtual void PushConstant(GPUShaderPushConstant *push_constant) = 0;
   virtual void SetTexture(uint32_t index, GPUTexture *texture) = 0;

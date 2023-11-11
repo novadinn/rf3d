@@ -11,6 +11,22 @@
 #include <vector>
 #include <vulkan/vulkan.h>
 
+struct VulkanShaderBinding {
+  VkDescriptorType type;
+  /* TODO: get rid of that, rn it is used only once and only for relfection step
+   */
+  VkDescriptorSetLayoutBinding layout_binding;
+  uint64_t size;
+};
+
+struct VulkanShaderSet {
+  VkDescriptorSetLayout layout;
+  /* one per frame */
+  std::vector<VkDescriptorSet> sets;
+  std::vector<VulkanShaderBinding> bindings;
+  uint32_t index;
+};
+
 class VulkanContext;
 
 class VulkanShader : public GPUShader {
@@ -19,14 +35,11 @@ public:
               float viewport_width, float viewport_height) override;
   void Destroy() override;
 
-  /* TODO: we dont need these function at all, we can just use reflection to get
-   * the correct buffer sizes */
-  void PrepareShaderBuffer(GPUShaderBufferIndex index, uint64_t size,
-                           uint32_t element_count = 1) override;
-  GPUUniformBuffer *GetShaderBuffer(GPUShaderBufferIndex index) override;
+  void AttachShaderBuffer(GPUUniformBuffer *uniform_buffer, uint32_t set,
+                          uint32_t binding) override;
 
   void Bind() override;
-  void BindShaderBuffer(GPUShaderBufferIndex index,
+  void BindShaderBuffer(GPUUniformBuffer *uniform_buffer, uint32_t set,
                         uint32_t draw_index = 0) override;
   void PushConstant(GPUShaderPushConstant *push_constant) override;
   void SetTexture(uint32_t index, GPUTexture *texture) override;
@@ -34,12 +47,6 @@ public:
   inline VulkanPipeline &GetPipeline() { return pipeline; }
 
 private:
-  struct VulkanShaderBuffer {
-    VkDescriptorSetLayout layout;
-    std::vector<VkDescriptorSet> sets;
-    VulkanUniformBuffer buffer;
-  };
-
   void ReflectStagePoolSizes(spirv_cross::Compiler &compiler,
                              spirv_cross::ShaderResources &resources,
                              std::vector<VkDescriptorPoolSize> &pool_sizes);
@@ -47,10 +54,9 @@ private:
       spirv_cross::Compiler &compiler, spirv_cross::ShaderResources &resources,
       std::vector<VkPushConstantRange> &push_constant_ranges);
   /* TODO: only uniform buffers are supported rn */
-  void ReflectStageBuffers(
-      spirv_cross::Compiler &compiler, spirv_cross::ShaderResources &resources,
-      std::unordered_map<uint32_t, std::vector<VkDescriptorSetLayoutBinding>>
-          &sets_and_bindings);
+  void ReflectStageBuffers(spirv_cross::Compiler &compiler,
+                           spirv_cross::ShaderResources &resources,
+                           std::vector<VulkanShaderSet> &sets);
   void ReflectVertexAttributes(
       spirv_cross::Compiler &compiler, spirv_cross::ShaderResources &resources,
       std::vector<VkVertexInputAttributeDescription> &attributes,
@@ -58,7 +64,5 @@ private:
 
   VulkanPipeline pipeline;
   VkDescriptorPool descriptor_pool;
-  /* TODO: instead of storing it here, it is better to have a global buffer
-   * storage */
-  std::unordered_map<GPUShaderBufferIndex, VulkanShaderBuffer> uniform_buffers;
+  std::vector<VulkanShaderSet> shader_sets;
 };

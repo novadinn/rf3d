@@ -139,8 +139,14 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
-  shader->PrepareShaderBuffer({0, 0}, sizeof(GlobalUBO));
-  shader->PrepareShaderBuffer({1, 0}, sizeof(InstanceUBO), meshes.size());
+  GPUUniformBuffer *global_uniform = frontend->UniformBufferAllocate();
+  GPUUniformBuffer *instance_uniform = frontend->UniformBufferAllocate();
+
+  global_uniform->Create(sizeof(GlobalUBO));
+  instance_uniform->Create(sizeof(InstanceUBO), meshes.size());
+
+  shader->AttachShaderBuffer(global_uniform, 0, 0);
+  shader->AttachShaderBuffer(instance_uniform, 1, 0);
 
   bool running = true;
   while (running) {
@@ -181,9 +187,9 @@ int main(int argc, char **argv) {
       global_ubo.view = glm::inverse(global_ubo.view);
       global_ubo.projection = glm::perspective(
           glm::radians(45.0f), (float)width / (float)height, 0.1f, 1000.0f);
-      shader->GetShaderBuffer({0, 0})->LoadData(
-          0, shader->GetShaderBuffer({0, 0})->GetSize(), &global_ubo);
-      shader->BindShaderBuffer({0, 0});
+
+      global_uniform->LoadData(0, global_uniform->GetSize(), &global_ubo);
+      shader->BindShaderBuffer(global_uniform, 0, 0);
 
       for (int i = 0; i < meshes.size(); ++i) {
         std::vector<InstanceUBO> instance_ubos;
@@ -205,10 +211,9 @@ int main(int argc, char **argv) {
         // 2, 1.0f); ubo_lights.lights[2] = glm::vec4(p * 0.2f, -p * 0.2f, p *
         // 0.2f, 1.0f); ubo_lights.lights[3] = glm::vec4(p, p, p, 1.0f);
 
-        shader->GetShaderBuffer({1, 0})->LoadData(
-            0, shader->GetShaderBuffer({1, 0})->GetSize(),
-            instance_ubos.data());
-        shader->BindShaderBuffer({1, 0}, i);
+        instance_uniform->LoadData(0, instance_uniform->GetSize(),
+                                   instance_ubos.data());
+        shader->BindShaderBuffer(instance_uniform, 1, i);
         // meshes[i].lights_buffer->GetBuffer()->LoadData(
         //     0, meshes[i].lights_buffer->GetBuffer()->GetSize(), &ubo_lights);
         // meshes[i].lights_buffer->Bind(shader);
@@ -230,6 +235,10 @@ int main(int argc, char **argv) {
     // meshes[i].texture->Destroy();
     // delete meshes[i].texture;
   }
+  global_uniform->Destroy();
+  delete global_uniform;
+  instance_uniform->Destroy();
+  delete instance_uniform;
   shader->Destroy();
   delete shader;
   vertex_buffer->Destroy();
