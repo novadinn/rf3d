@@ -12,9 +12,6 @@
 #include <vulkan/vulkan.h>
 
 struct VulkanShaderBinding {
-  VkDescriptorType type;
-  /* TODO: get rid of that, rn it is used only once and only for relfection step
-   */
   VkDescriptorSetLayoutBinding layout_binding;
   uint64_t size;
 };
@@ -40,9 +37,8 @@ public:
 
   void Bind() override;
   void BindShaderBuffer(GPUUniformBuffer *uniform_buffer, uint32_t set,
-                        uint32_t draw_index = 0) override;
+                        uint32_t offset) override;
   void PushConstant(GPUShaderPushConstant *push_constant) override;
-  void SetTexture(uint32_t index, GPUTexture *texture) override;
 
   inline VulkanPipeline &GetPipeline() { return pipeline; }
 

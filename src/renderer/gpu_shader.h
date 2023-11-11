@@ -37,15 +37,13 @@ public:
                       float viewport_width, float viewport_height) = 0;
   virtual void Destroy() = 0;
 
-  /* TODO: */
   virtual void AttachShaderBuffer(GPUUniformBuffer *uniform_buffer,
                                   uint32_t set, uint32_t binding) = 0;
 
   virtual void Bind() = 0;
   virtual void BindShaderBuffer(GPUUniformBuffer *uniform_buffer, uint32_t set,
-                                uint32_t draw_index = 0) = 0;
+                                uint32_t offset) = 0;
   virtual void PushConstant(GPUShaderPushConstant *push_constant) = 0;
-  virtual void SetTexture(uint32_t index, GPUTexture *texture) = 0;
 
 protected:
 };

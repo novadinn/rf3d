@@ -214,6 +214,7 @@ void VulkanShader::AttachShaderBuffer(GPUUniformBuffer *uniform_buffer,
   for (int i = 0; i < shader_sets.size(); ++i) {
     if (shader_sets[i].index == set) {
       descriptor_sets = shader_sets[i].sets;
+      break;
     }
   }
 
@@ -264,7 +265,7 @@ void VulkanShader::Bind() {
 }
 
 void VulkanShader::BindShaderBuffer(GPUUniformBuffer *uniform_buffer,
-                                    uint32_t set, uint32_t draw_index) {
+                                    uint32_t set, uint32_t offset) {
   VulkanContext *context = VulkanBackend::GetContext();
 
   VulkanDeviceQueueInfo info =
@@ -277,6 +278,7 @@ void VulkanShader::BindShaderBuffer(GPUUniformBuffer *uniform_buffer,
   for (int i = 0; i < shader_sets.size(); ++i) {
     if (shader_sets[i].index == set) {
       descriptor_sets = shader_sets[i].sets;
+      break;
     }
   }
 
@@ -285,11 +287,10 @@ void VulkanShader::BindShaderBuffer(GPUUniformBuffer *uniform_buffer,
     return;
   }
 
-  uint32_t dynamic_offsets = draw_index * uniform_buffer->GetDynamicAlignment();
   vkCmdBindDescriptorSets(command_buffer->GetHandle(),
                           VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.GetLayout(),
                           set, 1, &descriptor_sets[context->image_index], 1,
-                          &dynamic_offsets);
+                          &offset);
 }
 
 void VulkanShader::PushConstant(GPUShaderPushConstant *push_constant) {
@@ -307,8 +308,6 @@ void VulkanShader::PushConstant(GPUShaderPushConstant *push_constant) {
                      push_constant->offset, push_constant->size,
                      push_constant->value);
 }
-
-void VulkanShader::SetTexture(uint32_t index, GPUTexture *texture) {}
 
 void VulkanShader::ReflectStagePoolSizes(
     spirv_cross::Compiler &compiler, spirv_cross::ShaderResources &resources,
@@ -374,7 +373,6 @@ void VulkanShader::ReflectStageBuffers(spirv_cross::Compiler &compiler,
     VulkanShaderBinding shader_binding;
     shader_binding.layout_binding = layout_binding;
     shader_binding.size = binding_size;
-    shader_binding.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
 
     sets[set_index].bindings.emplace_back(shader_binding);
   }

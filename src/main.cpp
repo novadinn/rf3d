@@ -28,6 +28,10 @@ struct GlobalUBO {
   glm::mat4 projection;
 };
 
+struct WorldUBO {
+  glm::vec4 lights[4];
+};
+
 struct InstanceUBO {
   glm::mat4 model;
 };
@@ -129,6 +133,7 @@ int main(int argc, char **argv) {
   vertex_buffer->LoadData(0, vertices.size() * sizeof(vertices[0]),
                           vertices.data());
 
+  /* TODO: it may be possible to determine stage types via spirv-reflect */
   GPUShaderConfig shader_config = {};
   shader_config.stage_configs.emplace_back(GPUShaderStageConfig{
       GPU_SHADER_STAGE_TYPE_VERTEX, "assets/shaders/object_shader.vert.spv"});
@@ -140,13 +145,16 @@ int main(int argc, char **argv) {
   }
 
   GPUUniformBuffer *global_uniform = frontend->UniformBufferAllocate();
+  GPUUniformBuffer *world_uniform = frontend->UniformBufferAllocate();
   GPUUniformBuffer *instance_uniform = frontend->UniformBufferAllocate();
 
   global_uniform->Create(sizeof(GlobalUBO));
+  world_uniform->Create(sizeof(WorldUBO));
   instance_uniform->Create(sizeof(InstanceUBO), meshes.size());
 
   shader->AttachShaderBuffer(global_uniform, 0, 0);
-  shader->AttachShaderBuffer(instance_uniform, 1, 0);
+  shader->AttachShaderBuffer(world_uniform, 1, 0);
+  shader->AttachShaderBuffer(instance_uniform, 2, 0);
 
   bool running = true;
   while (running) {
@@ -191,6 +199,16 @@ int main(int argc, char **argv) {
       global_uniform->LoadData(0, global_uniform->GetSize(), &global_ubo);
       shader->BindShaderBuffer(global_uniform, 0, 0);
 
+      WorldUBO world_ubo = {};
+      const float p = 5.0f;
+      world_ubo.lights[0] = glm::vec4(-p * 0.8f, -p * 0.8f, p * 0.8f, 1.0f);
+      world_ubo.lights[1] = glm::vec4(-p * 2, p * 2, p * 2, 1.0f);
+      world_ubo.lights[2] = glm::vec4(p * 0.2f, -p * 0.2f, p * 0.2f, 1.0f);
+      world_ubo.lights[3] = glm::vec4(p, p, p, 1.0f);
+
+      world_uniform->LoadData(0, world_uniform->GetSize(), &world_ubo);
+      shader->BindShaderBuffer(world_uniform, 1, 0);
+
       for (int i = 0; i < meshes.size(); ++i) {
         std::vector<InstanceUBO> instance_ubos;
         for (int j = 0; j < meshes.size(); ++j) {
@@ -204,23 +222,13 @@ int main(int argc, char **argv) {
           instance_ubos.emplace_back(instance_ubo);
         }
 
-        // UBOLights ubo_lights = {};
-        // const float p = 5.0f;
-        // ubo_lights.lights[0] = glm::vec4(-p * 0.8f, -p * 0.8f, p *
-        // 0.8f, 1.0f); ubo_lights.lights[1] = glm::vec4(-p * 2, p * 2, p *
-        // 2, 1.0f); ubo_lights.lights[2] = glm::vec4(p * 0.2f, -p * 0.2f, p *
-        // 0.2f, 1.0f); ubo_lights.lights[3] = glm::vec4(p, p, p, 1.0f);
-
         instance_uniform->LoadData(0, instance_uniform->GetSize(),
                                    instance_ubos.data());
-        shader->BindShaderBuffer(instance_uniform, 1, i);
-        // meshes[i].lights_buffer->GetBuffer()->LoadData(
-        //     0, meshes[i].lights_buffer->GetBuffer()->GetSize(), &ubo_lights);
-        // meshes[i].lights_buffer->Bind(shader);
+        shader->BindShaderBuffer(instance_uniform, 2,
+                                 i * instance_uniform->GetDynamicAlignment());
 
         push_constant.value = &meshes[i].push_constants;
         shader->PushConstant(&push_constant);
-        // shader->SetTexture(0, meshes[i].texture);
 
         frontend->Draw(vertices.size());
       }
@@ -235,10 +243,12 @@ int main(int argc, char **argv) {
     // meshes[i].texture->Destroy();
     // delete meshes[i].texture;
   }
-  global_uniform->Destroy();
-  delete global_uniform;
   instance_uniform->Destroy();
   delete instance_uniform;
+  world_uniform->Destroy();
+  delete world_uniform;
+  global_uniform->Destroy();
+  delete global_uniform;
   shader->Destroy();
   delete shader;
   vertex_buffer->Destroy();

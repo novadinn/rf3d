@@ -37,7 +37,7 @@ void *VulkanIndexBuffer::Lock(uint64_t offset, uint64_t size) {
 void VulkanIndexBuffer::Unlock() { buffer.Unlock(); }
 
 bool VulkanIndexBuffer::LoadData(uint64_t offset, uint64_t size, void *data) {
-  buffer.LoadDataStaging(offset, size, data);
+  return buffer.LoadDataStaging(offset, size, data);
 }
 
 uint64_t VulkanIndexBuffer::GetSize() const { return buffer.GetSize(); }
