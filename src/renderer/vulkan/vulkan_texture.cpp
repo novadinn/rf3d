@@ -135,7 +135,9 @@ void VulkanTexture::WriteData(uint8_t *pixels, uint32_t offset) {
       VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 
   VulkanBuffer staging;
-  staging.Create(GPU_BUFFER_TYPE_STAGING, size);
+  staging.Create(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                     VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
   staging.LoadData(0, size, pixels);
 
   /* TODO: or transfer? */

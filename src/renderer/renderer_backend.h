@@ -1,9 +1,11 @@
 #pragma once
 
-#include "renderer/gpu_buffer.h"
+#include "renderer/gpu_index_buffer.h"
 #include "renderer/gpu_render_pass.h"
 #include "renderer/gpu_render_target.h"
 #include "renderer/gpu_shader.h"
+#include "renderer/gpu_uniform_buffer.h"
+#include "renderer/gpu_vertex_buffer.h"
 
 #include <stdint.h>
 
@@ -24,7 +26,9 @@ public:
   virtual GPURenderPass *GetWindowRenderPass() = 0;
   virtual GPURenderTarget *GetCurrentWindowRenderTarget() = 0;
 
-  virtual GPUBuffer *BufferAllocate() = 0;
+  virtual GPUVertexBuffer *VertexBufferAllocate() = 0;
+  virtual GPUIndexBuffer *IndexBufferAllocate() = 0;
+  virtual GPUUniformBuffer *UniformBufferAllocate() = 0;
   virtual GPURenderPass *RenderPassAllocate() = 0;
   virtual GPURenderTarget *RenderTargetAllocate() = 0;
   virtual GPUShader *ShaderAllocate() = 0;

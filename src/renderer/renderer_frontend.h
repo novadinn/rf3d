@@ -24,7 +24,9 @@ public:
   GPURenderPass *GetWindowRenderPass();
   GPURenderTarget *GetCurrentWindowRenderTarget();
 
-  GPUBuffer *BufferAllocate();
+  GPUVertexBuffer *VertexBufferAllocate();
+  GPUIndexBuffer *IndexBufferAllocate();
+  GPUUniformBuffer *UniformBufferAllocate();
   GPURenderPass *RenderPassAllocate();
   GPURenderTarget *RenderTargetAllocate();
   GPUShader *ShaderAllocate();

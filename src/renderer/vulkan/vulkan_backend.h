@@ -22,7 +22,9 @@ public:
   GPURenderPass *GetWindowRenderPass() override;
   GPURenderTarget *GetCurrentWindowRenderTarget() override;
 
-  GPUBuffer *BufferAllocate() override;
+  GPUVertexBuffer *VertexBufferAllocate() override;
+  GPUIndexBuffer *IndexBufferAllocate() override;
+  GPUUniformBuffer *UniformBufferAllocate() override;
   GPURenderTarget *RenderTargetAllocate() override;
   GPURenderPass *RenderPassAllocate() override;
   GPUShader *ShaderAllocate() override;

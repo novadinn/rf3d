@@ -3,8 +3,11 @@
 #include "logger.h"
 #include "platform.h"
 #include "renderer/gpu_shader.h"
+#include "vulkan_index_buffer.h"
 #include "vulkan_render_pass.h"
 #include "vulkan_texture.h"
+#include "vulkan_uniform_buffer.h"
+#include "vulkan_vertex_buffer.h"
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_vulkan.h>
@@ -314,7 +317,17 @@ GPURenderTarget *VulkanBackend::GetCurrentWindowRenderTarget() {
   return main_framebuffers[context->image_index];
 }
 
-GPUBuffer *VulkanBackend::BufferAllocate() { return new VulkanBuffer(); }
+GPUVertexBuffer *VulkanBackend::VertexBufferAllocate() {
+  return new VulkanVertexBuffer();
+}
+
+GPUIndexBuffer *VulkanBackend::IndexBufferAllocate() {
+  return new VulkanIndexBuffer();
+}
+
+GPUUniformBuffer *VulkanBackend::UniformBufferAllocate() {
+  return new VulkanUniformBuffer();
+}
 
 GPURenderTarget *VulkanBackend::RenderTargetAllocate() {
   return new VulkanFramebuffer();

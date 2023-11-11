@@ -3,6 +3,7 @@
 #include "renderer/gpu_shader.h"
 #include "vulkan_buffer.h"
 #include "vulkan_pipeline.h"
+#include "vulkan_uniform_buffer.h"
 
 #include <spirv_cross/spirv.hpp>
 #include <spirv_cross/spirv_glsl.hpp>
@@ -22,8 +23,7 @@ public:
    * the correct buffer sizes */
   void PrepareShaderBuffer(GPUShaderBufferIndex index, uint64_t size,
                            uint32_t element_count = 1) override;
-  GPUBuffer *GetShaderBuffer(GPUShaderBufferIndex index) override;
-  uint32_t GetShaderBufferAlignment(GPUShaderBufferIndex index) override;
+  GPUUniformBuffer *GetShaderBuffer(GPUShaderBufferIndex index) override;
 
   void Bind() override;
   void BindShaderBuffer(GPUShaderBufferIndex index,
@@ -37,9 +37,7 @@ private:
   struct VulkanShaderBuffer {
     VkDescriptorSetLayout layout;
     std::vector<VkDescriptorSet> sets;
-    std::vector<VulkanBuffer> buffers;
-    /* for dynamic unifoms/storage buffers */
-    uint32_t dynamic_alignment;
+    VulkanUniformBuffer buffer;
   };
 
   void ReflectStagePoolSizes(spirv_cross::Compiler &compiler,

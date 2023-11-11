@@ -133,8 +133,6 @@ bool VulkanShader::Create(GPUShaderConfig *config, GPURenderPass *render_pass,
 
     std::vector<VkDescriptorSet> sets;
     sets.resize(context->swapchain->GetImageCount());
-    std::vector<VulkanBuffer> buffers;
-    buffers.resize(context->swapchain->GetImageCount());
 
     VkDescriptorSetAllocateInfo set_allocate_info = {};
     set_allocate_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -154,7 +152,6 @@ bool VulkanShader::Create(GPUShaderConfig *config, GPURenderPass *render_pass,
     VulkanShaderBuffer shader_buffer;
     shader_buffer.layout = set_layout;
     shader_buffer.sets = sets;
-    shader_buffer.buffers = buffers;
 
     uniform_buffers.emplace(index, shader_buffer);
   }
@@ -199,9 +196,7 @@ void VulkanShader::Destroy() {
   descriptor_pool = 0;
   for (auto it = uniform_buffers.begin(); it != uniform_buffers.end(); ++it) {
     /* TODO: those may not be created, assert on that */
-    for (int i = 0; i < it->second.buffers.size(); ++i) {
-      it->second.buffers[i].Destroy();
-    }
+    it->second.buffer.Destroy();
     vkDestroyDescriptorSetLayout(context->device->GetLogicalDevice(),
                                  it->second.layout, context->allocator);
   }
@@ -218,13 +213,11 @@ void VulkanShader::PrepareShaderBuffer(GPUShaderBufferIndex index,
   size_t buffer_size = element_count * dynamic_alignment;
 
   VulkanShaderBuffer *shader_buffer = &uniform_buffers[index];
-  shader_buffer->dynamic_alignment = dynamic_alignment;
+  shader_buffer->buffer.Create(index, size, element_count);
 
   for (int i = 0; i < context->swapchain->GetImageCount(); ++i) {
-    shader_buffer->buffers[i].Create(GPU_BUFFER_TYPE_UNIFORM, buffer_size);
-
     VkDescriptorBufferInfo buffer_info = {};
-    buffer_info.buffer = shader_buffer->buffers[i].GetHandle();
+    buffer_info.buffer = shader_buffer->buffer.GetBufferAtFrame(i).GetHandle();
     buffer_info.offset = 0;
     buffer_info.range = dynamic_alignment;
 
@@ -241,23 +234,20 @@ void VulkanShader::PrepareShaderBuffer(GPUShaderBufferIndex index,
     write_descriptor_set.pBufferInfo = &buffer_info;
     write_descriptor_set.pTexelBufferView = 0;
 
-    VK_CHECK(vkBindBufferMemory(context->device->GetLogicalDevice(),
-                                shader_buffer->buffers[i].GetHandle(),
-                                shader_buffer->buffers[i].GetMemory(), 0));
+    VK_CHECK(vkBindBufferMemory(
+        context->device->GetLogicalDevice(),
+        shader_buffer->buffer.GetBufferAtFrame(i).GetHandle(),
+        shader_buffer->buffer.GetBufferAtFrame(i).GetMemory(), 0));
 
     vkUpdateDescriptorSets(context->device->GetLogicalDevice(), 1,
                            &write_descriptor_set, 0, 0);
   }
 }
 
-GPUBuffer *VulkanShader::GetShaderBuffer(GPUShaderBufferIndex index) {
+GPUUniformBuffer *VulkanShader::GetShaderBuffer(GPUShaderBufferIndex index) {
   VulkanContext *context = VulkanBackend::GetContext();
 
-  return &(uniform_buffers[index].buffers[context->image_index]);
-}
-
-uint32_t VulkanShader::GetShaderBufferAlignment(GPUShaderBufferIndex index) {
-  return uniform_buffers[index].dynamic_alignment;
+  return &(uniform_buffers[index].buffer);
 }
 
 void VulkanShader::Bind() {
@@ -283,7 +273,7 @@ void VulkanShader::BindShaderBuffer(GPUShaderBufferIndex index,
       &info.command_buffers[context->image_index];
 
   uint32_t dynamic_offsets =
-      draw_index * uniform_buffers[index].dynamic_alignment;
+      draw_index * uniform_buffers[index].buffer.GetDynamicAlignment();
   vkCmdBindDescriptorSets(
       command_buffer->GetHandle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
       pipeline.GetLayout(), index.set, 1,

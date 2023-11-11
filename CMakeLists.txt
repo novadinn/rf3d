@@ -58,6 +58,9 @@ set(SRC
   src/renderer/vulkan/vulkan_buffer.cpp
   src/renderer/vulkan/vulkan_texture.cpp
   src/renderer/vulkan/vulkan_attachment.cpp
+  src/renderer/vulkan/vulkan_vertex_buffer.cpp
+  src/renderer/vulkan/vulkan_index_buffer.cpp
+  src/renderer/vulkan/vulkan_uniform_buffer.cpp
 )
 
 add_executable(

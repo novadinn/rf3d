@@ -65,7 +65,7 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
-  GPUBuffer *vertex_buffer = frontend->BufferAllocate();
+  GPUVertexBuffer *vertex_buffer = frontend->VertexBufferAllocate();
   GPUShader *shader = frontend->ShaderAllocate();
   GPURenderPass *window_render_pass = frontend->GetWindowRenderPass();
 
@@ -122,8 +122,10 @@ int main(int argc, char **argv) {
       1.0f,  0.0f,  -0.5f, 0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  0.0f,
       -0.5f, 0.5f,  -0.5f, 0.0f,  1.0f,  0.0f,  0.0f,  1.0f};
 
-  vertex_buffer->Create(GPU_BUFFER_TYPE_VERTEX,
-                        vertices.size() * sizeof(vertices[0]));
+  if (!vertex_buffer->Create(vertices.size() * sizeof(vertices[0]))) {
+    ERROR("Failed to create a vertex buffer!");
+    exit(1);
+  }
   vertex_buffer->LoadData(0, vertices.size() * sizeof(vertices[0]),
                           vertices.data());
 

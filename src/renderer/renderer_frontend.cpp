@@ -47,8 +47,16 @@ GPURenderTarget *RendererFrontend::GetCurrentWindowRenderTarget() {
   return backend->GetCurrentWindowRenderTarget();
 }
 
-GPUBuffer *RendererFrontend::BufferAllocate() {
-  return backend->BufferAllocate();
+GPUVertexBuffer *RendererFrontend::VertexBufferAllocate() {
+  return backend->VertexBufferAllocate();
+}
+
+GPUIndexBuffer *RendererFrontend::IndexBufferAllocate() {
+  return backend->IndexBufferAllocate();
+}
+
+GPUUniformBuffer *RendererFrontend::UniformBufferAllocate() {
+  return backend->UniformBufferAllocate();
 }
 
 GPURenderPass *RendererFrontend::RenderPassAllocate() {

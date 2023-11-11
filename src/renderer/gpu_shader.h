@@ -1,11 +1,10 @@
 #pragma once
 
-#include "gpu_buffer.h"
 #include "gpu_core.h"
 #include "gpu_render_pass.h"
 #include "gpu_texture.h"
+#include "gpu_uniform_buffer.h"
 
-#include <list>
 #include <vector>
 
 struct GPUShaderPushConstant {
@@ -30,22 +29,6 @@ struct GPUShaderConfig {
   std::vector<GPUShaderStageConfig> stage_configs;
 };
 
-struct GPUShaderBufferIndex {
-  uint32_t set, binding;
-
-  bool operator==(const GPUShaderBufferIndex &other) const {
-    return (set == other.set && binding == other.binding);
-  }
-};
-
-template <> struct std::hash<GPUShaderBufferIndex> {
-  std::size_t operator()(const GPUShaderBufferIndex &index) const {
-    return ((std::hash<uint32_t>()(index.set) ^
-             (std::hash<uint32_t>()(index.binding) << 1)) >>
-            1);
-  }
-};
-
 class GPUShader {
 public:
   virtual ~GPUShader(){};
@@ -54,11 +37,12 @@ public:
                       float viewport_width, float viewport_height) = 0;
   virtual void Destroy() = 0;
 
+  /* TODO: */
+  // virtual void AttachShaderBuffer() = 0;
   virtual void PrepareShaderBuffer(GPUShaderBufferIndex index,
                                    uint64_t element_size,
                                    uint32_t element_count = 1) = 0;
-  virtual GPUBuffer *GetShaderBuffer(GPUShaderBufferIndex index) = 0;
-  virtual uint32_t GetShaderBufferAlignment(GPUShaderBufferIndex index) = 0;
+  virtual GPUUniformBuffer *GetShaderBuffer(GPUShaderBufferIndex index) = 0;
 
   virtual void Bind() = 0;
   virtual void BindShaderBuffer(GPUShaderBufferIndex index,
