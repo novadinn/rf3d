@@ -122,18 +122,21 @@ bool VulkanBackend::Initialize(SDL_Window *sdl_window) {
     context->images_in_flight[i] = 0;
   }
 
-  std::vector<GPUShaderStageConfig> stage_configs;
-  stage_configs.resize(2);
-  stage_configs[0].type = GPU_SHADER_STAGE_TYPE_VERTEX;
-  stage_configs[0].file_path = "assets/shaders/object_shader.vert.spv";
-  stage_configs[1].type = GPU_SHADER_STAGE_TYPE_FRAGMENT;
-  stage_configs[1].file_path = "assets/shaders/object_shader.frag.spv";
+  context->descriptor_pools = new VulkanDescriptorPools();
+  context->descriptor_pools->Initialize();
+  context->layout_cache = new VulkanDescriptorLayoutCache();
+  context->layout_cache->Initialize();
 
   return true;
 }
 
 void VulkanBackend::Shutdown() {
   vkDeviceWaitIdle(context->device->GetLogicalDevice());
+
+  context->layout_cache->Shutdown();
+  delete context->layout_cache;
+  context->descriptor_pools->Shutdown();
+  delete context->descriptor_pools;
 
   for (int i = 0; i < context->swapchain->GetMaxFramesInFlights(); ++i) {
     vkDestroySemaphore(context->device->GetLogicalDevice(),

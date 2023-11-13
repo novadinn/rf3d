@@ -61,6 +61,9 @@ set(SRC
   src/renderer/vulkan/vulkan_vertex_buffer.cpp
   src/renderer/vulkan/vulkan_index_buffer.cpp
   src/renderer/vulkan/vulkan_uniform_buffer.cpp
+  src/renderer/vulkan/vulkan_descriptor_pools.cpp
+  src/renderer/vulkan/vulkan_descriptor_layout_cache.cpp
+  src/renderer/vulkan/vulkan_descriptor_builder.cpp
 )
 
 add_executable(

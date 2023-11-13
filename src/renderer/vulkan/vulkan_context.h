@@ -5,6 +5,8 @@
 #include <vulkan/vulkan.h>
 
 #include "vulkan_command_buffer.h"
+#include "vulkan_descriptor_layout_cache.h"
+#include "vulkan_descriptor_pools.h"
 #include "vulkan_device.h"
 #include "vulkan_fence.h"
 #include "vulkan_swapchain.h"
@@ -32,4 +34,6 @@ public:
   uint32_t current_frame;
 
   /* TODO: VkPipelineCache */
+  VulkanDescriptorPools *descriptor_pools;
+  VulkanDescriptorLayoutCache *layout_cache;
 };

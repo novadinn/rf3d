@@ -46,9 +46,6 @@ public:
   inline VulkanPipeline &GetPipeline() { return pipeline; }
 
 private:
-  void ReflectStagePoolSizes(spirv_cross::Compiler &compiler,
-                             spirv_cross::ShaderResources &resources,
-                             std::vector<VkDescriptorPoolSize> &pool_sizes);
   void ReflectStagePushConstantRanges(
       spirv_cross::Compiler &compiler, spirv_cross::ShaderResources &resources,
       std::vector<VkPushConstantRange> &push_constant_ranges);
@@ -65,6 +62,5 @@ private:
                                       int32_t *out_set_index);
 
   VulkanPipeline pipeline;
-  VkDescriptorPool descriptor_pool;
   std::vector<VulkanShaderSet> shader_sets;
 };

@@ -4,6 +4,7 @@
 #include "renderer/gpu_utils.h"
 #include "vulkan_backend.h"
 #include "vulkan_context.h"
+#include "vulkan_descriptor_builder.h"
 #include "vulkan_texture.h"
 #include "vulkan_utils.h"
 
@@ -23,7 +24,6 @@ bool VulkanShader::Create(GPUShaderConfig *config, GPURenderPass *render_pass,
   std::vector<VkPipelineShaderStageCreateInfo> pipeline_stage_create_infos;
   pipeline_stage_create_infos.resize(config->stage_configs.size());
 
-  std::vector<VkDescriptorPoolSize> pool_sizes;
   std::vector<VkPushConstantRange> push_constant_ranges;
   std::vector<VulkanShaderSet> sets;
   std::vector<VkVertexInputAttributeDescription> attributes;
@@ -57,7 +57,6 @@ bool VulkanShader::Create(GPUShaderConfig *config, GPURenderPass *render_pass,
     spirv_cross::Compiler compiler(file_data.data(),
                                    file_data.size() / sizeof(uint32_t));
     spirv_cross::ShaderResources resources = compiler.get_shader_resources();
-    ReflectStagePoolSizes(compiler, resources, pool_sizes);
     ReflectStagePushConstantRanges(compiler, resources, push_constant_ranges);
     ReflectStageUniforms(compiler, resources, sets);
     if (stage_config->type == GPU_SHADER_STAGE_TYPE_VERTEX) {
@@ -94,18 +93,6 @@ bool VulkanShader::Create(GPUShaderConfig *config, GPURenderPass *render_pass,
   scissor.extent.width = viewport_width;
   scissor.extent.height = viewport_height;
 
-  VkDescriptorPoolCreateInfo pool_create_info = {};
-  pool_create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-  pool_create_info.pNext = 0;
-  pool_create_info.flags = 0;
-  pool_create_info.maxSets = 1024; /* TODO: HACK! */
-  pool_create_info.poolSizeCount = pool_sizes.size();
-  pool_create_info.pPoolSizes = pool_sizes.data();
-
-  VK_CHECK(vkCreateDescriptorPool(context->device->GetLogicalDevice(),
-                                  &pool_create_info, context->allocator,
-                                  &descriptor_pool));
-
   for (int i = 0; i < sets.size(); ++i) {
     VkDescriptorSetLayout set_layout;
 
@@ -139,16 +126,9 @@ bool VulkanShader::Create(GPUShaderConfig *config, GPURenderPass *render_pass,
     std::vector<VkDescriptorSet> descriptor_sets;
     descriptor_sets.resize(context->swapchain->GetImageCount());
 
-    VkDescriptorSetAllocateInfo set_allocate_info = {};
-    set_allocate_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    set_allocate_info.pNext = 0;
-    set_allocate_info.descriptorPool = descriptor_pool;
-    set_allocate_info.descriptorSetCount = descriptor_sets.size();
-    set_allocate_info.pSetLayouts = set_layouts.data();
-
-    VK_CHECK(vkAllocateDescriptorSets(context->device->GetLogicalDevice(),
-                                      &set_allocate_info,
-                                      descriptor_sets.data()));
+    for (int i = 0; i < set_layouts.size(); ++i) {
+      descriptor_sets[i] = context->descriptor_pools->Allocate(set_layouts[i]);
+    }
 
     sets[i].sets = descriptor_sets;
     sets[i].layout = set_layout;
@@ -191,9 +171,6 @@ void VulkanShader::Destroy() {
 
   vkDeviceWaitIdle(context->device->GetLogicalDevice());
 
-  vkDestroyDescriptorPool(context->device->GetLogicalDevice(), descriptor_pool,
-                          context->allocator);
-  descriptor_pool = 0;
   for (int i = 0; i < shader_sets.size(); ++i) {
     /* TODO: those may not be created, assert on that */
     vkDestroyDescriptorSetLayout(context->device->GetLogicalDevice(),
@@ -376,27 +353,6 @@ void VulkanShader::PushConstant(GPUShaderPushConstant *push_constant) {
                          push_constant->stage_flags),
                      push_constant->offset, push_constant->size,
                      push_constant->value);
-}
-
-void VulkanShader::ReflectStagePoolSizes(
-    spirv_cross::Compiler &compiler, spirv_cross::ShaderResources &resources,
-    std::vector<VkDescriptorPoolSize> &pool_sizes) {
-  /* TODO: since this is evaluated for each shader stage, there may be
-   * duplications of pool sizes */
-  if (!resources.uniform_buffers.empty()) {
-    VkDescriptorPoolSize pool_size = {};
-    pool_size.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-    pool_size.descriptorCount =
-        1024; /* TODO: HACK! max number of descriptors in a pool */
-    pool_sizes.emplace_back(pool_size);
-  }
-  if (!resources.sampled_images.empty()) {
-    VkDescriptorPoolSize pool_size = {};
-    pool_size.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    pool_size.descriptorCount =
-        1024; /* TODO: HACK! max number of descriptors in a pool */
-    pool_sizes.emplace_back(pool_size);
-  }
 }
 
 void VulkanShader::ReflectStageUniforms(spirv_cross::Compiler &compiler,
