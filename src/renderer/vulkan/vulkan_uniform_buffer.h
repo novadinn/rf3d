@@ -19,7 +19,7 @@ public:
 
   uint64_t GetSize() const override;
 
-  VulkanBuffer GetBufferAtFrame(uint32_t frame) const { return buffers[frame]; }
+  std::vector<VulkanBuffer> &GetBuffers() { return buffers; }
 
 private:
   /* one per frame */

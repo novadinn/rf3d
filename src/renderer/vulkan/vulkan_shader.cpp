@@ -181,6 +181,42 @@ void VulkanShader::Destroy() {
   pipeline = {};
 }
 
+void VulkanShader::AttachSetResources(uint32_t set,
+                                      std::vector<GPUShaderBinding> &bindings) {
+  VulkanDescriptorBuilder builder = VulkanDescriptorBuilder::Begin();
+  std::vector<VkDescriptorSet> descriptor_sets;
+
+  for (int i = 0; i < bindings.size(); ++i) {
+    switch (bindings[i].type) {
+    case GPU_SHADER_BINDING_TYPE_UNIFORM_BUFFER: {
+      VulkanUniformBuffer *native_buffer =
+          (VulkanUniformBuffer *)bindings[i].uniform_buffer;
+      std::vector<VulkanBuffer> &buffers = native_buffer->GetBuffers();
+
+      descriptor_sets.resize(buffers.size());
+    } break;
+    case GPU_SHADER_BINDING_TYPE_TEXTURE: {
+      VulkanTexture *native_texture = (VulkanTexture *)bindings[i].texture;
+
+      VkDescriptorImageInfo image_info = {};
+      image_info.sampler = native_texture->GetSampler();
+      image_info.imageView = native_texture->GetImageView();
+      image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+      builder = builder.BindImage(bindings[i].binding, &image_info,
+                                  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                  VK_SHADER_STAGE_ALL_GRAPHICS);
+
+      descriptor_sets.resize(1);
+    } break;
+    }
+  }
+
+  for (int i = 0; i < descriptor_sets.size(); ++i) {
+    builder.BuildCached(&descriptor_sets[i]);
+  }
+}
+
 void VulkanShader::AttachUniformBuffer(GPUUniformBuffer *uniform_buffer,
                                        uint32_t set, uint32_t binding) {
   VulkanContext *context = VulkanBackend::GetContext();
@@ -201,9 +237,11 @@ void VulkanShader::AttachUniformBuffer(GPUUniformBuffer *uniform_buffer,
     return;
   }
 
+  std::vector<VulkanBuffer> &buffers = native_uniform_buffer->GetBuffers();
+
   for (int i = 0; i < context->swapchain->GetImageCount(); ++i) {
     VkDescriptorBufferInfo buffer_info = {};
-    buffer_info.buffer = native_uniform_buffer->GetBufferAtFrame(i).GetHandle();
+    buffer_info.buffer = buffers[i].GetHandle();
     buffer_info.offset = 0;
     buffer_info.range = native_uniform_buffer->GetDynamicAlignment();
 
@@ -220,10 +258,9 @@ void VulkanShader::AttachUniformBuffer(GPUUniformBuffer *uniform_buffer,
     write_descriptor_set.pBufferInfo = &buffer_info;
     write_descriptor_set.pTexelBufferView = 0;
 
-    VK_CHECK(vkBindBufferMemory(
-        context->device->GetLogicalDevice(),
-        native_uniform_buffer->GetBufferAtFrame(i).GetHandle(),
-        native_uniform_buffer->GetBufferAtFrame(i).GetMemory(), 0));
+    VK_CHECK(vkBindBufferMemory(context->device->GetLogicalDevice(),
+                                buffers[i].GetHandle(), buffers[i].GetMemory(),
+                                0));
 
     vkUpdateDescriptorSets(context->device->GetLogicalDevice(), 1,
                            &write_descriptor_set, 0, 0);

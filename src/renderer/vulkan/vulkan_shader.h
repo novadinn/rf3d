@@ -33,6 +33,8 @@ public:
               float viewport_width, float viewport_height) override;
   void Destroy() override;
 
+  void AttachSetResources(uint32_t set,
+                          std::vector<GPUShaderBinding> &bindings) override;
   void AttachUniformBuffer(GPUUniformBuffer *uniform_buffer, uint32_t set,
                            uint32_t binding) override;
   void AttachTexture(GPUTexture *texture, uint32_t set,

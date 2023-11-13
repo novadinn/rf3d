@@ -29,6 +29,18 @@ struct GPUShaderConfig {
   std::vector<GPUShaderStageConfig> stage_configs;
 };
 
+enum GPUShaderBindingType {
+  GPU_SHADER_BINDING_TYPE_UNIFORM_BUFFER,
+  GPU_SHADER_BINDING_TYPE_TEXTURE,
+};
+
+struct GPUShaderBinding {
+  GPUShaderBindingType type;
+  uint32_t binding;
+  GPUUniformBuffer *uniform_buffer;
+  GPUTexture *texture;
+};
+
 class GPUShader {
 public:
   virtual ~GPUShader(){};
@@ -37,6 +49,8 @@ public:
                       float viewport_width, float viewport_height) = 0;
   virtual void Destroy() = 0;
 
+  virtual void AttachSetResources(uint32_t set,
+                                  std::vector<GPUShaderBinding> &bindings) = 0;
   virtual void AttachUniformBuffer(GPUUniformBuffer *uniform_buffer,
                                    uint32_t set, uint32_t binding) = 0;
   virtual void AttachTexture(GPUTexture *texture, uint32_t set,
