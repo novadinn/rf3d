@@ -25,7 +25,8 @@ int VulkanUtils::FindMemoryIndex(VkPhysicalDevice physical_device,
 size_t VulkanUtils::GetDynamicAlignment(size_t element_size) {
   VulkanContext *context = VulkanBackend::GetContext();
 
-  size_t min_ubo_alignment = context->device->GetMinUBOAlignment();
+  size_t min_ubo_alignment =
+      context->device->GetProperties().limits.minUniformBufferOffsetAlignment;
   size_t dynamic_alignment = element_size;
   if (min_ubo_alignment > 0) {
     dynamic_alignment =
@@ -46,12 +47,12 @@ VkFormat VulkanUtils::GPUFormatToVulkanFormat(GPUFormat format) {
     return VK_FORMAT_R32G32B32_SFLOAT;
   } break;
   case GPU_FORMAT_RGB8: {
-    return VK_FORMAT_R8G8B8A8_UNORM; /* TODO: VK_FORMAT_R8G8B8_UNORM is
+    return VK_FORMAT_R8G8B8_UNORM; /* TODO: VK_FORMAT_R8G8B8_UNORM is
                                         unsupported on most devices */
   } break;
   case GPU_FORMAT_RGBA8: {
     /* TODO: this is device specific */
-    return VK_FORMAT_B8G8R8A8_UNORM;
+    return VK_FORMAT_R8G8B8A8_SRGB;
   } break;
   case GPU_FORMAT_D24_S8: {
     /* TODO: on my device, d24_s8 is not supported :( fix possibility to use

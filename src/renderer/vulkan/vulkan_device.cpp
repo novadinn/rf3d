@@ -208,10 +208,6 @@ bool VulkanDevice::SupportsDeviceLocalHostVisible() const {
   return false;
 }
 
-bool VulkanDevice::DeviceIsIntegrated() const {
-  return properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
-}
-
 bool VulkanDevice::SelectPhysicalDevice(
     VulkanPhysicalDeviceRequirements *requirements) {
   VulkanContext *context = VulkanBackend::GetContext();

@@ -1,11 +1,11 @@
 #include "vulkan_framebuffer.h"
 
 #include "logger.h"
+#include "vulkan_attachment.h"
 #include "vulkan_backend.h"
 #include "vulkan_context.h"
 #include "vulkan_device.h"
 #include "vulkan_render_pass.h"
-#include "vulkan_texture.h"
 
 bool VulkanFramebuffer::Create(GPURenderPass *target_render_pass,
                                std::vector<GPUAttachment *> target_attachments,
@@ -18,7 +18,8 @@ bool VulkanFramebuffer::Create(GPURenderPass *target_render_pass,
 
   std::vector<VkImageView> attachment_views;
   for (int i = 0; i < target_attachments.size(); ++i) {
-    VulkanTexture *native_attachment = ((VulkanTexture *)target_attachments[i]);
+    VulkanAttachment *native_attachment =
+        ((VulkanAttachment *)target_attachments[i]);
     attachment_views.push_back(native_attachment->GetImageView());
   }
 

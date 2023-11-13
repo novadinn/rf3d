@@ -14,9 +14,12 @@ public:
               uint32_t texture_width, uint32_t texture_height) override;
   void Destroy() override;
 
-  void WriteData(uint8_t *pixels, uint32_t offset) override;
+  void WriteData(void *pixels, uint32_t offset) override;
 
-  inline VkImageView GetImageView() { return view; }
+  inline VkImage GetHandle() const { return handle; }
+  inline VkImageView GetImageView() const { return view; }
+  inline VkDeviceMemory GetMemory() const { return memory; }
+  inline VkSampler GetSampler() const { return sampler; }
 
 private:
   void TransitionLayout(VulkanCommandBuffer *command_buffer, VkFormat format,
@@ -27,4 +30,5 @@ private:
   VkImage handle;
   VkImageView view;
   VkDeviceMemory memory;
+  VkSampler sampler;
 };

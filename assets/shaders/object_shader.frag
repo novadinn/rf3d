@@ -3,11 +3,13 @@
 layout(location = 0) in vec3 outWorldPos;
 layout(location = 1) in vec3 outNormal;
 layout(location = 2) in vec3 outCameraPosition;
+layout(location = 3) in vec2 outTexCoords;
 
 layout(location = 0) out vec4 outColor;
 
 layout(set = 1, binding = 0) uniform WorldUBO { vec4 lights[4]; }
 worldUBO;
+layout(set = 3, binding = 0) uniform sampler2D objectTexture;
 
 layout(push_constant) uniform PushConsts {
   layout(offset = 0) float roughness;
@@ -81,5 +83,5 @@ void main() {
 
   color = pow(color, vec3(0.4545));
 
-  outColor = vec4(color, 1.0);
+  outColor = vec4(color + texture(objectTexture, outTexCoords).xyz, 1.0);
 }

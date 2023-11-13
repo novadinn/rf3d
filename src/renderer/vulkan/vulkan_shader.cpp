@@ -4,6 +4,7 @@
 #include "renderer/gpu_utils.h"
 #include "vulkan_backend.h"
 #include "vulkan_context.h"
+#include "vulkan_texture.h"
 #include "vulkan_utils.h"
 
 #include <map>
@@ -58,7 +59,7 @@ bool VulkanShader::Create(GPUShaderConfig *config, GPURenderPass *render_pass,
     spirv_cross::ShaderResources resources = compiler.get_shader_resources();
     ReflectStagePoolSizes(compiler, resources, pool_sizes);
     ReflectStagePushConstantRanges(compiler, resources, push_constant_ranges);
-    ReflectStageBuffers(compiler, resources, sets);
+    ReflectStageUniforms(compiler, resources, sets);
     if (stage_config->type == GPU_SHADER_STAGE_TYPE_VERTEX) {
       ReflectVertexAttributes(compiler, resources, attributes,
                               &attributes_stride);
@@ -203,8 +204,8 @@ void VulkanShader::Destroy() {
   pipeline = {};
 }
 
-void VulkanShader::AttachShaderBuffer(GPUUniformBuffer *uniform_buffer,
-                                      uint32_t set, uint32_t binding) {
+void VulkanShader::AttachUniformBuffer(GPUUniformBuffer *uniform_buffer,
+                                       uint32_t set, uint32_t binding) {
   VulkanContext *context = VulkanBackend::GetContext();
 
   VulkanUniformBuffer *native_uniform_buffer =
@@ -252,6 +253,48 @@ void VulkanShader::AttachShaderBuffer(GPUUniformBuffer *uniform_buffer,
   }
 }
 
+void VulkanShader::AttachTexture(GPUTexture *texture, uint32_t set,
+                                 uint32_t binding) {
+  VulkanContext *context = VulkanBackend::GetContext();
+
+  VulkanTexture *native_texture = (VulkanTexture *)texture;
+
+  std::vector<VkDescriptorSet> descriptor_sets;
+  for (int i = 0; i < shader_sets.size(); ++i) {
+    if (shader_sets[i].index == set) {
+      descriptor_sets = shader_sets[i].sets;
+      break;
+    }
+  }
+
+  if (descriptor_sets.empty()) {
+    ERROR("Failed to attach shader buffer - no such set index exists!");
+    return;
+  }
+
+  VkDescriptorImageInfo image_info = {};
+  image_info.sampler = native_texture->GetSampler();
+  image_info.imageView = native_texture->GetImageView();
+  image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+  VkWriteDescriptorSet write_descriptor_set = {};
+  write_descriptor_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+  write_descriptor_set.pNext = 0;
+  /* TODO: no need to create a descriptor set for each frame for textures */
+  write_descriptor_set.dstSet = descriptor_sets[0];
+  write_descriptor_set.dstBinding = binding;
+  write_descriptor_set.dstArrayElement = 0;
+  write_descriptor_set.descriptorCount = 1;
+  write_descriptor_set.descriptorType =
+      VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+  write_descriptor_set.pImageInfo = &image_info;
+  write_descriptor_set.pBufferInfo = 0;
+  write_descriptor_set.pTexelBufferView = 0;
+
+  vkUpdateDescriptorSets(context->device->GetLogicalDevice(), 1,
+                         &write_descriptor_set, 0, 0);
+}
+
 void VulkanShader::Bind() {
   VulkanContext *context = VulkanBackend::GetContext();
 
@@ -264,8 +307,7 @@ void VulkanShader::Bind() {
   pipeline.Bind(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
 }
 
-void VulkanShader::BindShaderBuffer(GPUUniformBuffer *uniform_buffer,
-                                    uint32_t set, uint32_t offset) {
+void VulkanShader::BindUniformBuffer(uint32_t set, uint32_t offset) {
   VulkanContext *context = VulkanBackend::GetContext();
 
   VulkanDeviceQueueInfo info =
@@ -293,6 +335,33 @@ void VulkanShader::BindShaderBuffer(GPUUniformBuffer *uniform_buffer,
                           &offset);
 }
 
+void VulkanShader::BindTexture(uint32_t set) {
+  VulkanContext *context = VulkanBackend::GetContext();
+
+  VulkanDeviceQueueInfo info =
+      context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_GRAPHICS);
+
+  VulkanCommandBuffer *command_buffer =
+      &info.command_buffers[context->image_index];
+
+  std::vector<VkDescriptorSet> descriptor_sets;
+  for (int i = 0; i < shader_sets.size(); ++i) {
+    if (shader_sets[i].index == set) {
+      descriptor_sets = shader_sets[i].sets;
+      break;
+    }
+  }
+
+  if (descriptor_sets.empty()) {
+    ERROR("Failed to bind shader buffer - no such set index exists!");
+    return;
+  }
+
+  vkCmdBindDescriptorSets(command_buffer->GetHandle(),
+                          VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.GetLayout(),
+                          set, 1, &descriptor_sets[0], 0, 0);
+}
+
 void VulkanShader::PushConstant(GPUShaderPushConstant *push_constant) {
   VulkanContext *context = VulkanBackend::GetContext();
 
@@ -312,6 +381,8 @@ void VulkanShader::PushConstant(GPUShaderPushConstant *push_constant) {
 void VulkanShader::ReflectStagePoolSizes(
     spirv_cross::Compiler &compiler, spirv_cross::ShaderResources &resources,
     std::vector<VkDescriptorPoolSize> &pool_sizes) {
+  /* TODO: since this is evaluated for each shader stage, there may be
+   * duplications of pool sizes */
   if (!resources.uniform_buffers.empty()) {
     VkDescriptorPoolSize pool_size = {};
     pool_size.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
@@ -319,41 +390,27 @@ void VulkanShader::ReflectStagePoolSizes(
         1024; /* TODO: HACK! max number of descriptors in a pool */
     pool_sizes.emplace_back(pool_size);
   }
+  if (!resources.sampled_images.empty()) {
+    VkDescriptorPoolSize pool_size = {};
+    pool_size.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    pool_size.descriptorCount =
+        1024; /* TODO: HACK! max number of descriptors in a pool */
+    pool_sizes.emplace_back(pool_size);
+  }
 }
 
-void VulkanShader::ReflectStageBuffers(spirv_cross::Compiler &compiler,
-                                       spirv_cross::ShaderResources &resources,
-                                       std::vector<VulkanShaderSet> &sets) {
+void VulkanShader::ReflectStageUniforms(spirv_cross::Compiler &compiler,
+                                        spirv_cross::ShaderResources &resources,
+                                        std::vector<VulkanShaderSet> &sets) {
   for (auto &buffer : resources.uniform_buffers) {
     uint32_t set =
         compiler.get_decoration(buffer.id, spv::DecorationDescriptorSet);
     uint32_t binding =
         compiler.get_decoration(buffer.id, spv::DecorationBinding);
 
-    /* check if binding is duplicated in shader stages */
-    for (int i = 0; i < sets.size(); ++i) {
-      if (sets[i].index == set) {
-        for (int j = 0; j < sets[i].bindings.size(); ++j) {
-          if (sets[i].bindings[j].layout_binding.binding == binding) {
-            return;
-          }
-        }
-      }
-    }
-
-    /* check if set is already presented */
     int32_t set_index = -1;
-    for (int i = 0; i < sets.size(); ++i) {
-      if (sets[i].index == set) {
-        uint32_t set_index = i;
-        break;
-      }
-    }
-    if (set_index == -1) {
-      VulkanShaderSet shader_set;
-      shader_set.index = set;
-      sets.emplace_back(shader_set);
-      set_index = sets.size() - 1;
+    if (!UpdateDescriptorSetsReflection(sets, set, binding, &set_index)) {
+      return; /* set and binding are duplicated */
     }
 
     uint32_t binding_size = 0;
@@ -373,6 +430,32 @@ void VulkanShader::ReflectStageBuffers(spirv_cross::Compiler &compiler,
     VulkanShaderBinding shader_binding;
     shader_binding.layout_binding = layout_binding;
     shader_binding.size = binding_size;
+
+    sets[set_index].bindings.emplace_back(shader_binding);
+  }
+
+  for (auto &image : resources.sampled_images) {
+    uint32_t set =
+        compiler.get_decoration(image.id, spv::DecorationDescriptorSet);
+    uint32_t binding =
+        compiler.get_decoration(image.id, spv::DecorationBinding);
+
+    int32_t set_index = -1;
+    if (!UpdateDescriptorSetsReflection(sets, set, binding, &set_index)) {
+      return; /* set and binding are duplicated */
+    }
+
+    VkDescriptorSetLayoutBinding layout_binding = {};
+    layout_binding.binding = binding;
+    layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    layout_binding.descriptorCount = 1; /* for array of uniforms */
+    layout_binding.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS; /* TODO: we are
+                           not checking in which stages this is presented */
+    layout_binding.pImmutableSamplers = 0; /* texture samplers */
+
+    VulkanShaderBinding shader_binding;
+    shader_binding.layout_binding = layout_binding;
+    shader_binding.size = 0;
 
     sets[set_index].bindings.emplace_back(shader_binding);
   }
@@ -451,4 +534,38 @@ void VulkanShader::ReflectVertexAttributes(
   }
 
   *out_stride = offset;
+}
+
+bool VulkanShader::UpdateDescriptorSetsReflection(
+    std::vector<VulkanShaderSet> &sets, uint32_t set, uint32_t binding,
+    int32_t *out_set_index) {
+  /* check if binding is duplicated in shader stages */
+  for (int i = 0; i < sets.size(); ++i) {
+    if (sets[i].index == set) {
+      for (int j = 0; j < sets[i].bindings.size(); ++j) {
+        if (sets[i].bindings[j].layout_binding.binding == binding) {
+          return false;
+        }
+      }
+    }
+  }
+
+  /* check if set is already presented */
+  int32_t set_index = -1;
+  for (int i = 0; i < sets.size(); ++i) {
+    if (sets[i].index == set) {
+      set_index = i;
+      break;
+    }
+  }
+  if (set_index == -1) {
+    VulkanShaderSet shader_set;
+    shader_set.index = set;
+    sets.emplace_back(shader_set);
+    set_index = sets.size() - 1;
+  }
+
+  *out_set_index = set_index;
+
+  return true;
 }

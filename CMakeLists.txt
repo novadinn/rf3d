@@ -89,6 +89,7 @@ file(GLOB TEXTURES
   "assets/textures/brickwall.jpg"
   "assets/textures/metal.png"
   "assets/textures/wood.png"
+  "assets/textures/grass.png"
 )
 foreach(TEXTURE ${TEXTURES})
   get_filename_component(FILE_NAME ${TEXTURE} NAME)

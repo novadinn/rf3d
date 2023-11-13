@@ -18,7 +18,7 @@ struct PushConsts {
 };
 
 struct MeshParams {
-  // GPUTexture *texture;
+  GPUTexture *texture;
   glm::vec3 position;
   PushConsts push_constants;
 };
@@ -40,15 +40,17 @@ void load_texture(GPUTexture *texture, const char *path) {
   int texture_width, texture_height, texture_num_channels;
   stbi_set_flip_vertically_on_load(true);
   unsigned char *data = stbi_load(path, &texture_width, &texture_height,
-                                  &texture_num_channels, 0);
+                                  &texture_num_channels, STBI_rgb_alpha);
   if (!data) {
     FATAL("Failed to load image!");
+    return;
   }
 
-  texture->Create(GPU_FORMAT_RGB8, GPU_TEXTURE_TYPE_2D, texture_width,
+  texture->Create(GPU_FORMAT_RGBA8, GPU_TEXTURE_TYPE_2D, texture_width,
                   texture_height);
   texture->WriteData(data, 0);
 
+  stbi_set_flip_vertically_on_load(false);
   stbi_image_free(data);
 }
 
@@ -75,17 +77,17 @@ int main(int argc, char **argv) {
 
   std::vector<MeshParams> meshes(3);
   for (int i = 0; i < meshes.size(); ++i) {
-    // meshes[i].texture = frontend->TextureAllocate();
+    meshes[i].texture = frontend->TextureAllocate();
   }
 
-  // loadTexture(meshes[0].texture, "assets/textures/metal.png");
+  load_texture(meshes[0].texture, "assets/textures/metal.png");
   meshes[0].position = glm::vec3(0, 0, 0.0f);
   meshes[0].push_constants =
       PushConsts{0.1f, 1.0f, 0.672411f, 0.637331f, 0.585456f};
-  // loadTexture(meshes[1].texture, "assets/textures/brickwall.jpg");
+  load_texture(meshes[1].texture, "assets/textures/brickwall.jpg");
   meshes[1].position = glm::vec3(2, 0, 0.0f);
   meshes[1].push_constants = PushConsts{0.8f, 0.2f, 1, 0, 0};
-  // loadTexture(meshes[2].texture, "assets/textures/wood.png");
+  load_texture(meshes[2].texture, "assets/textures/wood.png");
   meshes[2].position = glm::vec3(-2, 0, 0.0f);
   meshes[2].push_constants = PushConsts{0.5f, 0.5f, 0, 1, 0};
 
@@ -152,9 +154,10 @@ int main(int argc, char **argv) {
   world_uniform->Create(sizeof(WorldUBO));
   instance_uniform->Create(sizeof(InstanceUBO), meshes.size());
 
-  shader->AttachShaderBuffer(global_uniform, 0, 0);
-  shader->AttachShaderBuffer(world_uniform, 1, 0);
-  shader->AttachShaderBuffer(instance_uniform, 2, 0);
+  shader->AttachUniformBuffer(global_uniform, 0, 0);
+  shader->AttachUniformBuffer(world_uniform, 1, 0);
+  shader->AttachUniformBuffer(instance_uniform, 2, 0);
+  shader->AttachTexture(meshes[0].texture, 3, 0);
 
   bool running = true;
   while (running) {
@@ -197,7 +200,7 @@ int main(int argc, char **argv) {
           glm::radians(45.0f), (float)width / (float)height, 0.1f, 1000.0f);
 
       global_uniform->LoadData(0, global_uniform->GetSize(), &global_ubo);
-      shader->BindShaderBuffer(global_uniform, 0, 0);
+      shader->BindUniformBuffer(0, 0);
 
       WorldUBO world_ubo = {};
       const float p = 5.0f;
@@ -207,7 +210,9 @@ int main(int argc, char **argv) {
       world_ubo.lights[3] = glm::vec4(p, p, p, 1.0f);
 
       world_uniform->LoadData(0, world_uniform->GetSize(), &world_ubo);
-      shader->BindShaderBuffer(world_uniform, 1, 0);
+      shader->BindUniformBuffer(1, 0);
+
+      shader->BindTexture(3);
 
       for (int i = 0; i < meshes.size(); ++i) {
         std::vector<InstanceUBO> instance_ubos;
@@ -224,8 +229,8 @@ int main(int argc, char **argv) {
 
         instance_uniform->LoadData(0, instance_uniform->GetSize(),
                                    instance_ubos.data());
-        shader->BindShaderBuffer(instance_uniform, 2,
-                                 i * instance_uniform->GetDynamicAlignment());
+        shader->BindUniformBuffer(2,
+                                  i * instance_uniform->GetDynamicAlignment());
 
         push_constant.value = &meshes[i].push_constants;
         shader->PushConstant(&push_constant);
@@ -240,8 +245,8 @@ int main(int argc, char **argv) {
   }
 
   for (int i = 0; i < meshes.size(); ++i) {
-    // meshes[i].texture->Destroy();
-    // delete meshes[i].texture;
+    meshes[i].texture->Destroy();
+    delete meshes[i].texture;
   }
   instance_uniform->Destroy();
   delete instance_uniform;

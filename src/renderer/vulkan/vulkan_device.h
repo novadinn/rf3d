@@ -52,14 +52,14 @@ public:
     return swapchain_support_info;
   }
   inline VkFormat GetDepthFormat() const { return depth_format; }
-  inline size_t GetMinUBOAlignment() const {
-    return properties.limits.minUniformBufferOffsetAlignment;
-  }
 
   bool SupportsDeviceLocalHostVisible() const;
-  /* TODO: this is unused rn. Possible uses includes getting rid of staging
-   * copy and copying via memcpy */
-  bool DeviceIsIntegrated() const;
+
+  inline VkPhysicalDeviceProperties GetProperties() const { return properties; }
+  inline VkPhysicalDeviceFeatures GetFeatures() const { return features; }
+  inline VkPhysicalDeviceMemoryProperties GetMemoryProperties() const {
+    return memory;
+  }
 
 private:
   bool SelectPhysicalDevice(VulkanPhysicalDeviceRequirements *requirements);

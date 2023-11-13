@@ -1,6 +1,7 @@
 #pragma once
 
 #include "renderer/gpu_shader.h"
+#include "renderer/gpu_texture.h"
 #include "vulkan_buffer.h"
 #include "vulkan_pipeline.h"
 #include "vulkan_uniform_buffer.h"
@@ -32,12 +33,14 @@ public:
               float viewport_width, float viewport_height) override;
   void Destroy() override;
 
-  void AttachShaderBuffer(GPUUniformBuffer *uniform_buffer, uint32_t set,
-                          uint32_t binding) override;
+  void AttachUniformBuffer(GPUUniformBuffer *uniform_buffer, uint32_t set,
+                           uint32_t binding) override;
+  void AttachTexture(GPUTexture *texture, uint32_t set,
+                     uint32_t binding) override;
 
   void Bind() override;
-  void BindShaderBuffer(GPUUniformBuffer *uniform_buffer, uint32_t set,
-                        uint32_t offset) override;
+  void BindUniformBuffer(uint32_t set, uint32_t offset) override;
+  void BindTexture(uint32_t set) override;
   void PushConstant(GPUShaderPushConstant *push_constant) override;
 
   inline VulkanPipeline &GetPipeline() { return pipeline; }
@@ -50,13 +53,16 @@ private:
       spirv_cross::Compiler &compiler, spirv_cross::ShaderResources &resources,
       std::vector<VkPushConstantRange> &push_constant_ranges);
   /* TODO: only uniform buffers are supported rn */
-  void ReflectStageBuffers(spirv_cross::Compiler &compiler,
-                           spirv_cross::ShaderResources &resources,
-                           std::vector<VulkanShaderSet> &sets);
+  void ReflectStageUniforms(spirv_cross::Compiler &compiler,
+                            spirv_cross::ShaderResources &resources,
+                            std::vector<VulkanShaderSet> &sets);
   void ReflectVertexAttributes(
       spirv_cross::Compiler &compiler, spirv_cross::ShaderResources &resources,
       std::vector<VkVertexInputAttributeDescription> &attributes,
       uint64_t *out_stride);
+  bool UpdateDescriptorSetsReflection(std::vector<VulkanShaderSet> &sets,
+                                      uint32_t set, uint32_t binding,
+                                      int32_t *out_set_index);
 
   VulkanPipeline pipeline;
   VkDescriptorPool descriptor_pool;

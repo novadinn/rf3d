@@ -13,6 +13,7 @@ public:
   void SetImageView(VkImageView new_view) { /* TODO: copy construcor */
     view = new_view;
   }
+  inline VkImageView GetImageView() const { return view; }
 
 private:
   VkImage handle;
