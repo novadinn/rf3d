@@ -59,6 +59,12 @@ VkFormat VulkanUtils::GPUFormatToVulkanFormat(GPUFormat format) {
      * stencil buffer later */
     return context->device->GetDepthFormat();
   } break;
+  case GPU_FORMAT_DEVICE_COLOR_OPTIMAL: {
+    return context->swapchain->GetImageFormat().format;
+  } break;
+  case GPU_FORMAT_DEVICE_DEPTH_OPTIMAL: {
+    return context->device->GetDepthFormat();
+  } break;
   default: {
     ERROR("Unsupported shader attribute format!");
     return VK_FORMAT_UNDEFINED;

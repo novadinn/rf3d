@@ -19,4 +19,5 @@ private:
   VkImage handle;
   VkImageView view;
   VkDeviceMemory memory;
+  VkSampler sampler;
 };

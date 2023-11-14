@@ -35,6 +35,7 @@ public:
   GPURenderTarget *RenderTargetAllocate();
   GPUShader *ShaderAllocate();
   GPUTexture *TextureAllocate();
+  GPUAttachment *AttachmentAllocate();
   GPUDescriptorSet *DescriptorSetAllocate();
 
 private:

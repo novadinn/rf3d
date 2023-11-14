@@ -185,6 +185,32 @@ int main(int argc, char **argv) {
     bindings.clear();
   }
 
+  GPURenderPass *offscreen_render_pass = frontend->RenderPassAllocate();
+  offscreen_render_pass->Create(
+      std::vector<GPURenderPassAttachment>{
+          GPURenderPassAttachment{GPU_FORMAT_DEVICE_COLOR_OPTIMAL,
+                                  GPU_ATTACHMENT_USAGE_COLOR_ATTACHMENT},
+          GPURenderPassAttachment{
+              GPU_FORMAT_DEVICE_DEPTH_OPTIMAL,
+              GPU_ATTACHMENT_USAGE_DEPTH_STENCIL_ATTACHMENT}},
+      glm::vec4(0, 0, width, height), glm::vec4(0, 0, 0, 1), 1.0f, 0.0f,
+      GPU_RENDER_PASS_CLEAR_FLAG_COLOR | GPU_RENDER_PASS_CLEAR_FLAG_DEPTH |
+          GPU_RENDER_PASS_CLEAR_FLAG_STENCIL);
+  GPUAttachment *offscreen_color_attachment = frontend->AttachmentAllocate();
+  offscreen_color_attachment->Create(GPU_FORMAT_DEVICE_COLOR_OPTIMAL,
+                                     GPU_ATTACHMENT_USAGE_COLOR_ATTACHMENT,
+                                     width, height);
+  GPUAttachment *offscreen_depth_attachment = frontend->AttachmentAllocate();
+  offscreen_depth_attachment->Create(
+      GPU_FORMAT_DEVICE_DEPTH_OPTIMAL,
+      GPU_ATTACHMENT_USAGE_DEPTH_STENCIL_ATTACHMENT, width, height);
+  GPURenderTarget *offscreen_render_target = frontend->RenderTargetAllocate();
+  offscreen_render_target->Create(
+      offscreen_render_pass,
+      std::vector<GPUAttachment *>{offscreen_color_attachment,
+                                   offscreen_depth_attachment},
+      width, height);
+
   bool running = true;
   while (running) {
     SDL_Event event;
@@ -266,10 +292,18 @@ int main(int argc, char **argv) {
 
       window_render_pass->End();
 
+      offscreen_render_pass->Begin(offscreen_render_target);
+      offscreen_render_pass->End();
+
       frontend->EndFrame();
     }
   }
 
+  offscreen_render_target->Destroy();
+  offscreen_depth_attachment->Destroy();
+  offscreen_color_attachment->Destroy();
+  offscreen_render_pass->Destroy();
+  delete offscreen_render_pass;
   for (int i = 0; i < meshes.size(); ++i) {
     meshes[i].texture->Destroy();
     delete meshes[i].texture;

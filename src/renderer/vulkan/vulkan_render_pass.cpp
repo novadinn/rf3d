@@ -7,6 +7,7 @@
 #include "vulkan_context.h"
 #include "vulkan_device.h"
 #include "vulkan_swapchain.h"
+#include "vulkan_utils.h"
 
 void VulkanRenderPass::Create(
     std::vector<GPURenderPassAttachment> pass_render_attachments,
@@ -30,9 +31,8 @@ void VulkanRenderPass::Create(
 
     VkAttachmentDescription attachment = {};
     attachment.flags = 0;
-    attachment.format = is_depth_attachment
-                            ? context->device->GetDepthFormat()
-                            : context->swapchain->GetImageFormat().format;
+    attachment.format =
+        VulkanUtils::GPUFormatToVulkanFormat(attachments[i].format);
     attachment.samples = VK_SAMPLE_COUNT_1_BIT;
     attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     attachment.storeOp = is_depth_attachment ? VK_ATTACHMENT_STORE_OP_DONT_CARE

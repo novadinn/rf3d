@@ -83,6 +83,10 @@ GPUTexture *RendererFrontend::TextureAllocate() {
   return backend->TextureAllocate();
 }
 
+GPUAttachment *RendererFrontend::AttachmentAllocate() {
+  return backend->AttachmentAllocate();
+}
+
 GPUDescriptorSet *RendererFrontend::DescriptorSetAllocate() {
   return backend->DescriptorSetAllocate();
 }

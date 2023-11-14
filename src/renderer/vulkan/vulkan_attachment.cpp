@@ -23,8 +23,7 @@ void VulkanAttachment::Create(GPUFormat attachment_format,
   if (GPUUtils::IsDepthFormat(format)) {
     usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
   } else {
-    usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-            VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
   }
 
   /* TODO: a lot of hardcoded stuff */
@@ -92,12 +91,35 @@ void VulkanAttachment::Create(GPUFormat attachment_format,
 
   VK_CHECK(vkCreateImageView(context->device->GetLogicalDevice(),
                              &view_create_info, context->allocator, &view));
+
+  /* TODO: create sampler only if needed, and only if it is a color attachment
+   */
+  VkSamplerCreateInfo sampler_create_info = {};
+  sampler_create_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+  sampler_create_info.pNext = 0;
+  sampler_create_info.flags = 0;
+  sampler_create_info.magFilter = VK_FILTER_LINEAR;
+  sampler_create_info.minFilter = VK_FILTER_LINEAR;
+  sampler_create_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+  sampler_create_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+  sampler_create_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+  sampler_create_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+  sampler_create_info.mipLodBias = 0.0f;
+  sampler_create_info.maxAnisotropy = 1.0f;
+  sampler_create_info.minLod = 0.0f;
+  sampler_create_info.maxLod = 1.0f;
+  sampler_create_info.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+  VK_CHECK(vkCreateSampler(context->device->GetLogicalDevice(),
+                           &sampler_create_info, context->allocator, &sampler));
 }
 
 void VulkanAttachment::Destroy() {
   VulkanContext *context = VulkanBackend::GetContext();
 
   vkDeviceWaitIdle(context->device->GetLogicalDevice());
+
+  vkDestroySampler(context->device->GetLogicalDevice(), sampler,
+                   context->allocator);
 
   vkDestroyImageView(context->device->GetLogicalDevice(), view,
                      context->allocator);

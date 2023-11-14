@@ -36,5 +36,6 @@ public:
   virtual GPURenderTarget *RenderTargetAllocate() = 0;
   virtual GPUShader *ShaderAllocate() = 0;
   virtual GPUTexture *TextureAllocate() = 0;
+  virtual GPUAttachment *AttachmentAllocate() = 0;
   virtual GPUDescriptorSet *DescriptorSetAllocate() = 0;
 };

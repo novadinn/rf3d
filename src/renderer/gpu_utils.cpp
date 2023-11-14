@@ -54,5 +54,6 @@ int GPUUtils::GetGPUFormatCount(GPUFormat format) {
 }
 
 bool GPUUtils::IsDepthFormat(GPUFormat format) {
-  return format == GPU_FORMAT_D24_S8;
+  return format == GPU_FORMAT_D24_S8 ||
+         format == GPU_FORMAT_DEVICE_DEPTH_OPTIMAL;
 }
