@@ -135,7 +135,6 @@ int main(int argc, char **argv) {
   vertex_buffer->LoadData(0, vertices.size() * sizeof(vertices[0]),
                           vertices.data());
 
-  /* TODO: it may be possible to determine stage types via spirv-reflect */
   GPUShaderConfig shader_config = {};
   shader_config.stage_configs.emplace_back(GPUShaderStageConfig{
       GPU_SHADER_STAGE_TYPE_VERTEX, "assets/shaders/object_shader.vert.spv"});
@@ -154,10 +153,32 @@ int main(int argc, char **argv) {
   world_uniform->Create(sizeof(WorldUBO));
   instance_uniform->Create(sizeof(InstanceUBO), meshes.size());
 
-  shader->AttachUniformBuffer(global_uniform, 0, 0);
-  shader->AttachUniformBuffer(world_uniform, 1, 0);
-  shader->AttachUniformBuffer(instance_uniform, 2, 0);
-  shader->AttachTexture(meshes[0].texture, 3, 0);
+  GPUDescriptorSet *global_descriptor_set = frontend->DescriptorSetAllocate();
+  GPUDescriptorSet *world_descriptor_set = frontend->DescriptorSetAllocate();
+  GPUDescriptorSet *instance_descriptor_set = frontend->DescriptorSetAllocate();
+  GPUDescriptorSet *texture_descriptor_set = frontend->DescriptorSetAllocate();
+
+  /* TODO: we can query this info from the shader */
+  std::vector<GPUDescriptorBinding> bindings;
+  bindings.emplace_back(GPUDescriptorBinding{
+      0, GPU_DESCRIPTOR_BINDING_TYPE_UNIFORM_BUFFER, 0, global_uniform});
+  global_descriptor_set->Create(0, bindings);
+  bindings.clear();
+
+  bindings.emplace_back(GPUDescriptorBinding{
+      0, GPU_DESCRIPTOR_BINDING_TYPE_UNIFORM_BUFFER, 0, world_uniform});
+  world_descriptor_set->Create(1, bindings);
+  bindings.clear();
+
+  bindings.emplace_back(GPUDescriptorBinding{
+      0, GPU_DESCRIPTOR_BINDING_TYPE_UNIFORM_BUFFER, 0, instance_uniform});
+  instance_descriptor_set->Create(2, bindings);
+  bindings.clear();
+
+  bindings.emplace_back(GPUDescriptorBinding{
+      0, GPU_DESCRIPTOR_BINDING_TYPE_TEXTURE, meshes[0].texture, 0});
+  texture_descriptor_set->Create(3, bindings);
+  bindings.clear();
 
   bool running = true;
   while (running) {
@@ -200,7 +221,7 @@ int main(int argc, char **argv) {
           glm::radians(45.0f), (float)width / (float)height, 0.1f, 1000.0f);
 
       global_uniform->LoadData(0, global_uniform->GetSize(), &global_ubo);
-      shader->BindUniformBuffer(0, 0);
+      shader->BindUniformBuffer(global_descriptor_set, 0);
 
       WorldUBO world_ubo = {};
       const float p = 5.0f;
@@ -210,9 +231,9 @@ int main(int argc, char **argv) {
       world_ubo.lights[3] = glm::vec4(p, p, p, 1.0f);
 
       world_uniform->LoadData(0, world_uniform->GetSize(), &world_ubo);
-      shader->BindUniformBuffer(1, 0);
+      shader->BindUniformBuffer(world_descriptor_set, 0);
 
-      shader->BindTexture(3);
+      shader->BindTexture(texture_descriptor_set);
 
       for (int i = 0; i < meshes.size(); ++i) {
         std::vector<InstanceUBO> instance_ubos;
@@ -229,7 +250,7 @@ int main(int argc, char **argv) {
 
         instance_uniform->LoadData(0, instance_uniform->GetSize(),
                                    instance_ubos.data());
-        shader->BindUniformBuffer(2,
+        shader->BindUniformBuffer(instance_descriptor_set,
                                   i * instance_uniform->GetDynamicAlignment());
 
         push_constant.value = &meshes[i].push_constants;

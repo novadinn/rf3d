@@ -1,5 +1,6 @@
 #include "vulkan_descriptor_builder.h"
 
+#include "logger.h"
 #include "vulkan_backend.h"
 
 VulkanDescriptorBuilder VulkanDescriptorBuilder::Begin() {
@@ -9,15 +10,18 @@ VulkanDescriptorBuilder VulkanDescriptorBuilder::Begin() {
 
 VulkanDescriptorBuilder &VulkanDescriptorBuilder::BindBuffer(
     uint32_t binding, VkDescriptorBufferInfo *buffer_info,
-    VkDescriptorType type, VkShaderStageFlags stage_flags) {
-  VkDescriptorSetLayoutBinding layout_binding = {};
-  layout_binding.binding = binding;
-  layout_binding.descriptorType = type;
-  layout_binding.descriptorCount = 1;
-  layout_binding.stageFlags = stage_flags;
-  layout_binding.pImmutableSamplers = nullptr;
+    VkDescriptorType type, VkShaderStageFlags stage_flags, bool repeat) {
+  /* TODO: we can just check if this binding is already present in the array */
+  if (!repeat) {
+    VkDescriptorSetLayoutBinding layout_binding = {};
+    layout_binding.binding = binding;
+    layout_binding.descriptorType = type;
+    layout_binding.descriptorCount = 1;
+    layout_binding.stageFlags = stage_flags;
+    layout_binding.pImmutableSamplers = nullptr;
 
-  bindings.emplace_back(layout_binding);
+    bindings.emplace_back(layout_binding);
+  }
 
   VkWriteDescriptorSet write_descriptor_set = {};
   write_descriptor_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -37,15 +41,17 @@ VulkanDescriptorBuilder &VulkanDescriptorBuilder::BindBuffer(
 
 VulkanDescriptorBuilder &VulkanDescriptorBuilder::BindImage(
     uint32_t binding, VkDescriptorImageInfo *image_info, VkDescriptorType type,
-    VkShaderStageFlags stage_flags) {
-  VkDescriptorSetLayoutBinding layout_binding = {};
-  layout_binding.binding = binding;
-  layout_binding.descriptorType = type;
-  layout_binding.descriptorCount = 1;
-  layout_binding.stageFlags = stage_flags;
-  layout_binding.pImmutableSamplers = nullptr;
+    VkShaderStageFlags stage_flags, bool repeat) {
+  if (!repeat) {
+    VkDescriptorSetLayoutBinding layout_binding = {};
+    layout_binding.binding = binding;
+    layout_binding.descriptorType = type;
+    layout_binding.descriptorCount = 1;
+    layout_binding.stageFlags = stage_flags;
+    layout_binding.pImmutableSamplers = nullptr;
 
-  bindings.emplace_back(layout_binding);
+    bindings.emplace_back(layout_binding);
+  }
 
   VkWriteDescriptorSet write_descriptor_set = {};
   write_descriptor_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -69,7 +75,7 @@ bool VulkanDescriptorBuilder::Build(VkDescriptorSet *out_set,
 
   VkDescriptorSetLayoutCreateInfo layout_info = {};
   layout_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-  layout_info.pNext = nullptr;
+  layout_info.pNext = 0;
   layout_info.flags = 0;
   layout_info.pBindings = bindings.data();
   layout_info.bindingCount = bindings.size();
@@ -86,12 +92,7 @@ bool VulkanDescriptorBuilder::Build(VkDescriptorSet *out_set,
   }
 
   vkUpdateDescriptorSets(context->device->GetLogicalDevice(), writes.size(),
-                         writes.data(), 0, nullptr);
+                         writes.data(), 0, 0);
 
   return true;
-}
-
-bool VulkanDescriptorBuilder::BuildCached(VkDescriptorSet *out_set) {
-  VkDescriptorSetLayout layout;
-  return Build(out_set, &layout);
 }

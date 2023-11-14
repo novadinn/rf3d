@@ -64,6 +64,7 @@ set(SRC
   src/renderer/vulkan/vulkan_descriptor_pools.cpp
   src/renderer/vulkan/vulkan_descriptor_layout_cache.cpp
   src/renderer/vulkan/vulkan_descriptor_builder.cpp
+  src/renderer/vulkan/vulkan_descriptor_set.cpp
 )
 
 add_executable(

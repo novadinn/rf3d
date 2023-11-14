@@ -48,6 +48,10 @@ bool VulkanBuffer::Create(uint64_t buffer_size, VkBufferUsageFlags usage_flags,
   VK_CHECK(vkAllocateMemory(context->device->GetLogicalDevice(), &allocate_info,
                             context->allocator, &memory));
 
+  /* TODO: is there a limit of max bound buffers? */
+  VK_CHECK(vkBindBufferMemory(context->device->GetLogicalDevice(), handle,
+                              memory, 0));
+
   return true;
 }
 
@@ -104,11 +108,11 @@ bool VulkanBuffer::LoadDataStaging(uint64_t offset, uint64_t size, void *data) {
   }
 
   staging_buffer.LoadData(0, staging_buffer.GetSize(), data);
-  VK_CHECK(vkBindBufferMemory(context->device->GetLogicalDevice(),
-                              staging_buffer.GetHandle(),
-                              staging_buffer.GetMemory(), 0));
-  VK_CHECK(vkBindBufferMemory(context->device->GetLogicalDevice(), handle,
-                              memory, 0));
+  // VK_CHECK(vkBindBufferMemory(context->device->GetLogicalDevice(),
+  //                             staging_buffer.GetHandle(),
+  //                             staging_buffer.GetMemory(), 0));
+  // VK_CHECK(vkBindBufferMemory(context->device->GetLogicalDevice(), handle,
+  //                             memory, 0));
 
   staging_buffer.CopyTo(this, 0, 0, staging_buffer.GetSize());
 

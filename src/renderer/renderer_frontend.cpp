@@ -74,3 +74,7 @@ GPUShader *RendererFrontend::ShaderAllocate() {
 GPUTexture *RendererFrontend::TextureAllocate() {
   return backend->TextureAllocate();
 }
+
+GPUDescriptorSet *RendererFrontend::DescriptorSetAllocate() {
+  return backend->DescriptorSetAllocate();
+}

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "renderer/gpu_descriptor_set.h"
 #include "renderer/gpu_index_buffer.h"
 #include "renderer/gpu_render_pass.h"
 #include "renderer/gpu_render_target.h"
@@ -33,4 +34,5 @@ public:
   virtual GPURenderTarget *RenderTargetAllocate() = 0;
   virtual GPUShader *ShaderAllocate() = 0;
   virtual GPUTexture *TextureAllocate() = 0;
+  virtual GPUDescriptorSet *DescriptorSetAllocate() = 0;
 };

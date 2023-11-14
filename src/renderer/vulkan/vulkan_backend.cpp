@@ -3,6 +3,7 @@
 #include "logger.h"
 #include "platform.h"
 #include "renderer/gpu_shader.h"
+#include "vulkan_descriptor_set.h"
 #include "vulkan_index_buffer.h"
 #include "vulkan_render_pass.h"
 #include "vulkan_texture.h"
@@ -343,6 +344,10 @@ GPURenderPass *VulkanBackend::RenderPassAllocate() {
 GPUShader *VulkanBackend::ShaderAllocate() { return new VulkanShader(); }
 
 GPUTexture *VulkanBackend::TextureAllocate() { return new VulkanTexture(); }
+
+GPUDescriptorSet *VulkanBackend::DescriptorSetAllocate() {
+  return new VulkanDescriptorSet();
+}
 
 VulkanContext *VulkanBackend::GetContext() { return context; }
 

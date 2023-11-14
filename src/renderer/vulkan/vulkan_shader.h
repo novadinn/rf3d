@@ -1,5 +1,6 @@
 #pragma once
 
+#include "renderer/gpu_descriptor_set.h"
 #include "renderer/gpu_shader.h"
 #include "renderer/gpu_texture.h"
 #include "vulkan_buffer.h"
@@ -12,15 +13,14 @@
 #include <vector>
 #include <vulkan/vulkan.h>
 
+/* used for reflection */
 struct VulkanShaderBinding {
   VkDescriptorSetLayoutBinding layout_binding;
   uint64_t size;
 };
 
+/* used for reflection */
 struct VulkanShaderSet {
-  VkDescriptorSetLayout layout;
-  /* one per frame */
-  std::vector<VkDescriptorSet> sets;
   std::vector<VulkanShaderBinding> bindings;
   uint32_t index;
 };
@@ -33,16 +33,9 @@ public:
               float viewport_width, float viewport_height) override;
   void Destroy() override;
 
-  void AttachSetResources(uint32_t set,
-                          std::vector<GPUShaderBinding> &bindings) override;
-  void AttachUniformBuffer(GPUUniformBuffer *uniform_buffer, uint32_t set,
-                           uint32_t binding) override;
-  void AttachTexture(GPUTexture *texture, uint32_t set,
-                     uint32_t binding) override;
-
   void Bind() override;
-  void BindUniformBuffer(uint32_t set, uint32_t offset) override;
-  void BindTexture(uint32_t set) override;
+  void BindUniformBuffer(GPUDescriptorSet *set, uint32_t offset) override;
+  void BindTexture(GPUDescriptorSet *set) override;
   void PushConstant(GPUShaderPushConstant *push_constant) override;
 
   inline VulkanPipeline &GetPipeline() { return pipeline; }
@@ -51,7 +44,6 @@ private:
   void ReflectStagePushConstantRanges(
       spirv_cross::Compiler &compiler, spirv_cross::ShaderResources &resources,
       std::vector<VkPushConstantRange> &push_constant_ranges);
-  /* TODO: only uniform buffers are supported rn */
   void ReflectStageUniforms(spirv_cross::Compiler &compiler,
                             spirv_cross::ShaderResources &resources,
                             std::vector<VulkanShaderSet> &sets);

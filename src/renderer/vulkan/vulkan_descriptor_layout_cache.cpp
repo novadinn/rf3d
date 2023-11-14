@@ -1,5 +1,6 @@
 #include "vulkan_descriptor_layout_cache.h"
 
+#include "logger.h"
 #include "vulkan_backend.h"
 
 void VulkanDescriptorLayoutCache::Initialize() {}
@@ -44,6 +45,7 @@ VkDescriptorSetLayout VulkanDescriptorLayoutCache::CreateDescriptorLayout(
   if (it != layout_cache.end()) {
     return (*it).second;
   }
+
   VkDescriptorSetLayout layout;
   VK_CHECK(vkCreateDescriptorSetLayout(context->device->GetLogicalDevice(),
                                        layout_create_info, context->allocator,
@@ -57,23 +59,24 @@ bool VulkanDescriptorLayoutCache::DescriptorLayoutInfo::operator==(
     const DescriptorLayoutInfo &other) const {
   if (other.bindings.size() != bindings.size()) {
     return false;
-  } else {
-    for (int i = 0; i < bindings.size(); i++) {
-      if (other.bindings[i].binding != bindings[i].binding) {
-        return false;
-      }
-      if (other.bindings[i].descriptorType != bindings[i].descriptorType) {
-        return false;
-      }
-      if (other.bindings[i].descriptorCount != bindings[i].descriptorCount) {
-        return false;
-      }
-      if (other.bindings[i].stageFlags != bindings[i].stageFlags) {
-        return false;
-      }
-    }
-    return true;
   }
+
+  for (int i = 0; i < bindings.size(); i++) {
+    if (other.bindings[i].binding != bindings[i].binding) {
+      return false;
+    }
+    if (other.bindings[i].descriptorType != bindings[i].descriptorType) {
+      return false;
+    }
+    if (other.bindings[i].descriptorCount != bindings[i].descriptorCount) {
+      return false;
+    }
+    if (other.bindings[i].stageFlags != bindings[i].stageFlags) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 size_t VulkanDescriptorLayoutCache::DescriptorLayoutInfo::hash() const {

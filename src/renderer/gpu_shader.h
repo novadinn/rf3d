@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gpu_core.h"
+#include "gpu_descriptor_set.h"
 #include "gpu_render_pass.h"
 #include "gpu_texture.h"
 #include "gpu_uniform_buffer.h"
@@ -49,16 +50,9 @@ public:
                       float viewport_width, float viewport_height) = 0;
   virtual void Destroy() = 0;
 
-  virtual void AttachSetResources(uint32_t set,
-                                  std::vector<GPUShaderBinding> &bindings) = 0;
-  virtual void AttachUniformBuffer(GPUUniformBuffer *uniform_buffer,
-                                   uint32_t set, uint32_t binding) = 0;
-  virtual void AttachTexture(GPUTexture *texture, uint32_t set,
-                             uint32_t binding) = 0;
-
   virtual void Bind() = 0;
-  virtual void BindUniformBuffer(uint32_t set, uint32_t offset) = 0;
-  virtual void BindTexture(uint32_t set) = 0;
+  virtual void BindUniformBuffer(GPUDescriptorSet *set, uint32_t offset) = 0;
+  virtual void BindTexture(GPUDescriptorSet *set) = 0;
   virtual void PushConstant(GPUShaderPushConstant *push_constant) = 0;
 
 protected:
