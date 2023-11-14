@@ -17,11 +17,9 @@ public:
 
   bool LoadData(uint64_t offset, uint64_t size, void *data) override;
 
-  uint64_t GetSize() const override;
-
-  std::vector<VulkanBuffer> &GetBuffers() { return buffers; }
+  inline uint64_t GetSize() const override;
+  inline VulkanBuffer &GetBuffer() { return buffer; }
 
 private:
-  /* one per frame */
-  std::vector<VulkanBuffer> buffers;
+  VulkanBuffer buffer;
 };

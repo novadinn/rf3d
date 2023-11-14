@@ -10,11 +10,10 @@ public:
               std::vector<GPUDescriptorBinding> &set_bindings) override;
   void Destroy() override;
 
-  inline std::vector<VkDescriptorSet> &GetSets() { return sets; }
+  inline VkDescriptorSet &GetSet() { return set; }
   inline VkDescriptorSetLayout GetLayout() { return layout; }
 
 private:
-  /* one per frame (if needed) */
-  std::vector<VkDescriptorSet> sets;
+  VkDescriptorSet set;
   VkDescriptorSetLayout layout;
 };

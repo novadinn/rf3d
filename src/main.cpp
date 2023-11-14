@@ -158,8 +158,8 @@ int main(int argc, char **argv) {
   GPUDescriptorSet *instance_descriptor_set = frontend->DescriptorSetAllocate();
   GPUDescriptorSet *texture_descriptor_set = frontend->DescriptorSetAllocate();
 
-  /* TODO: we can query this info from the shader */
   std::vector<GPUDescriptorBinding> bindings;
+
   bindings.emplace_back(GPUDescriptorBinding{
       0, GPU_DESCRIPTOR_BINDING_TYPE_UNIFORM_BUFFER, 0, global_uniform});
   global_descriptor_set->Create(0, bindings);

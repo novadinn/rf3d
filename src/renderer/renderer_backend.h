@@ -26,6 +26,8 @@ public:
 
   virtual GPURenderPass *GetWindowRenderPass() = 0;
   virtual GPURenderTarget *GetCurrentWindowRenderTarget() = 0;
+  virtual uint32_t GetCurrentFrameIndex() = 0;
+  virtual uint32_t GetMaxFramesInFlight() = 0;
 
   virtual GPUVertexBuffer *VertexBufferAllocate() = 0;
   virtual GPUIndexBuffer *IndexBufferAllocate() = 0;

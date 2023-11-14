@@ -23,6 +23,10 @@ public:
 
   GPURenderPass *GetWindowRenderPass();
   GPURenderTarget *GetCurrentWindowRenderTarget();
+  /* TODO: those 2 are unused right now, but if we want a more smooth rendering,
+   * all of the writable resources should be arrays and use those 2 methodss */
+  uint32_t GetCurrentFrameIndex();
+  uint32_t GetMaxFramesInFlight();
 
   GPUVertexBuffer *VertexBufferAllocate();
   GPUIndexBuffer *IndexBufferAllocate();

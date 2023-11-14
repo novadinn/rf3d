@@ -176,10 +176,10 @@ void VulkanShader::BindUniformBuffer(GPUDescriptorSet *set, uint32_t offset) {
 
   VulkanDescriptorSet *native_set = (VulkanDescriptorSet *)set;
 
-  vkCmdBindDescriptorSets(
-      command_buffer->GetHandle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
-      pipeline.GetLayout(), set->GetIndex(), 1,
-      &native_set->GetSets()[context->image_index], 1, &offset);
+  vkCmdBindDescriptorSets(command_buffer->GetHandle(),
+                          VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.GetLayout(),
+                          set->GetIndex(), 1, &native_set->GetSet(), 1,
+                          &offset);
 }
 
 void VulkanShader::BindTexture(GPUDescriptorSet *set) {
@@ -195,7 +195,7 @@ void VulkanShader::BindTexture(GPUDescriptorSet *set) {
 
   vkCmdBindDescriptorSets(command_buffer->GetHandle(),
                           VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.GetLayout(),
-                          set->GetIndex(), 1, &native_set->GetSets()[0], 0, 0);
+                          set->GetIndex(), 1, &native_set->GetSet(), 0, 0);
 }
 
 void VulkanShader::PushConstant(GPUShaderPushConstant *push_constant) {

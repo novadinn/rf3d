@@ -21,6 +21,8 @@ public:
 
   GPURenderPass *GetWindowRenderPass() override;
   GPURenderTarget *GetCurrentWindowRenderTarget() override;
+  uint32_t GetCurrentFrameIndex() override;
+  uint32_t GetMaxFramesInFlight() override;
 
   GPUVertexBuffer *VertexBufferAllocate() override;
   GPUIndexBuffer *IndexBufferAllocate() override;

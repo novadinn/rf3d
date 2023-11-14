@@ -10,11 +10,11 @@ public:
   VulkanDescriptorBuilder &BindBuffer(uint32_t binding,
                                       VkDescriptorBufferInfo *buffer_info,
                                       VkDescriptorType type,
-                                      VkShaderStageFlags stage_flags,
-                                      bool repeat);
-  VulkanDescriptorBuilder &
-  BindImage(uint32_t binding, VkDescriptorImageInfo *image_info,
-            VkDescriptorType type, VkShaderStageFlags stage_flags, bool repeat);
+                                      VkShaderStageFlags stage_flags);
+  VulkanDescriptorBuilder &BindImage(uint32_t binding,
+                                     VkDescriptorImageInfo *image_info,
+                                     VkDescriptorType type,
+                                     VkShaderStageFlags stage_flags);
 
   bool Build(VkDescriptorSet *out_set, VkDescriptorSetLayout *out_layout);
 

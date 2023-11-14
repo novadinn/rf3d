@@ -321,6 +321,14 @@ GPURenderTarget *VulkanBackend::GetCurrentWindowRenderTarget() {
   return main_framebuffers[context->image_index];
 }
 
+uint32_t VulkanBackend::GetCurrentFrameIndex() {
+  return context->current_frame;
+}
+
+uint32_t VulkanBackend::GetMaxFramesInFlight() {
+  return context->swapchain->GetMaxFramesInFlights();
+}
+
 GPUVertexBuffer *VulkanBackend::VertexBufferAllocate() {
   return new VulkanVertexBuffer();
 }

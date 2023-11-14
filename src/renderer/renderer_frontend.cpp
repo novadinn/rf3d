@@ -47,6 +47,14 @@ GPURenderTarget *RendererFrontend::GetCurrentWindowRenderTarget() {
   return backend->GetCurrentWindowRenderTarget();
 }
 
+uint32_t RendererFrontend::GetCurrentFrameIndex() {
+  return backend->GetCurrentFrameIndex();
+}
+
+uint32_t RendererFrontend::GetMaxFramesInFlight() {
+  return backend->GetMaxFramesInFlight();
+}
+
 GPUVertexBuffer *RendererFrontend::VertexBufferAllocate() {
   return backend->VertexBufferAllocate();
 }

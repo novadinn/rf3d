@@ -19,29 +19,24 @@ void VulkanDescriptorSet::Create(
     GPUDescriptorBinding &binding = bindings[i];
     switch (binding.type) {
     case GPU_DESCRIPTOR_BINDING_TYPE_UNIFORM_BUFFER: {
-      sets.resize(context->swapchain->GetImageCount());
-      for (int j = 0; j < sets.size(); ++j) {
-        VulkanUniformBuffer *native_uniform_buffer =
-            (VulkanUniformBuffer *)binding.uniform_buffer;
+      VulkanUniformBuffer *native_uniform_buffer =
+          (VulkanUniformBuffer *)binding.uniform_buffer;
 
-        VkDescriptorBufferInfo buffer_info = {};
-        buffer_info.buffer = native_uniform_buffer->GetBuffers()[j].GetHandle();
-        buffer_info.offset = 0;
-        buffer_info.range = native_uniform_buffer->GetDynamicAlignment();
+      VkDescriptorBufferInfo buffer_info = {};
+      buffer_info.buffer = native_uniform_buffer->GetBuffer().GetHandle();
+      buffer_info.offset = 0;
+      buffer_info.range = native_uniform_buffer->GetDynamicAlignment();
 
-        // VK_CHECK(vkBindBufferMemory(
-        //     context->device->GetLogicalDevice(),
-        //     native_uniform_buffer->GetBuffers()[j].GetHandle(),
-        //     native_uniform_buffer->GetBuffers()[j].GetMemory(), 0));
+      // VK_CHECK(vkBindBufferMemory(
+      //     context->device->GetLogicalDevice(),
+      //     native_uniform_buffer->GetBuffers()[j].GetHandle(),
+      //     native_uniform_buffer->GetBuffers()[j].GetMemory(), 0));
 
-        builder = builder.BindBuffer(binding.binding, &buffer_info,
-                                     VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
-                                     VK_SHADER_STAGE_ALL_GRAPHICS, j != 0);
-      }
+      builder = builder.BindBuffer(binding.binding, &buffer_info,
+                                   VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+                                   VK_SHADER_STAGE_ALL_GRAPHICS);
     } break;
     case GPU_DESCRIPTOR_BINDING_TYPE_TEXTURE: {
-      sets.resize(1);
-
       VulkanTexture *native_texture = (VulkanTexture *)binding.texture;
 
       VkDescriptorImageInfo image_info = {};
@@ -51,14 +46,12 @@ void VulkanDescriptorSet::Create(
 
       builder = builder.BindImage(binding.binding, &image_info,
                                   VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                  VK_SHADER_STAGE_ALL_GRAPHICS, false);
+                                  VK_SHADER_STAGE_ALL_GRAPHICS);
     } break;
     }
   }
 
-  for (int i = 0; i < sets.size(); ++i) {
-    builder.Build(&sets[i], &layout);
-  }
+  builder.Build(&set, &layout);
 }
 
 void VulkanDescriptorSet::Destroy() {

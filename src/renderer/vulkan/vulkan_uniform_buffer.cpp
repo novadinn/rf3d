@@ -14,48 +14,27 @@ bool VulkanUniformBuffer::Create(uint64_t buffer_element_size,
                                    ? VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
                                    : 0;
 
-  buffers.resize(context->swapchain->GetImageCount());
-  for (int i = 0; i < buffers.size(); ++i) {
-    if (!buffers[i].Create(buffer_size,
-                           VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT |
-                               VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                               VK_MEMORY_PROPERTY_HOST_COHERENT_BIT |
-                               device_local_bits)) {
-      return false;
-    }
+  if (!buffer.Create(
+          buffer_size,
+          VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+              VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | device_local_bits)) {
+    return false;
   }
 
   return true;
 }
 
-void VulkanUniformBuffer::Destroy() {
-  for (int i = 0; i < buffers.size(); ++i) {
-    buffers[i].Destroy();
-  }
-  buffers.clear();
-}
+void VulkanUniformBuffer::Destroy() { buffer.Destroy(); }
 
 void *VulkanUniformBuffer::Lock(uint64_t offset, uint64_t size) {
-  VulkanContext *context = VulkanBackend::GetContext();
-
-  return buffers[context->image_index].Lock(offset, size);
+  return buffer.Lock(offset, size);
 }
 
-void VulkanUniformBuffer::Unlock() {
-  VulkanContext *context = VulkanBackend::GetContext();
-
-  buffers[context->image_index].Unlock();
-}
+void VulkanUniformBuffer::Unlock() { buffer.Unlock(); }
 
 bool VulkanUniformBuffer::LoadData(uint64_t offset, uint64_t size, void *data) {
-  VulkanContext *context = VulkanBackend::GetContext();
-
-  return buffers[context->image_index].LoadData(offset, size, data);
+  return buffer.LoadData(offset, size, data);
 }
 
-uint64_t VulkanUniformBuffer::GetSize() const {
-  VulkanContext *context = VulkanBackend::GetContext();
-
-  return buffers[context->image_index].GetSize();
-}
+uint64_t VulkanUniformBuffer::GetSize() const { return buffer.GetSize(); }

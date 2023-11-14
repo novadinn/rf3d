@@ -10,18 +10,15 @@ VulkanDescriptorBuilder VulkanDescriptorBuilder::Begin() {
 
 VulkanDescriptorBuilder &VulkanDescriptorBuilder::BindBuffer(
     uint32_t binding, VkDescriptorBufferInfo *buffer_info,
-    VkDescriptorType type, VkShaderStageFlags stage_flags, bool repeat) {
-  /* TODO: we can just check if this binding is already present in the array */
-  if (!repeat) {
-    VkDescriptorSetLayoutBinding layout_binding = {};
-    layout_binding.binding = binding;
-    layout_binding.descriptorType = type;
-    layout_binding.descriptorCount = 1;
-    layout_binding.stageFlags = stage_flags;
-    layout_binding.pImmutableSamplers = nullptr;
+    VkDescriptorType type, VkShaderStageFlags stage_flags) {
+  VkDescriptorSetLayoutBinding layout_binding = {};
+  layout_binding.binding = binding;
+  layout_binding.descriptorType = type;
+  layout_binding.descriptorCount = 1;
+  layout_binding.stageFlags = stage_flags;
+  layout_binding.pImmutableSamplers = nullptr;
 
-    bindings.emplace_back(layout_binding);
-  }
+  bindings.emplace_back(layout_binding);
 
   VkWriteDescriptorSet write_descriptor_set = {};
   write_descriptor_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -41,17 +38,15 @@ VulkanDescriptorBuilder &VulkanDescriptorBuilder::BindBuffer(
 
 VulkanDescriptorBuilder &VulkanDescriptorBuilder::BindImage(
     uint32_t binding, VkDescriptorImageInfo *image_info, VkDescriptorType type,
-    VkShaderStageFlags stage_flags, bool repeat) {
-  if (!repeat) {
-    VkDescriptorSetLayoutBinding layout_binding = {};
-    layout_binding.binding = binding;
-    layout_binding.descriptorType = type;
-    layout_binding.descriptorCount = 1;
-    layout_binding.stageFlags = stage_flags;
-    layout_binding.pImmutableSamplers = nullptr;
+    VkShaderStageFlags stage_flags) {
+  VkDescriptorSetLayoutBinding layout_binding = {};
+  layout_binding.binding = binding;
+  layout_binding.descriptorType = type;
+  layout_binding.descriptorCount = 1;
+  layout_binding.stageFlags = stage_flags;
+  layout_binding.pImmutableSamplers = nullptr;
 
-    bindings.emplace_back(layout_binding);
-  }
+  bindings.emplace_back(layout_binding);
 
   VkWriteDescriptorSet write_descriptor_set = {};
   write_descriptor_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
