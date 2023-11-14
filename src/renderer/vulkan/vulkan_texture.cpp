@@ -12,6 +12,11 @@ void VulkanTexture::Create(GPUFormat texture_format,
                            uint32_t texture_height) {
   VulkanContext *context = VulkanBackend::GetContext();
 
+  uint32_t mip_levels =
+      static_cast<uint32_t>(
+          std::floor(std::log2(std::max(texture_width, texture_height)))) +
+      1;
+
   format = texture_format;
   type = texture_type;
   width = texture_width;
@@ -43,12 +48,13 @@ void VulkanTexture::Create(GPUFormat texture_format,
   image_create_info.extent.width = width;
   image_create_info.extent.height = height;
   image_create_info.extent.depth = 1;
-  image_create_info.mipLevels = 1;
+  image_create_info.mipLevels = mip_levels;
   image_create_info.arrayLayers = array_layers;
   image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
   image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-  image_create_info.usage =
-      VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+  image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                            VK_IMAGE_USAGE_SAMPLED_BIT |
+                            VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
   image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
   image_create_info.queueFamilyIndexCount = 0;
   image_create_info.pQueueFamilyIndices = 0;
@@ -92,7 +98,7 @@ void VulkanTexture::Create(GPUFormat texture_format,
   /* view_create_info.components; */
   view_create_info.subresourceRange.aspectMask = native_aspect_flags;
   view_create_info.subresourceRange.baseMipLevel = 0;
-  view_create_info.subresourceRange.levelCount = 1;
+  view_create_info.subresourceRange.levelCount = mip_levels;
   view_create_info.subresourceRange.baseArrayLayer = 0;
   view_create_info.subresourceRange.layerCount = 1;
 
@@ -110,21 +116,18 @@ void VulkanTexture::Create(GPUFormat texture_format,
   sampler_create_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
   sampler_create_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
   sampler_create_info.mipLodBias = 0.0f;
-  /* TODO: */
-  // if (context->device->GetFeatures().samplerAnisotropy) {
-  //   sampler_create_info.anisotropyEnable = VK_TRUE;
-  //   sampler_create_info.maxAnisotropy =
-  //       context->device->GetProperties().limits.maxSamplerAnisotropy;
-  // } else {
-  //   sampler_create_info.anisotropyEnable = VK_FALSE;
-  //   sampler_create_info.maxAnisotropy = 1.0f;
-  // }
-  sampler_create_info.anisotropyEnable = VK_FALSE;
-  sampler_create_info.maxAnisotropy = 1.0f;
+  if (context->device->GetFeatures().samplerAnisotropy) {
+    sampler_create_info.anisotropyEnable = VK_TRUE;
+    sampler_create_info.maxAnisotropy =
+        context->device->GetProperties().limits.maxSamplerAnisotropy;
+  } else {
+    sampler_create_info.anisotropyEnable = VK_FALSE;
+    sampler_create_info.maxAnisotropy = 1.0f;
+  }
   sampler_create_info.compareEnable = VK_FALSE;
-  sampler_create_info.compareOp = VK_COMPARE_OP_ALWAYS;
+  sampler_create_info.compareOp = VK_COMPARE_OP_NEVER;
   sampler_create_info.minLod = 0.0f;
-  sampler_create_info.maxLod = 0.0f;
+  sampler_create_info.maxLod = (float)mip_levels;
   sampler_create_info.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
   sampler_create_info.unnormalizedCoordinates = VK_FALSE;
 
@@ -156,6 +159,9 @@ void VulkanTexture::Destroy() {
 void VulkanTexture::WriteData(void *pixels, uint32_t offset) {
   VulkanContext *context = VulkanBackend::GetContext();
 
+  uint32_t mip_levels =
+      static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
+
   VkFormat native_format = VulkanUtils::GPUFormatToVulkanFormat(format);
 
   uint32_t channel_count = GPUUtils::GetGPUFormatCount(format);
@@ -167,9 +173,8 @@ void VulkanTexture::WriteData(void *pixels, uint32_t offset) {
                      VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
   staging.LoadData(0, size, pixels);
 
-  /* TODO: or transfer? */
   VulkanDeviceQueueInfo queue_info =
-      context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_GRAPHICS);
+      context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_TRANSFER);
   VkCommandPool command_pool = queue_info.command_pool;
   VkQueue queue = queue_info.queue;
 
@@ -180,11 +185,18 @@ void VulkanTexture::WriteData(void *pixels, uint32_t offset) {
                    VK_IMAGE_LAYOUT_UNDEFINED,
                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
   CopyFromBuffer(&staging, &temp_command_buffer, 0);
-  TransitionLayout(&temp_command_buffer, native_format,
-                   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                   VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+  if (mip_levels < 2) {
+    TransitionLayout(&temp_command_buffer, native_format,
+                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+  }
+
   temp_command_buffer.FreeAndEndSingleUse(command_pool, queue);
   staging.Destroy();
+
+  if (!(mip_levels < 2)) {
+    GenerateMipMaps();
+  }
 }
 
 void VulkanTexture::TransitionLayout(VulkanCommandBuffer *command_buffer,
@@ -192,9 +204,11 @@ void VulkanTexture::TransitionLayout(VulkanCommandBuffer *command_buffer,
                                      VkImageLayout new_layout) {
   VulkanContext *context = VulkanBackend::GetContext();
 
-  /* TODO: or transfer? */
+  uint32_t mip_levels =
+      static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
+
   VulkanDeviceQueueInfo graphics_queue_info =
-      context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_GRAPHICS);
+      context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_TRANSFER);
 
   uint32_t array_layers = 0;
   switch (type) {
@@ -214,7 +228,7 @@ void VulkanTexture::TransitionLayout(VulkanCommandBuffer *command_buffer,
   barrier.image = handle;
   barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
   barrier.subresourceRange.baseMipLevel = 0;
-  barrier.subresourceRange.levelCount = 1;
+  barrier.subresourceRange.levelCount = mip_levels;
   barrier.subresourceRange.baseArrayLayer = 0;
   barrier.subresourceRange.layerCount = array_layers;
 
@@ -267,6 +281,9 @@ void VulkanTexture::CopyFromBuffer(VulkanBuffer *buffer,
                                    uint64_t offset) {
   VulkanContext *context = VulkanBackend::GetContext();
 
+  uint32_t mip_levels =
+      static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
+
   uint32_t array_layers = 0;
   switch (type) {
   case GPU_TEXTURE_TYPE_2D: {
@@ -276,6 +293,26 @@ void VulkanTexture::CopyFromBuffer(VulkanBuffer *buffer,
     ERROR("Unsupported image type!");
   } break;
   }
+
+  // std::vector<VkBufferImageCopy> image_copies;
+  // image_copies.resize(mip_levels);
+  // for (int i = 0; i < image_copies.size(); ++i) {
+  //   VkBufferImageCopy region = {};
+  //   region.bufferOffset = offset;
+  //   region.bufferRowLength = 0;
+  //   region.bufferImageHeight = 0;
+  //   region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+  //   region.imageSubresource.mipLevel = i;
+  //   region.imageSubresource.baseArrayLayer = 0;
+  //   region.imageSubresource.layerCount = array_layers;
+  //   region.imageOffset.x = 0;
+  //   region.imageOffset.y = 0;
+  //   region.imageOffset.z = 0;
+  //   region.imageExtent.width = width >> i;
+  //   region.imageExtent.height = height >> i;
+  //   region.imageExtent.depth = 1;
+  //   image_copies[i] = region;
+  // }
 
   VkBufferImageCopy region = {};
   region.bufferOffset = offset;
@@ -294,7 +331,109 @@ void VulkanTexture::CopyFromBuffer(VulkanBuffer *buffer,
 
   // VK_CHECK(vkBindBufferMemory(context->device->GetLogicalDevice(),
   //                             buffer->GetHandle(), buffer->GetMemory(), 0));
+  // vkCmdCopyBufferToImage(command_buffer->GetHandle(), buffer->GetHandle(),
+  //                        handle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+  //                        image_copies.size(), image_copies.data());
   vkCmdCopyBufferToImage(command_buffer->GetHandle(), buffer->GetHandle(),
                          handle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
                          &region);
+}
+
+void VulkanTexture::GenerateMipMaps() {
+  VulkanContext *context = VulkanBackend::GetContext();
+
+  uint32_t mip_levels =
+      static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
+  VkFormat native_format = VulkanUtils::GPUFormatToVulkanFormat(format);
+
+  VkFormatProperties format_properties;
+  vkGetPhysicalDeviceFormatProperties(context->device->GetPhysicalDevice(),
+                                      native_format, &format_properties);
+
+  if (!(format_properties.optimalTilingFeatures &
+        VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
+    ERROR("Texture image format does not support linear blitting!");
+    return;
+  }
+
+  VulkanDeviceQueueInfo queue_info =
+      context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_TRANSFER);
+  VkCommandPool command_pool = queue_info.command_pool;
+  VkQueue queue = queue_info.queue;
+
+  VulkanCommandBuffer temp_command_buffer;
+  temp_command_buffer.AllocateAndBeginSingleUse(command_pool);
+
+  VkImageMemoryBarrier barrier = {};
+  barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+  barrier.image = handle;
+  barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+  barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+  barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+  barrier.subresourceRange.baseArrayLayer = 0;
+  barrier.subresourceRange.layerCount = 1;
+  barrier.subresourceRange.levelCount = 1;
+
+  int32_t mip_width = width;
+  int32_t mip_height = height;
+
+  for (uint32_t i = 1; i < mip_levels; ++i) {
+    barrier.subresourceRange.baseMipLevel = i - 1;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+    vkCmdPipelineBarrier(
+        temp_command_buffer.GetHandle(), VK_PIPELINE_STAGE_TRANSFER_BIT,
+        VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+
+    VkImageBlit blit = {};
+    blit.srcOffsets[0] = {0, 0, 0};
+    blit.srcOffsets[1] = {mip_width, mip_height, 1};
+    blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    blit.srcSubresource.mipLevel = i - 1;
+    blit.srcSubresource.baseArrayLayer = 0;
+    blit.srcSubresource.layerCount = 1;
+    blit.dstOffsets[0] = {0, 0, 0};
+    blit.dstOffsets[1] = {mip_width > 1 ? mip_width / 2 : 1,
+                          mip_height > 1 ? mip_height / 2 : 1, 1};
+    blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    blit.dstSubresource.mipLevel = i;
+    blit.dstSubresource.baseArrayLayer = 0;
+    blit.dstSubresource.layerCount = 1;
+
+    vkCmdBlitImage(temp_command_buffer.GetHandle(), handle,
+                   VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, handle,
+                   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit,
+                   VK_FILTER_LINEAR);
+
+    barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+    vkCmdPipelineBarrier(temp_command_buffer.GetHandle(),
+                         VK_PIPELINE_STAGE_TRANSFER_BIT,
+                         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr,
+                         0, nullptr, 1, &barrier);
+
+    if (mip_width > 1)
+      mip_width /= 2;
+    if (mip_height > 1)
+      mip_height /= 2;
+  }
+
+  barrier.subresourceRange.baseMipLevel = mip_levels - 1;
+  barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+  barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+  barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+  barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+  vkCmdPipelineBarrier(temp_command_buffer.GetHandle(),
+                       VK_PIPELINE_STAGE_TRANSFER_BIT,
+                       VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0,
+                       nullptr, 1, &barrier);
+
+  temp_command_buffer.FreeAndEndSingleUse(command_pool, queue);
 }

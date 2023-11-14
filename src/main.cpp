@@ -18,6 +18,7 @@ struct PushConsts {
 };
 
 struct MeshParams {
+  GPUDescriptorSet *texture_descriptor_set;
   GPUTexture *texture;
   glm::vec3 position;
   PushConsts push_constants;
@@ -84,10 +85,10 @@ int main(int argc, char **argv) {
   meshes[0].position = glm::vec3(0, 0, 0.0f);
   meshes[0].push_constants =
       PushConsts{0.1f, 1.0f, 0.672411f, 0.637331f, 0.585456f};
-  load_texture(meshes[1].texture, "assets/textures/brickwall.jpg");
+  load_texture(meshes[1].texture, "assets/textures/wood.png");
   meshes[1].position = glm::vec3(2, 0, 0.0f);
   meshes[1].push_constants = PushConsts{0.8f, 0.2f, 1, 0, 0};
-  load_texture(meshes[2].texture, "assets/textures/wood.png");
+  load_texture(meshes[2].texture, "assets/textures/brickwall.jpg");
   meshes[2].position = glm::vec3(-2, 0, 0.0f);
   meshes[2].push_constants = PushConsts{0.5f, 0.5f, 0, 1, 0};
 
@@ -156,7 +157,9 @@ int main(int argc, char **argv) {
   GPUDescriptorSet *global_descriptor_set = frontend->DescriptorSetAllocate();
   GPUDescriptorSet *world_descriptor_set = frontend->DescriptorSetAllocate();
   GPUDescriptorSet *instance_descriptor_set = frontend->DescriptorSetAllocate();
-  GPUDescriptorSet *texture_descriptor_set = frontend->DescriptorSetAllocate();
+  for (int i = 0; i < meshes.size(); ++i) {
+    meshes[i].texture_descriptor_set = frontend->DescriptorSetAllocate();
+  }
 
   std::vector<GPUDescriptorBinding> bindings;
 
@@ -175,10 +178,12 @@ int main(int argc, char **argv) {
   instance_descriptor_set->Create(2, bindings);
   bindings.clear();
 
-  bindings.emplace_back(GPUDescriptorBinding{
-      0, GPU_DESCRIPTOR_BINDING_TYPE_TEXTURE, meshes[0].texture, 0});
-  texture_descriptor_set->Create(3, bindings);
-  bindings.clear();
+  for (int i = 0; i < meshes.size(); ++i) {
+    bindings.emplace_back(GPUDescriptorBinding{
+        0, GPU_DESCRIPTOR_BINDING_TYPE_TEXTURE, meshes[i].texture, 0});
+    meshes[i].texture_descriptor_set->Create(3, bindings);
+    bindings.clear();
+  }
 
   bool running = true;
   while (running) {
@@ -233,8 +238,6 @@ int main(int argc, char **argv) {
       world_uniform->LoadData(0, world_uniform->GetSize(), &world_ubo);
       shader->BindUniformBuffer(world_descriptor_set, 0);
 
-      shader->BindTexture(texture_descriptor_set);
-
       for (int i = 0; i < meshes.size(); ++i) {
         std::vector<InstanceUBO> instance_ubos;
         for (int j = 0; j < meshes.size(); ++j) {
@@ -252,6 +255,8 @@ int main(int argc, char **argv) {
                                    instance_ubos.data());
         shader->BindUniformBuffer(instance_descriptor_set,
                                   i * instance_uniform->GetDynamicAlignment());
+
+        shader->BindTexture(meshes[i].texture_descriptor_set);
 
         push_constant.value = &meshes[i].push_constants;
         shader->PushConstant(&push_constant);

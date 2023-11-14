@@ -26,6 +26,7 @@ private:
                         VkImageLayout old_layout, VkImageLayout new_layout);
   void CopyFromBuffer(VulkanBuffer *buffer, VulkanCommandBuffer *command_buffer,
                       uint64_t offset);
+  void GenerateMipMaps();
 
   VkImage handle;
   VkImageView view;

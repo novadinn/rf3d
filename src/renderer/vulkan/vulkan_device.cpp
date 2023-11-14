@@ -62,9 +62,8 @@ bool VulkanDevice::Create(VulkanPhysicalDeviceRequirements *requirements) {
   required_extension_names.emplace_back("VK_KHR_portability_subset");
 #endif
 
-  /* TODO: make this part of requirements, and then check if supported via
-   * this->features */
   VkPhysicalDeviceFeatures device_features = {};
+  device_features.samplerAnisotropy = VK_TRUE;
 
   VkDeviceCreateInfo device_create_info = {};
   device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
