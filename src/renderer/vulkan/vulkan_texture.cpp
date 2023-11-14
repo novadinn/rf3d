@@ -356,7 +356,7 @@ void VulkanTexture::GenerateMipMaps() {
   }
 
   VulkanDeviceQueueInfo queue_info =
-      context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_TRANSFER);
+      context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_GRAPHICS);
   VkCommandPool command_pool = queue_info.command_pool;
   VkQueue queue = queue_info.queue;
 
