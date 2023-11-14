@@ -18,7 +18,6 @@ struct GPUShaderPushConstant {
 enum GPUShaderStageType {
   GPU_SHADER_STAGE_TYPE_VERTEX,
   GPU_SHADER_STAGE_TYPE_FRAGMENT,
-  /* TODO: others */
 };
 
 struct GPUShaderStageConfig {

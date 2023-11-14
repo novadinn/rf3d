@@ -38,7 +38,6 @@ void VulkanTexture::Create(GPUFormat texture_format,
   } break;
   }
 
-  /* TODO: a lot of hardcoded stuff */
   VkImageCreateInfo image_create_info = {};
   image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
   image_create_info.pNext = 0;

@@ -66,7 +66,6 @@ bool VulkanBackend::Initialize(SDL_Window *sdl_window) {
     return false;
   }
 
-  /* TODO: temp */
   int width, height;
   SDL_Vulkan_GetDrawableSize(window, &width, &height);
 

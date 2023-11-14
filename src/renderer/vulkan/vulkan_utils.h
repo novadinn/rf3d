@@ -16,7 +16,6 @@ public:
   GPUShaderStageTypeToVulkanStage(GPUShaderStageType stage);
   static VkImageAspectFlags
   GPUTextureUsageToVulkanAspectFlags(GPUAttachmentUsage usage);
-  /* TODO: not type, flags */
   static VkShaderStageFlags
   GPUShaderStageFlagsToVulkanShaderStageFlags(uint8_t stage_flags);
 };

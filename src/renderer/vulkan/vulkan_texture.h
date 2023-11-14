@@ -7,7 +7,6 @@
 #include <stdint.h>
 #include <vulkan/vulkan.h>
 
-/* TODO: we dont need to have both texture and image classes */
 class VulkanTexture : public GPUTexture {
 public:
   void Create(GPUFormat texture_format, GPUTextureType texture_type,

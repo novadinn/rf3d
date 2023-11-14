@@ -26,7 +26,6 @@ void VulkanAttachment::Create(GPUFormat attachment_format,
     usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
   }
 
-  /* TODO: a lot of hardcoded stuff */
   VkImageCreateInfo image_create_info = {};
   image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
   image_create_info.pNext = 0;

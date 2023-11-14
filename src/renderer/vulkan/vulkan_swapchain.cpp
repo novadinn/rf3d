@@ -167,7 +167,6 @@ bool VulkanSwapchain::AcquireNextImage(uint64_t timeout_ns,
       vkAcquireNextImageKHR(context->device->GetLogicalDevice(), handle,
                             timeout_ns, semaphor, fence, out_image_index);
 
-  /* TODO: hardcoded */
   if (result == VK_ERROR_OUT_OF_DATE_KHR) {
     Recreate(width, height);
     return false;

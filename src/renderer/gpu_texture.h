@@ -7,7 +7,6 @@
 enum GPUTextureType {
   GPU_TEXTURE_TYPE_NONE,
   GPU_TEXTURE_TYPE_2D,
-  /* TODO: others */
 };
 
 class GPUTexture {

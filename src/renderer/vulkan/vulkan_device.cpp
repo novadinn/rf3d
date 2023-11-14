@@ -282,8 +282,6 @@ bool VulkanDevice::SelectPhysicalDevice(
           temp_queue_infos.count(VULKAN_DEVICE_QUEUE_TYPE_TRANSFER)) {
         temp_queue_infos[VULKAN_DEVICE_QUEUE_TYPE_TRANSFER].family_index = j;
       }
-
-      /* TODO: other queue types */
     }
 
     if ((!requirements->graphics ||

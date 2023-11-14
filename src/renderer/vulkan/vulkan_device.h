@@ -10,7 +10,6 @@ enum VulkanDeviceQueueType {
   VULKAN_DEVICE_QUEUE_TYPE_GRAPHICS,
   VULKAN_DEVICE_QUEUE_TYPE_PRESENT,
   VULKAN_DEVICE_QUEUE_TYPE_TRANSFER,
-  /* TODO: others */
 };
 
 struct VulkanPhysicalDeviceRequirements {
