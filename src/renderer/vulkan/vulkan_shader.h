@@ -13,34 +13,36 @@
 #include <vector>
 #include <vulkan/vulkan.h>
 
-/* used for reflection */
-struct VulkanShaderBinding {
-  VkDescriptorSetLayoutBinding layout_binding;
-  uint64_t size;
-};
-
-/* used for reflection */
-struct VulkanShaderSet {
-  std::vector<VulkanShaderBinding> bindings;
-  uint32_t index;
-};
-
 class VulkanContext;
 
 class VulkanShader : public GPUShader {
 public:
-  bool Create(GPUShaderConfig *config, GPURenderPass *render_pass,
-              float viewport_width, float viewport_height) override;
+  bool Create(std::vector<GPUShaderStageConfig> stage_configs,
+              GPURenderPass *render_pass, float viewport_width,
+              float viewport_height) override;
   void Destroy() override;
 
   void Bind() override;
   void BindUniformBuffer(GPUDescriptorSet *set, uint32_t offset) override;
   void BindTexture(GPUDescriptorSet *set) override;
-  void PushConstant(GPUShaderPushConstant *push_constant) override;
+  void PushConstant(void *value, uint64_t size, uint32_t offset,
+                    uint8_t stage_flags) override;
 
   inline VulkanPipeline &GetPipeline() { return pipeline; }
 
 private:
+  /* used for reflection */
+  struct VulkanShaderBinding {
+    VkDescriptorSetLayoutBinding layout_binding;
+    uint64_t size;
+  };
+
+  /* used for reflection */
+  struct VulkanShaderSet {
+    std::vector<VulkanShaderBinding> bindings;
+    uint32_t index;
+  };
+
   void ReflectStagePushConstantRanges(
       spirv_cross::Compiler &compiler, spirv_cross::ShaderResources &resources,
       std::vector<VkPushConstantRange> &push_constant_ranges);
@@ -56,5 +58,4 @@ private:
                                       int32_t *out_set_index);
 
   VulkanPipeline pipeline;
-  std::vector<VulkanShaderSet> shader_sets;
 };

@@ -136,12 +136,12 @@ int main(int argc, char **argv) {
   vertex_buffer->LoadData(0, vertices.size() * sizeof(vertices[0]),
                           vertices.data());
 
-  GPUShaderConfig shader_config = {};
-  shader_config.stage_configs.emplace_back(GPUShaderStageConfig{
+  std::vector<GPUShaderStageConfig> stage_configs;
+  stage_configs.emplace_back(GPUShaderStageConfig{
       GPU_SHADER_STAGE_TYPE_VERTEX, "assets/shaders/object_shader.vert.spv"});
-  shader_config.stage_configs.emplace_back(GPUShaderStageConfig{
+  stage_configs.emplace_back(GPUShaderStageConfig{
       GPU_SHADER_STAGE_TYPE_FRAGMENT, "assets/shaders/object_shader.frag.spv"});
-  if (!shader->Create(&shader_config, window_render_pass, width, height)) {
+  if (!shader->Create(stage_configs, window_render_pass, width, height)) {
     FATAL("Failed to create a shader. Aborting...");
     exit(1);
   }
@@ -185,6 +185,18 @@ int main(int argc, char **argv) {
     bindings.clear();
   }
 
+  GPUAttachment *offscreen_color_attachment = frontend->AttachmentAllocate();
+  offscreen_color_attachment->Create(GPU_FORMAT_DEVICE_COLOR_OPTIMAL,
+                                     GPU_ATTACHMENT_USAGE_COLOR_ATTACHMENT,
+                                     width, height);
+  GPUAttachment *offscreen_depth_attachment = frontend->AttachmentAllocate();
+  offscreen_depth_attachment->Create(
+      GPU_FORMAT_DEVICE_DEPTH_OPTIMAL,
+      GPU_ATTACHMENT_USAGE_DEPTH_STENCIL_ATTACHMENT, width, height);
+  std::vector<GPUAttachment *> offscreen_attachments;
+  offscreen_attachments.emplace_back(offscreen_color_attachment);
+  offscreen_attachments.emplace_back(offscreen_depth_attachment);
+
   GPURenderPass *offscreen_render_pass = frontend->RenderPassAllocate();
   offscreen_render_pass->Create(
       std::vector<GPURenderPassAttachment>{
@@ -196,20 +208,9 @@ int main(int argc, char **argv) {
       glm::vec4(0, 0, width, height), glm::vec4(0, 0, 0, 1), 1.0f, 0.0f,
       GPU_RENDER_PASS_CLEAR_FLAG_COLOR | GPU_RENDER_PASS_CLEAR_FLAG_DEPTH |
           GPU_RENDER_PASS_CLEAR_FLAG_STENCIL);
-  GPUAttachment *offscreen_color_attachment = frontend->AttachmentAllocate();
-  offscreen_color_attachment->Create(GPU_FORMAT_DEVICE_COLOR_OPTIMAL,
-                                     GPU_ATTACHMENT_USAGE_COLOR_ATTACHMENT,
-                                     width, height);
-  GPUAttachment *offscreen_depth_attachment = frontend->AttachmentAllocate();
-  offscreen_depth_attachment->Create(
-      GPU_FORMAT_DEVICE_DEPTH_OPTIMAL,
-      GPU_ATTACHMENT_USAGE_DEPTH_STENCIL_ATTACHMENT, width, height);
   GPURenderTarget *offscreen_render_target = frontend->RenderTargetAllocate();
-  offscreen_render_target->Create(
-      offscreen_render_pass,
-      std::vector<GPUAttachment *>{offscreen_color_attachment,
-                                   offscreen_depth_attachment},
-      width, height);
+  offscreen_render_target->Create(offscreen_render_pass, offscreen_attachments,
+                                  width, height);
 
   bool running = true;
   while (running) {
@@ -232,11 +233,6 @@ int main(int argc, char **argv) {
 
     if (frontend->BeginFrame()) {
       window_render_pass->Begin(frontend->GetCurrentWindowRenderTarget());
-
-      GPUShaderPushConstant push_constant;
-      push_constant.size = sizeof(PushConsts);
-      push_constant.offset = 0;
-      push_constant.stage_flags = GPU_SHADER_STAGE_TYPE_FRAGMENT;
 
       static float angle = 0.0f;
       angle += 0.003f;
@@ -284,8 +280,8 @@ int main(int argc, char **argv) {
 
         shader->BindTexture(meshes[i].texture_descriptor_set);
 
-        push_constant.value = &meshes[i].push_constants;
-        shader->PushConstant(&push_constant);
+        shader->PushConstant(&meshes[i].push_constants, sizeof(PushConsts), 0,
+                             GPU_SHADER_STAGE_TYPE_FRAGMENT);
 
         frontend->Draw(vertices.size());
       }

@@ -15,15 +15,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-bool VulkanShader::Create(GPUShaderConfig *config, GPURenderPass *render_pass,
-                          float viewport_width, float viewport_height) {
+bool VulkanShader::Create(std::vector<GPUShaderStageConfig> stage_configs,
+                          GPURenderPass *render_pass, float viewport_width,
+                          float viewport_height) {
   VulkanContext *context = VulkanBackend::GetContext();
   VulkanRenderPass *native_pass = (VulkanRenderPass *)render_pass;
 
   std::vector<VkShaderModule> stages;
-  stages.resize(config->stage_configs.size());
+  stages.resize(stage_configs.size());
   std::vector<VkPipelineShaderStageCreateInfo> pipeline_stage_create_infos;
-  pipeline_stage_create_infos.resize(config->stage_configs.size());
+  pipeline_stage_create_infos.resize(stage_configs.size());
 
   std::vector<VkPushConstantRange> push_constant_ranges;
   std::vector<VulkanShaderSet> sets;
@@ -31,7 +32,7 @@ bool VulkanShader::Create(GPUShaderConfig *config, GPURenderPass *render_pass,
   uint64_t attributes_stride = 0;
 
   for (int i = 0; i < stages.size(); ++i) {
-    GPUShaderStageConfig *stage_config = &config->stage_configs[i];
+    GPUShaderStageConfig *stage_config = &stage_configs[i];
     FILE *file = fopen(stage_config->file_path, "rb");
     if (!file) {
       ERROR("Failed to open file %s", stage_config->file_path);
@@ -118,8 +119,6 @@ bool VulkanShader::Create(GPUShaderConfig *config, GPURenderPass *render_pass,
     descriptor_set_layouts.emplace_back(set_layout);
   }
 
-  shader_sets = sets;
-
   std::vector<VkDynamicState> dynamic_states;
 
   VulkanPipelineConfig pipeline_config;
@@ -198,7 +197,8 @@ void VulkanShader::BindTexture(GPUDescriptorSet *set) {
                           set->GetIndex(), 1, &native_set->GetSet(), 0, 0);
 }
 
-void VulkanShader::PushConstant(GPUShaderPushConstant *push_constant) {
+void VulkanShader::PushConstant(void *value, uint64_t size, uint32_t offset,
+                                uint8_t stage_flags) {
   VulkanContext *context = VulkanBackend::GetContext();
 
   VulkanDeviceQueueInfo info =
@@ -207,11 +207,10 @@ void VulkanShader::PushConstant(GPUShaderPushConstant *push_constant) {
   VulkanCommandBuffer *command_buffer =
       &info.command_buffers[context->image_index];
 
-  vkCmdPushConstants(command_buffer->GetHandle(), pipeline.GetLayout(),
-                     VulkanUtils::GPUShaderStageFlagsToVulkanShaderStageFlags(
-                         push_constant->stage_flags),
-                     push_constant->offset, push_constant->size,
-                     push_constant->value);
+  vkCmdPushConstants(
+      command_buffer->GetHandle(), pipeline.GetLayout(),
+      VulkanUtils::GPUShaderStageFlagsToVulkanShaderStageFlags(stage_flags),
+      offset, size, value);
 }
 
 void VulkanShader::ReflectStageUniforms(spirv_cross::Compiler &compiler,
