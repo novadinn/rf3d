@@ -1,5 +1,7 @@
 #include <stdio.h>
 
+#include "camera.h"
+#include "input.h"
 #include "logger.h"
 #include "renderer/renderer_frontend.h"
 
@@ -82,14 +84,14 @@ int main(int argc, char **argv) {
   }
 
   load_texture(meshes[0].texture, "assets/textures/metal.png");
-  meshes[0].position = glm::vec3(0, 0, 0.0f);
+  meshes[0].position = glm::vec3(0, 0, 5.0f);
   meshes[0].push_constants =
       PushConsts{0.1f, 1.0f, 0.672411f, 0.637331f, 0.585456f};
   load_texture(meshes[1].texture, "assets/textures/wood.png");
-  meshes[1].position = glm::vec3(2, 0, 0.0f);
+  meshes[1].position = glm::vec3(2, 0, 5.0f);
   meshes[1].push_constants = PushConsts{0.8f, 0.2f, 1, 0, 0};
   load_texture(meshes[2].texture, "assets/textures/brickwall.jpg");
-  meshes[2].position = glm::vec3(-2, 0, 0.0f);
+  meshes[2].position = glm::vec3(-2, 0, 5.0f);
   meshes[2].push_constants = PushConsts{0.5f, 0.5f, 0, 1, 0};
 
   std::vector<float> vertices = {
@@ -212,23 +214,72 @@ int main(int argc, char **argv) {
   offscreen_render_target->Create(offscreen_render_pass, offscreen_attachments,
                                   width, height);
 
+  Camera *camera = new Camera();
+  camera->Create(45, width / height, 0.1f, 1000.0f);
+  camera->SetViewportSize(width, height);
+
+  glm::ivec2 previous_mouse = {0, 0};
+  uint32_t last_update_time = SDL_GetTicks();
+
   bool running = true;
   while (running) {
+    uint32_t start_time_ms = SDL_GetTicks();
+    Input::Begin();
+
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
       switch (event.type) {
-      case SDL_QUIT: {
-        running = false;
+      case SDL_KEYDOWN: {
+        if (!event.key.repeat) {
+          Input::KeyDownEvent(event);
+        }
+      } break;
+      case SDL_KEYUP: {
+        Input::KeyUpEvent(event);
+      } break;
+      case SDL_MOUSEBUTTONDOWN: {
+        Input::MouseButtonDownEvent(event);
+      } break;
+      case SDL_MOUSEBUTTONUP: {
+        Input::MouseButtonUpEvent(event);
+      } break;
+      case SDL_MOUSEWHEEL: {
+        Input::WheelEvent(event);
       } break;
       case SDL_WINDOWEVENT: {
-        if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
+        if (event.window.event == SDL_WINDOWEVENT_CLOSE) {
+          running = false;
+        } else if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
           int width, height;
           SDL_GetWindowSize(window, &width, &height);
 
           frontend->Resize((uint32_t)width, (uint32_t)height);
         }
       } break;
+      case SDL_QUIT: {
+        running = false;
+      } break;
       }
+    }
+
+    float delta_time = 0.01f;
+    glm::ivec2 current_mouse;
+    Input::GetMousePosition(&current_mouse.x, &current_mouse.y);
+    glm::vec2 mouse_delta = current_mouse - previous_mouse;
+    mouse_delta *= delta_time;
+
+    glm::ivec2 wheel_movement;
+    Input::GetWheelMovement(&wheel_movement.x, &wheel_movement.y);
+
+    if (Input::WasMouseButtonHeld(SDL_BUTTON_MIDDLE)) {
+      if (Input::WasKeyHeld(SDLK_LSHIFT)) {
+        camera->Pan(mouse_delta);
+      } else {
+        camera->Rotate(mouse_delta);
+      }
+    }
+    if (wheel_movement.y != 0) {
+      camera->Zoom(delta_time * wheel_movement.y);
     }
 
     if (frontend->BeginFrame()) {
@@ -240,22 +291,20 @@ int main(int argc, char **argv) {
       shader->Bind();
       vertex_buffer->Bind(0);
 
-      glm::vec3 camera_position = glm::vec3(0, 0, -5.0f);
+      glm::vec3 camera_position = glm::vec3(0, 0, 0.0f);
       GlobalUBO global_ubo = {};
-      global_ubo.view = glm::translate(glm::mat4(1.0f), camera_position);
-      global_ubo.view = glm::inverse(global_ubo.view);
-      global_ubo.projection = glm::perspective(
-          glm::radians(45.0f), (float)width / (float)height, 0.1f, 1000.0f);
+      global_ubo.view = camera->GetViewMatrix();
+      global_ubo.projection = camera->GetProjectionMatrix();
 
       global_uniform->LoadData(0, global_uniform->GetSize(), &global_ubo);
       shader->BindUniformBuffer(global_descriptor_set, 0);
 
       WorldUBO world_ubo = {};
       const float p = 5.0f;
-      world_ubo.lights[0] = glm::vec4(-p * 0.8f, -p * 0.8f, p * 0.8f, 1.0f);
-      world_ubo.lights[1] = glm::vec4(-p * 2, p * 2, p * 2, 1.0f);
-      world_ubo.lights[2] = glm::vec4(p * 0.2f, -p * 0.2f, p * 0.2f, 1.0f);
-      world_ubo.lights[3] = glm::vec4(p, p, p, 1.0f);
+      world_ubo.lights[0] = glm::vec4(-p * 0.8f, -p * 0.8f, p * 0.8f, 5.0f);
+      world_ubo.lights[1] = glm::vec4(-p * 2, p * 2, p * 2, 5.0f);
+      world_ubo.lights[2] = glm::vec4(p * 0.2f, -p * 0.2f, p * 0.2f, 5.0f);
+      world_ubo.lights[3] = glm::vec4(p, p, p, 5.0f);
 
       world_uniform->LoadData(0, world_uniform->GetSize(), &world_ubo);
       shader->BindUniformBuffer(world_descriptor_set, 0);
@@ -293,7 +342,17 @@ int main(int argc, char **argv) {
 
       frontend->EndFrame();
     }
+
+    const uint32_t ms_per_frame = 1000 / 120;
+    const uint32_t elapsed_time_ms = SDL_GetTicks() - start_time_ms;
+    if (elapsed_time_ms < ms_per_frame) {
+      SDL_Delay(ms_per_frame - elapsed_time_ms);
+    }
+
+    Input::GetMousePosition(&previous_mouse.x, &previous_mouse.y);
   }
+
+  delete camera;
 
   offscreen_render_target->Destroy();
   offscreen_depth_attachment->Destroy();

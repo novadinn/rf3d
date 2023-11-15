@@ -43,6 +43,8 @@ add_definitions(
 set(SRC 
   src/main.cpp 
   src/logger.cpp 
+  src/input.cpp 
+  src/camera.cpp 
   src/renderer/renderer_frontend.cpp 
   src/renderer/gpu_utils.cpp
   src/renderer/vulkan/vulkan_backend.cpp
