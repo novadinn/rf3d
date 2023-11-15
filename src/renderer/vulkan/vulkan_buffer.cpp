@@ -129,8 +129,7 @@ bool VulkanBuffer::CopyTo(VulkanBuffer *dest, uint64_t source_offset,
 
   vkQueueWaitIdle(queue);
   VulkanCommandBuffer temp_command_buffer;
-  temp_command_buffer.Allocate(command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-  temp_command_buffer.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+  temp_command_buffer.AllocateAndBeginSingleUse(command_pool);
 
   VkBufferCopy copy_region;
   copy_region.srcOffset = source_offset;
@@ -140,25 +139,7 @@ bool VulkanBuffer::CopyTo(VulkanBuffer *dest, uint64_t source_offset,
   vkCmdCopyBuffer(temp_command_buffer.GetHandle(), handle, dest->GetHandle(), 1,
                   &copy_region);
 
-  temp_command_buffer.End();
-
-  VkSubmitInfo submit_info = {};
-  submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-  submit_info.pNext = 0;
-  submit_info.waitSemaphoreCount = 0;
-  submit_info.pWaitSemaphores = 0;
-  submit_info.pWaitDstStageMask = 0;
-  submit_info.commandBufferCount = 1;
-  submit_info.pCommandBuffers = &temp_command_buffer.GetHandle();
-  submit_info.signalSemaphoreCount = 0;
-  submit_info.pSignalSemaphores = 0;
-
-  VK_CHECK(vkQueueSubmit(queue, 1, &submit_info, 0));
-
-  /* wait for it to finish */
-  VK_CHECK(vkQueueWaitIdle(queue));
-
-  temp_command_buffer.Free(command_pool);
+  temp_command_buffer.FreeAndEndSingleUse(command_pool, queue);
 
   return true;
 }
