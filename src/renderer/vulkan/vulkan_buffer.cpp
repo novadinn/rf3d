@@ -48,10 +48,6 @@ bool VulkanBuffer::Create(uint64_t buffer_size, VkBufferUsageFlags usage_flags,
   VK_CHECK(vkAllocateMemory(context->device->GetLogicalDevice(), &allocate_info,
                             context->allocator, &memory));
 
-  /* TODO: is there a limit of max bound buffers? */
-  VK_CHECK(vkBindBufferMemory(context->device->GetLogicalDevice(), handle,
-                              memory, 0));
-
   return true;
 }
 
@@ -89,8 +85,8 @@ bool VulkanBuffer::LoadData(uint64_t offset, uint64_t size, void *data) {
 
   void *data_ptr;
   VK_CHECK(vkMapMemory(context->device->GetLogicalDevice(), memory, offset,
-                       total_size, 0, &data_ptr));
-  memcpy(data_ptr, data, total_size);
+                       size, 0, &data_ptr));
+  memcpy(data_ptr, data, size);
   vkUnmapMemory(context->device->GetLogicalDevice(), memory);
 
   return true;
@@ -100,7 +96,7 @@ bool VulkanBuffer::LoadDataStaging(uint64_t offset, uint64_t size, void *data) {
   VulkanContext *context = VulkanBackend::GetContext();
 
   VulkanBuffer staging_buffer;
-  if (!staging_buffer.Create(total_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+  if (!staging_buffer.Create(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
                                  VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
     ERROR("Failed to create a staging buffer.");
@@ -108,11 +104,11 @@ bool VulkanBuffer::LoadDataStaging(uint64_t offset, uint64_t size, void *data) {
   }
 
   staging_buffer.LoadData(0, staging_buffer.GetSize(), data);
-  // VK_CHECK(vkBindBufferMemory(context->device->GetLogicalDevice(),
-  //                             staging_buffer.GetHandle(),
-  //                             staging_buffer.GetMemory(), 0));
-  // VK_CHECK(vkBindBufferMemory(context->device->GetLogicalDevice(), handle,
-  //                             memory, 0));
+  VK_CHECK(vkBindBufferMemory(context->device->GetLogicalDevice(),
+                              staging_buffer.GetHandle(),
+                              staging_buffer.GetMemory(), 0));
+  VK_CHECK(vkBindBufferMemory(context->device->GetLogicalDevice(), handle,
+                              memory, 0));
 
   staging_buffer.CopyTo(this, 0, 0, staging_buffer.GetSize());
 

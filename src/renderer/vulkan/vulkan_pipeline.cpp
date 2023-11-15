@@ -114,7 +114,10 @@ bool VulkanPipeline::Create(VulkanPipelineConfig *config,
       VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
   input_assembly.pNext = 0;
   input_assembly.flags = 0;
-  input_assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+  static int a = 0;
+  input_assembly.topology = a == 0 ? VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+                                   : VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+  a++;
   input_assembly.primitiveRestartEnable = VK_FALSE;
 
   VkPipelineLayoutCreateInfo pipeline_layout_create_info = {};

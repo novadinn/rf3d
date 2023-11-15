@@ -140,9 +140,9 @@ int main(int argc, char **argv) {
 
   std::vector<GPUShaderStageConfig> stage_configs;
   stage_configs.emplace_back(GPUShaderStageConfig{
-      GPU_SHADER_STAGE_TYPE_VERTEX, "assets/shaders/object_shader.vert.spv"});
+      GPU_SHADER_STAGE_TYPE_VERTEX, "assets/shaders/object.vert.spv"});
   stage_configs.emplace_back(GPUShaderStageConfig{
-      GPU_SHADER_STAGE_TYPE_FRAGMENT, "assets/shaders/object_shader.frag.spv"});
+      GPU_SHADER_STAGE_TYPE_FRAGMENT, "assets/shaders/object.frag.spv"});
   if (!shader->Create(stage_configs, window_render_pass, width, height)) {
     FATAL("Failed to create a shader. Aborting...");
     exit(1);
@@ -217,6 +217,74 @@ int main(int argc, char **argv) {
   Camera *camera = new Camera();
   camera->Create(45, width / height, 0.1f, 1000.0f);
   camera->SetViewportSize(width, height);
+
+  const float far = 10.0f;
+  glm::vec3 camera_position = camera->GetPosition();
+  std::vector<float> grid_vertices;
+  for (float x = camera_position.x - far; x < camera_position.x + far;
+       x += 0.5f) {
+    glm::vec3 start = glm::vec3((int)x, 0, (int)(camera_position.z - far));
+    glm::vec3 end = glm::vec3((int)x, 0, (int)(camera_position.z + far));
+    glm::vec3 color = glm::vec3(0.4, 0.4, 0.4);
+    if ((int)x == 0) {
+      color = glm::vec3(1, 0.4, 0.4);
+    }
+
+    grid_vertices.push_back(start.x);
+    grid_vertices.push_back(start.y);
+    grid_vertices.push_back(start.z);
+
+    grid_vertices.push_back(color.x);
+    grid_vertices.push_back(color.y);
+    grid_vertices.push_back(color.z);
+
+    grid_vertices.push_back(end.x);
+    grid_vertices.push_back(end.y);
+    grid_vertices.push_back(end.z);
+
+    grid_vertices.push_back(color.x);
+    grid_vertices.push_back(color.y);
+    grid_vertices.push_back(color.z);
+  }
+
+  for (float z = camera_position.z - far; z < camera_position.z + far;
+       z += 0.5f) {
+    glm::vec3 start = glm::vec3((int)(camera_position.x - far), 0, (int)z);
+    glm::vec3 end = glm::vec3((int)(camera_position.x + far), 0, (int)z);
+    glm::vec3 color = glm::vec3(0.4, 0.4, 0.4);
+    if ((int)z == 0) {
+      color = glm::vec3(0.55, 0.8, 0.9);
+    }
+
+    grid_vertices.push_back(start.x);
+    grid_vertices.push_back(start.y);
+    grid_vertices.push_back(start.z);
+
+    grid_vertices.push_back(color.x);
+    grid_vertices.push_back(color.y);
+    grid_vertices.push_back(color.z);
+
+    grid_vertices.push_back(end.x);
+    grid_vertices.push_back(end.y);
+    grid_vertices.push_back(end.z);
+
+    grid_vertices.push_back(color.x);
+    grid_vertices.push_back(color.y);
+    grid_vertices.push_back(color.z);
+  }
+
+  GPUShader *grid_shader = frontend->ShaderAllocate();
+  stage_configs.clear();
+  stage_configs.emplace_back(GPUShaderStageConfig{
+      GPU_SHADER_STAGE_TYPE_VERTEX, "assets/shaders/grid.vert.spv"});
+  stage_configs.emplace_back(GPUShaderStageConfig{
+      GPU_SHADER_STAGE_TYPE_FRAGMENT, "assets/shaders/grid.frag.spv"});
+  grid_shader->Create(stage_configs, window_render_pass, width, height);
+
+  GPUVertexBuffer *grid_vertex_buffer = frontend->VertexBufferAllocate();
+  grid_vertex_buffer->Create(grid_vertices.size() * sizeof(grid_vertices[0]));
+  grid_vertex_buffer->LoadData(
+      0, grid_vertices.size() * sizeof(grid_vertices[0]), grid_vertices.data());
 
   glm::ivec2 previous_mouse = {0, 0};
   uint32_t last_update_time = SDL_GetTicks();
@@ -335,6 +403,11 @@ int main(int argc, char **argv) {
         frontend->Draw(vertices.size());
       }
 
+      grid_shader->Bind();
+      grid_vertex_buffer->Bind(0);
+      grid_shader->BindUniformBuffer(global_descriptor_set, 0);
+      frontend->Draw(grid_vertices.size());
+
       window_render_pass->End();
 
       offscreen_render_pass->Begin(offscreen_render_target);
@@ -353,6 +426,11 @@ int main(int argc, char **argv) {
   }
 
   delete camera;
+
+  grid_vertex_buffer->Destroy();
+  delete grid_vertex_buffer;
+  grid_shader->Destroy();
+  delete grid_shader;
 
   offscreen_render_target->Destroy();
   offscreen_depth_attachment->Destroy();

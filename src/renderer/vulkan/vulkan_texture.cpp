@@ -328,8 +328,8 @@ void VulkanTexture::CopyFromBuffer(VulkanBuffer *buffer,
   region.imageExtent.height = height;
   region.imageExtent.depth = 1;
 
-  // VK_CHECK(vkBindBufferMemory(context->device->GetLogicalDevice(),
-  //                             buffer->GetHandle(), buffer->GetMemory(), 0));
+  VK_CHECK(vkBindBufferMemory(context->device->GetLogicalDevice(),
+                              buffer->GetHandle(), buffer->GetMemory(), 0));
   // vkCmdCopyBufferToImage(command_buffer->GetHandle(), buffer->GetHandle(),
   //                        handle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
   //                        image_copies.size(), image_copies.data());
