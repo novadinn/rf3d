@@ -143,7 +143,8 @@ int main(int argc, char **argv) {
       GPU_SHADER_STAGE_TYPE_VERTEX, "assets/shaders/object.vert.spv"});
   stage_configs.emplace_back(GPUShaderStageConfig{
       GPU_SHADER_STAGE_TYPE_FRAGMENT, "assets/shaders/object.frag.spv"});
-  if (!shader->Create(stage_configs, window_render_pass, width, height)) {
+  if (!shader->Create(stage_configs, GPU_SHADER_TOPOLOGY_TYPE_TRIANGLE_LIST,
+                      window_render_pass, width, height)) {
     FATAL("Failed to create a shader. Aborting...");
     exit(1);
   }
@@ -218,7 +219,7 @@ int main(int argc, char **argv) {
   camera->Create(45, width / height, 0.1f, 1000.0f);
   camera->SetViewportSize(width, height);
 
-  const float far = 10.0f;
+  const float far = 100.0f;
   glm::vec3 camera_position = camera->GetPosition();
   std::vector<float> grid_vertices;
   for (float x = camera_position.x - far; x < camera_position.x + far;
@@ -279,7 +280,8 @@ int main(int argc, char **argv) {
       GPU_SHADER_STAGE_TYPE_VERTEX, "assets/shaders/grid.vert.spv"});
   stage_configs.emplace_back(GPUShaderStageConfig{
       GPU_SHADER_STAGE_TYPE_FRAGMENT, "assets/shaders/grid.frag.spv"});
-  grid_shader->Create(stage_configs, window_render_pass, width, height);
+  grid_shader->Create(stage_configs, GPU_SHADER_TOPOLOGY_TYPE_LINE_LIST,
+                      window_render_pass, width, height);
 
   GPUVertexBuffer *grid_vertex_buffer = frontend->VertexBufferAllocate();
   grid_vertex_buffer->Create(grid_vertices.size() * sizeof(grid_vertices[0]));

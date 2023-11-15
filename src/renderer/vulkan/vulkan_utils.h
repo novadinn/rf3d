@@ -18,4 +18,6 @@ public:
   GPUTextureUsageToVulkanAspectFlags(GPUAttachmentUsage usage);
   static VkShaderStageFlags
   GPUShaderStageFlagsToVulkanShaderStageFlags(uint8_t stage_flags);
+  static VkPrimitiveTopology
+  GPUShaderTopologyTypeToVulkanTopology(GPUShaderTopologyType type);
 };

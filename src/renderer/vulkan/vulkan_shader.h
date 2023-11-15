@@ -18,8 +18,8 @@ class VulkanContext;
 class VulkanShader : public GPUShader {
 public:
   bool Create(std::vector<GPUShaderStageConfig> stage_configs,
-              GPURenderPass *render_pass, float viewport_width,
-              float viewport_height) override;
+              GPUShaderTopologyType topology_type, GPURenderPass *render_pass,
+              float viewport_width, float viewport_height) override;
   void Destroy() override;
 
   void Bind() override;

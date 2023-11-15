@@ -128,3 +128,21 @@ VulkanUtils::GPUShaderStageFlagsToVulkanShaderStageFlags(uint8_t stage_flags) {
 
   return result;
 }
+
+VkPrimitiveTopology
+VulkanUtils::GPUShaderTopologyTypeToVulkanTopology(GPUShaderTopologyType type) {
+  switch (type) {
+  case GPU_SHADER_TOPOLOGY_TYPE_TRIANGLE_LIST: {
+    return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+  } break;
+  case GPU_SHADER_TOPOLOGY_TYPE_LINE_LIST: {
+    return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+  } break;
+  default: {
+    ERROR("Unsupported topology type!");
+    return VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
+  } break;
+  }
+
+  return VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
+}

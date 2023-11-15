@@ -16,6 +16,7 @@
 #include <stdlib.h>
 
 bool VulkanShader::Create(std::vector<GPUShaderStageConfig> stage_configs,
+                          GPUShaderTopologyType topology_type,
                           GPURenderPass *render_pass, float viewport_width,
                           float viewport_height) {
   VulkanContext *context = VulkanBackend::GetContext();
@@ -128,6 +129,8 @@ bool VulkanShader::Create(std::vector<GPUShaderStageConfig> stage_configs,
   pipeline_config.push_constant_ranges = push_constant_ranges;
   pipeline_config.scissor = scissor;
   pipeline_config.stages = pipeline_stage_create_infos;
+  pipeline_config.topology =
+      VulkanUtils::GPUShaderTopologyTypeToVulkanTopology(topology_type);
   pipeline_config.stride = attributes_stride;
   pipeline_config.viewport = viewport;
 

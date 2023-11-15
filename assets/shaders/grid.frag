@@ -13,7 +13,7 @@ float InverseLerp(float from, float to, float t) {
 void main() {
   const float fadeOffset = 30.0;
   /* TODO: constant, but we can retrieve that from the projection matrix */
-  const float far = 1000.0f;
+  const float far = 100.0f;
 
   float distanceToCamera = distance(outCameraPosition, outPosition);
   float t = InverseLerp(far - fadeOffset, far, distanceToCamera);

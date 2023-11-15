@@ -14,6 +14,7 @@ struct VulkanPipelineConfig {
   std::vector<VkPipelineShaderStageCreateInfo> stages;
   std::vector<VkDynamicState> dynamic_states;
   std::vector<VkPushConstantRange> push_constant_ranges;
+  VkPrimitiveTopology topology;
   VkViewport viewport;
   VkRect2D scissor;
 };

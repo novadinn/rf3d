@@ -13,6 +13,11 @@ enum GPUShaderStageType {
   GPU_SHADER_STAGE_TYPE_FRAGMENT,
 };
 
+enum GPUShaderTopologyType {
+  GPU_SHADER_TOPOLOGY_TYPE_TRIANGLE_LIST,
+  GPU_SHADER_TOPOLOGY_TYPE_LINE_LIST,
+};
+
 struct GPUShaderStageConfig {
   GPUShaderStageType type;
   const char *file_path;
@@ -23,6 +28,7 @@ public:
   virtual ~GPUShader(){};
 
   virtual bool Create(std::vector<GPUShaderStageConfig> stage_configs,
+                      GPUShaderTopologyType topology_type,
                       GPURenderPass *render_pass, float viewport_width,
                       float viewport_height) = 0;
   virtual void Destroy() = 0;
