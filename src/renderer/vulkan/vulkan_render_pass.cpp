@@ -10,7 +10,7 @@
 #include "vulkan_utils.h"
 
 void VulkanRenderPass::Create(
-    std::vector<GPURenderPassAttachment> pass_render_attachments,
+    std::vector<GPURenderPassAttachmentConfig> pass_render_attachments,
     glm::vec4 pass_render_area, glm::vec4 pass_clear_color, float pass_depth,
     float pass_stencil, uint8_t pass_clear_flags) {
   VulkanContext *context = VulkanBackend::GetContext();

@@ -13,7 +13,7 @@ enum GPURenderPassClearFlag {
   GPU_RENDER_PASS_CLEAR_FLAG_STENCIL = 0x4,
 };
 
-struct GPURenderPassAttachment {
+struct GPURenderPassAttachmentConfig {
   GPUFormat format;
   GPUAttachmentUsage usage;
 };
@@ -23,7 +23,7 @@ public:
   virtual ~GPURenderPass() {}
 
   virtual void
-  Create(std::vector<GPURenderPassAttachment> pass_render_attachments,
+  Create(std::vector<GPURenderPassAttachmentConfig> pass_render_attachments,
          glm::vec4 pass_render_area, glm::vec4 pass_clear_color,
          float pass_depth, float pass_stencil, uint8_t pass_clear_flags) = 0;
   virtual void Destroy() = 0;
@@ -42,7 +42,7 @@ public:
   }
 
 protected:
-  std::vector<GPURenderPassAttachment> attachments;
+  std::vector<GPURenderPassAttachmentConfig> attachments;
   glm::vec4 render_area;
   glm::vec4 clear_color;
   uint8_t clear_flags;
