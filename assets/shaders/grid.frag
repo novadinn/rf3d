@@ -11,11 +11,11 @@ float InverseLerp(float from, float to, float t) {
 }
 
 void main() {
-  const float fadeOffset = 30.0;
-  /* TODO: constant, but we can retrieve that from the projection matrix */
-  const float far = 100.0f;
-
   float distanceToCamera = distance(outCameraPosition, outPosition);
+  const float fadeOffset = 15.0 * distanceToCamera;
+  /* TODO: constant, but we can retrieve that from the projection matrix */
+  const float far = 64.0f;
+
   float t = InverseLerp(far - fadeOffset, far, distanceToCamera);
 
   outColor = vec4(outVertexColor, 1.0);
