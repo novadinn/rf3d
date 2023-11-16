@@ -27,10 +27,10 @@ void VulkanDescriptorSet::Create(
       buffer_info.offset = 0;
       buffer_info.range = native_uniform_buffer->GetDynamicAlignment();
 
-      VK_CHECK(vkBindBufferMemory(
-          context->device->GetLogicalDevice(),
-          native_uniform_buffer->GetBuffer().GetHandle(),
-          native_uniform_buffer->GetBuffer().GetMemory(), 0));
+      // VK_CHECK(vkBindBufferMemory(
+      //     context->device->GetLogicalDevice(),
+      //     native_uniform_buffer->GetBuffer().GetHandle(),
+      //     native_uniform_buffer->GetBuffer().GetMemory(), 0));
 
       builder = builder.BindBuffer(binding.binding, &buffer_info,
                                    VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,

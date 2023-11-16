@@ -330,6 +330,10 @@ void VulkanShader::ReflectVertexAttributes(
         attribute_format = VK_FORMAT_R32G32B32_SFLOAT;
         attribute_size = sizeof(float) * 3;
       } break;
+      case 4: {
+        attribute_format = VK_FORMAT_R32G32B32A32_SFLOAT;
+        attribute_size = sizeof(float) * 4;
+      } break;
       default: {
         ERROR("Unknown spirv vector type size!");
       } break;

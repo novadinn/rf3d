@@ -224,7 +224,9 @@ int main(int argc, char **argv) {
   camera->Create(45, width / height, 0.1f, 1000.0f);
   camera->SetViewportSize(width, height);
 
-  const float far = 100.0f;
+  const float far =
+      64.0f; /* TODO: on macos, only this value will not cause
+                vertex buffers corruption. determine the reason and fix later */
   glm::vec3 camera_position = camera->GetPosition();
   std::vector<float> grid_vertices;
   for (float x = camera_position.x - far; x < camera_position.x + far;
