@@ -207,6 +207,20 @@ bool VulkanDevice::SupportsDeviceLocalHostVisible() const {
   return false;
 }
 
+bool VulkanDevice::TransferQueueIsOnly() const {
+  VulkanDeviceQueueInfo queue_info =
+      GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_TRANSFER);
+
+  bool transfer_only = true;
+  for (auto it = queue_infos.begin(); it != queue_infos.end(); ++it) {
+    if (it->second.family_index == queue_info.family_index) {
+      transfer_only = false;
+    }
+  }
+
+  return transfer_only;
+}
+
 bool VulkanDevice::SelectPhysicalDevice(
     VulkanPhysicalDeviceRequirements *requirements) {
   VulkanContext *context = VulkanBackend::GetContext();
@@ -281,6 +295,25 @@ bool VulkanDevice::SelectPhysicalDevice(
       if ((queue_properties.queueFlags & VK_QUEUE_TRANSFER_BIT) &&
           temp_queue_infos.count(VULKAN_DEVICE_QUEUE_TYPE_TRANSFER)) {
         temp_queue_infos[VULKAN_DEVICE_QUEUE_TYPE_TRANSFER].family_index = j;
+      }
+    }
+
+    /* attempting to find a transfer-only queue (can be used for multithreaded
+     * transfer operations) */
+    if (temp_queue_infos.count(VULKAN_DEVICE_QUEUE_TYPE_TRANSFER)) {
+      for (uint32_t k = 0; k < queue_family_count; ++k) {
+        VkQueueFamilyProperties queue_properties = queue_family_properties[k];
+
+        if ((queue_properties.queueFlags & VK_QUEUE_TRANSFER_BIT) &&
+            !(queue_properties.queueFlags & VK_QUEUE_GRAPHICS_BIT) &&
+            !(queue_properties.queueFlags & VK_QUEUE_COMPUTE_BIT) &&
+            !(queue_properties.queueFlags & VK_QUEUE_TRANSFER_BIT) &&
+            !(queue_properties.queueFlags & VK_QUEUE_SPARSE_BINDING_BIT) &&
+            !(queue_properties.queueFlags & VK_QUEUE_PROTECTED_BIT) &&
+            !(queue_properties.queueFlags & VK_QUEUE_VIDEO_DECODE_BIT_KHR) &&
+            !(queue_properties.queueFlags & VK_QUEUE_OPTICAL_FLOW_BIT_NV)) {
+          temp_queue_infos[VULKAN_DEVICE_QUEUE_TYPE_TRANSFER].family_index = k;
+        }
       }
     }
 

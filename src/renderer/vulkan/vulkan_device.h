@@ -53,6 +53,7 @@ public:
   inline VkFormat GetDepthFormat() const { return depth_format; }
 
   bool SupportsDeviceLocalHostVisible() const;
+  bool TransferQueueIsOnly() const;
 
   inline VkPhysicalDeviceProperties GetProperties() const { return properties; }
   inline VkPhysicalDeviceFeatures GetFeatures() const { return features; }
