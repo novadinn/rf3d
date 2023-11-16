@@ -7,7 +7,7 @@
 #include "vulkan_command_buffer.h"
 #include "vulkan_utils.h"
 
-void VulkanTexture::Create(GPUFormat texture_format,
+bool VulkanTexture::Create(GPUFormat texture_format,
                            GPUTextureType texture_type, uint32_t texture_width,
                            uint32_t texture_height) {
   VulkanContext *context = VulkanBackend::GetContext();
@@ -35,6 +35,7 @@ void VulkanTexture::Create(GPUFormat texture_format,
   } break;
   default: {
     ERROR("Unsupported image type!");
+    return false;
   } break;
   }
 
@@ -72,6 +73,7 @@ void VulkanTexture::Create(GPUFormat texture_format,
       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
   if (memory_type == -1) {
     ERROR("Required memory type not found. Image not valid.");
+    return false;
   }
 
   VkMemoryAllocateInfo memory_allocate_info = {};
@@ -132,6 +134,8 @@ void VulkanTexture::Create(GPUFormat texture_format,
 
   VK_CHECK(vkCreateSampler(context->device->GetLogicalDevice(),
                            &sampler_create_info, context->allocator, &sampler));
+
+  return true;
 }
 
 void VulkanTexture::Destroy() {
@@ -194,7 +198,11 @@ void VulkanTexture::WriteData(void *pixels, uint32_t offset) {
   staging.Destroy();
 
   if (!(mip_levels < 2)) {
-    GenerateMipMaps();
+    if (!GenerateMipMaps()) {
+      TransitionLayout(&temp_command_buffer, native_format,
+                       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                       VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    }
   }
 }
 
@@ -216,6 +224,7 @@ void VulkanTexture::TransitionLayout(VulkanCommandBuffer *command_buffer,
   } break;
   default: {
     ERROR("Unsupported image type!");
+    array_layers = 1;
   } break;
   }
 
@@ -267,7 +276,7 @@ void VulkanTexture::TransitionLayout(VulkanCommandBuffer *command_buffer,
 
     dest_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
   } else {
-    FATAL("Unsupported layout transition!");
+    ERROR("Unsupported layout transition!");
     return;
   }
 
@@ -290,6 +299,7 @@ void VulkanTexture::CopyFromBuffer(VulkanBuffer *buffer,
   } break;
   default: {
     ERROR("Unsupported image type!");
+    array_layers = 1;
   } break;
   }
 
@@ -338,7 +348,7 @@ void VulkanTexture::CopyFromBuffer(VulkanBuffer *buffer,
                          &region);
 }
 
-void VulkanTexture::GenerateMipMaps() {
+bool VulkanTexture::GenerateMipMaps() {
   VulkanContext *context = VulkanBackend::GetContext();
 
   uint32_t mip_levels =
@@ -352,7 +362,7 @@ void VulkanTexture::GenerateMipMaps() {
   if (!(format_properties.optimalTilingFeatures &
         VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
     ERROR("Texture image format does not support linear blitting!");
-    return;
+    return false;
   }
 
   VulkanDeviceQueueInfo queue_info =
@@ -435,4 +445,6 @@ void VulkanTexture::GenerateMipMaps() {
                        nullptr, 1, &barrier);
 
   temp_command_buffer.FreeAndEndSingleUse(command_pool, queue);
+
+  return true;
 }

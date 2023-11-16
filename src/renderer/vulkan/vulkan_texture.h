@@ -9,7 +9,7 @@
 
 class VulkanTexture : public GPUTexture {
 public:
-  void Create(GPUFormat texture_format, GPUTextureType texture_type,
+  bool Create(GPUFormat texture_format, GPUTextureType texture_type,
               uint32_t texture_width, uint32_t texture_height) override;
   void Destroy() override;
 
@@ -25,7 +25,7 @@ private:
                         VkImageLayout old_layout, VkImageLayout new_layout);
   void CopyFromBuffer(VulkanBuffer *buffer, VulkanCommandBuffer *command_buffer,
                       uint64_t offset);
-  void GenerateMipMaps();
+  bool GenerateMipMaps();
 
   VkImage handle;
   VkImageView view;

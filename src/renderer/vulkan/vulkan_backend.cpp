@@ -297,7 +297,7 @@ bool VulkanBackend::EndFrame() {
   if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
     context->swapchain->Recreate(render_area.z, render_area.w);
   } else if (result != VK_SUCCESS) {
-    FATAL("Failed to present swap chain image!");
+    ERROR("Failed to present swap chain image!");
     return false;
   }
 

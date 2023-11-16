@@ -11,7 +11,7 @@
 
 #include <array>
 
-void VulkanRenderPass::Create(
+bool VulkanRenderPass::Create(
     std::vector<GPURenderPassAttachmentConfig> pass_render_attachments,
     glm::vec4 pass_render_area, glm::vec4 pass_clear_color, float pass_depth,
     float pass_stencil, uint8_t pass_clear_flags) {
@@ -51,6 +51,7 @@ void VulkanRenderPass::Create(
       } break;
       default: {
         ERROR("Unsupported attachment load operation!");
+        return false;
       } break;
       }
       switch (attachment_config->store_operation) {
@@ -62,6 +63,7 @@ void VulkanRenderPass::Create(
       } break;
       default: {
         ERROR("Unsupported attachment store operation!");
+        return false;
       } break;
       }
       attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
@@ -88,6 +90,7 @@ void VulkanRenderPass::Create(
       } break;
       default: {
         ERROR("Unsupported attachment load operation!");
+        return false;
       } break;
       }
       switch (attachment_config->store_operation) {
@@ -99,6 +102,7 @@ void VulkanRenderPass::Create(
       } break;
       default: {
         ERROR("Unsupported attachment store operation!");
+        return false;
       } break;
       }
 
@@ -173,6 +177,8 @@ void VulkanRenderPass::Create(
   VK_CHECK(vkCreateRenderPass(context->device->GetLogicalDevice(),
                               &render_pass_create_info, context->allocator,
                               &handle));
+
+  return true;
 }
 
 void VulkanRenderPass::Destroy() {

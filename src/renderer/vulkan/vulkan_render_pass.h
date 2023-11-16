@@ -9,7 +9,7 @@ class VulkanCommandBuffer;
 
 class VulkanRenderPass : public GPURenderPass {
 public:
-  void
+  bool
   Create(std::vector<GPURenderPassAttachmentConfig> pass_render_attachments,
          glm::vec4 pass_render_area, glm::vec4 pass_clear_color,
          float pass_depth, float pass_stencil,

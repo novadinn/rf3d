@@ -13,7 +13,7 @@ class GPUTexture {
 public:
   virtual ~GPUTexture() {}
 
-  virtual void Create(GPUFormat texture_format, GPUTextureType texture_type,
+  virtual bool Create(GPUFormat texture_format, GPUTextureType texture_type,
                       uint32_t texture_width, uint32_t texture_height) = 0;
   virtual void Destroy() = 0;
 

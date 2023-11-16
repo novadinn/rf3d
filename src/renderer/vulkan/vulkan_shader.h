@@ -49,7 +49,7 @@ private:
   void ReflectStageUniforms(spirv_cross::Compiler &compiler,
                             spirv_cross::ShaderResources &resources,
                             std::vector<VulkanShaderSet> &sets);
-  void ReflectVertexAttributes(
+  bool ReflectVertexAttributes(
       spirv_cross::Compiler &compiler, spirv_cross::ShaderResources &resources,
       std::vector<VkVertexInputAttributeDescription> &attributes,
       uint64_t *out_stride);

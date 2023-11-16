@@ -179,7 +179,7 @@ void VulkanDevice::UpdateDepthFormat() {
   }
 
   depth_format = VK_FORMAT_UNDEFINED;
-  FATAL("Failed to find a supported depth format!");
+  ERROR("Failed to find a supported depth format!");
 }
 
 void VulkanDevice::UpdateCommandBuffers() {

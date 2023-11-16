@@ -64,8 +64,10 @@ bool VulkanShader::Create(std::vector<GPUShaderStageConfig> stage_configs,
     ReflectStagePushConstantRanges(compiler, resources, push_constant_ranges);
     ReflectStageUniforms(compiler, resources, sets);
     if (stage_config->type == GPU_SHADER_STAGE_TYPE_VERTEX) {
-      ReflectVertexAttributes(compiler, resources, attributes,
-                              &attributes_stride);
+      if (!ReflectVertexAttributes(compiler, resources, attributes,
+                                   &attributes_stride)) {
+        return false;
+      }
     }
 
     file_data.clear();
@@ -306,7 +308,7 @@ void VulkanShader::ReflectStagePushConstantRanges(
   }
 }
 
-void VulkanShader::ReflectVertexAttributes(
+bool VulkanShader::ReflectVertexAttributes(
     spirv_cross::Compiler &compiler, spirv_cross::ShaderResources &resources,
     std::vector<VkVertexInputAttributeDescription> &attributes,
     uint64_t *out_stride) {
@@ -336,11 +338,13 @@ void VulkanShader::ReflectVertexAttributes(
       } break;
       default: {
         ERROR("Unknown spirv vector type size!");
+        return false;
       } break;
       };
     } break;
     default: {
       ERROR("Unknown spirv type!");
+      return false;
     } break;
     }
 
@@ -356,6 +360,8 @@ void VulkanShader::ReflectVertexAttributes(
   }
 
   *out_stride = offset;
+
+  return true;
 }
 
 bool VulkanShader::UpdateDescriptorSetsReflection(
