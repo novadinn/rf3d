@@ -77,11 +77,16 @@ bool VulkanBackend::Initialize(SDL_Window *sdl_window) {
   main_render_pass = RenderPassAllocate();
   main_render_pass->Create(
       std::vector<GPURenderPassAttachmentConfig>{
-          GPURenderPassAttachmentConfig{GPU_FORMAT_DEVICE_COLOR_OPTIMAL,
-                                        GPU_ATTACHMENT_USAGE_COLOR_ATTACHMENT},
+          GPURenderPassAttachmentConfig{
+              GPU_FORMAT_DEVICE_COLOR_OPTIMAL,
+              GPU_ATTACHMENT_USAGE_COLOR_ATTACHMENT,
+              GPU_RENDER_PASS_ATTACHMENT_LOAD_OPERATION_DONT_CARE,
+              GPU_RENDER_PASS_ATTACHMENT_STORE_OPERATION_DONT_CARE, true},
           GPURenderPassAttachmentConfig{
               GPU_FORMAT_DEVICE_DEPTH_OPTIMAL,
-              GPU_ATTACHMENT_USAGE_DEPTH_STENCIL_ATTACHMENT}},
+              GPU_ATTACHMENT_USAGE_DEPTH_STENCIL_ATTACHMENT,
+              GPU_RENDER_PASS_ATTACHMENT_LOAD_OPERATION_DONT_CARE,
+              GPU_RENDER_PASS_ATTACHMENT_STORE_OPERATION_DONT_CARE, false}},
       glm::vec4(0, 0, width, height), glm::vec4(0.2f, 0.2f, 0.2f, 1.0f), 1.0f,
       0.0f,
       GPU_RENDER_PASS_CLEAR_FLAG_COLOR | GPU_RENDER_PASS_CLEAR_FLAG_DEPTH |

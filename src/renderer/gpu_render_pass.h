@@ -13,9 +13,22 @@ enum GPURenderPassClearFlag {
   GPU_RENDER_PASS_CLEAR_FLAG_STENCIL = 0x4,
 };
 
+enum GPURenderPassAttachmentLoadOperation {
+  GPU_RENDER_PASS_ATTACHMENT_LOAD_OPERATION_DONT_CARE,
+  GPU_RENDER_PASS_ATTACHMENT_LOAD_OPERATION_LOAD,
+};
+
+enum GPURenderPassAttachmentStoreOperation {
+  GPU_RENDER_PASS_ATTACHMENT_STORE_OPERATION_DONT_CARE,
+  GPU_RENDER_PASS_ATTACHMENT_STORE_OPERATION_STORE,
+};
+
 struct GPURenderPassAttachmentConfig {
   GPUFormat format;
   GPUAttachmentUsage usage;
+  GPURenderPassAttachmentLoadOperation load_operation;
+  GPURenderPassAttachmentStoreOperation store_operation;
+  bool present_after;
 };
 
 class GPURenderPass {

@@ -203,11 +203,16 @@ int main(int argc, char **argv) {
   GPURenderPass *offscreen_render_pass = frontend->RenderPassAllocate();
   offscreen_render_pass->Create(
       std::vector<GPURenderPassAttachmentConfig>{
-          GPURenderPassAttachmentConfig{GPU_FORMAT_DEVICE_COLOR_OPTIMAL,
-                                        GPU_ATTACHMENT_USAGE_COLOR_ATTACHMENT},
+          GPURenderPassAttachmentConfig{
+              GPU_FORMAT_DEVICE_COLOR_OPTIMAL,
+              GPU_ATTACHMENT_USAGE_COLOR_ATTACHMENT,
+              GPU_RENDER_PASS_ATTACHMENT_LOAD_OPERATION_DONT_CARE,
+              GPU_RENDER_PASS_ATTACHMENT_STORE_OPERATION_DONT_CARE, true},
           GPURenderPassAttachmentConfig{
               GPU_FORMAT_DEVICE_DEPTH_OPTIMAL,
-              GPU_ATTACHMENT_USAGE_DEPTH_STENCIL_ATTACHMENT}},
+              GPU_ATTACHMENT_USAGE_DEPTH_STENCIL_ATTACHMENT,
+              GPU_RENDER_PASS_ATTACHMENT_LOAD_OPERATION_DONT_CARE,
+              GPU_RENDER_PASS_ATTACHMENT_STORE_OPERATION_DONT_CARE, false}},
       glm::vec4(0, 0, width, height), glm::vec4(0, 0, 0, 1), 1.0f, 0.0f,
       GPU_RENDER_PASS_CLEAR_FLAG_COLOR | GPU_RENDER_PASS_CLEAR_FLAG_DEPTH |
           GPU_RENDER_PASS_CLEAR_FLAG_STENCIL);

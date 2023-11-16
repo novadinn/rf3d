@@ -27,25 +27,89 @@ void VulkanRenderPass::Create(
   VkAttachmentReference depth_attachment_reference;
 
   for (int i = 0; i < attachments.size(); ++i) {
+    GPURenderPassAttachmentConfig *attachment_config = &attachments[i];
     bool is_depth_attachment = GPUUtils::IsDepthFormat(attachments[i].format);
 
     VkAttachmentDescription attachment = {};
     attachment.flags = 0;
     attachment.format =
-        VulkanUtils::GPUFormatToVulkanFormat(attachments[i].format);
+        VulkanUtils::GPUFormatToVulkanFormat(attachment_config->format);
     attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    attachment.storeOp = is_depth_attachment ? VK_ATTACHMENT_STORE_OP_DONT_CARE
-                                             : VK_ATTACHMENT_STORE_OP_STORE;
-    attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    attachment.finalLayout =
-        is_depth_attachment
-            ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
-            : VK_IMAGE_LAYOUT_PRESENT_SRC_KHR; /* TODO:
-                                                  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-                                                */
+    if (!is_depth_attachment) {
+      bool do_clear_color = clear_flags & GPU_RENDER_PASS_CLEAR_FLAG_COLOR;
+
+      switch (attachment_config->load_operation) {
+      case GPU_RENDER_PASS_ATTACHMENT_LOAD_OPERATION_DONT_CARE: {
+        attachment.loadOp = do_clear_color ? VK_ATTACHMENT_LOAD_OP_CLEAR
+                                           : VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+      } break;
+      case GPU_RENDER_PASS_ATTACHMENT_LOAD_OPERATION_LOAD: {
+        attachment.loadOp = do_clear_color ? VK_ATTACHMENT_LOAD_OP_CLEAR
+                                           : VK_ATTACHMENT_LOAD_OP_LOAD;
+      } break;
+      default: {
+        ERROR("Unsupported attachment load operation!");
+      } break;
+      }
+      switch (attachment_config->store_operation) {
+      case GPU_RENDER_PASS_ATTACHMENT_STORE_OPERATION_DONT_CARE: {
+        attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+      } break;
+      case GPU_RENDER_PASS_ATTACHMENT_STORE_OPERATION_STORE: {
+        attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+      } break;
+      default: {
+        ERROR("Unsupported attachment store operation!");
+      } break;
+      }
+      attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+      attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+      attachment.initialLayout =
+          attachment_config->load_operation ==
+                  GPU_RENDER_PASS_ATTACHMENT_LOAD_OPERATION_LOAD
+              ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+              : VK_IMAGE_LAYOUT_UNDEFINED;
+      attachment.finalLayout = attachment_config->present_after
+                                   ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+                                   : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    } else { /* depth attachment */
+      bool do_clear_depth = clear_flags & GPU_RENDER_PASS_CLEAR_FLAG_DEPTH;
+
+      switch (attachment_config->load_operation) {
+      case GPU_RENDER_PASS_ATTACHMENT_LOAD_OPERATION_DONT_CARE: {
+        attachment.loadOp = do_clear_depth ? VK_ATTACHMENT_LOAD_OP_CLEAR
+                                           : VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+      } break;
+      case GPU_RENDER_PASS_ATTACHMENT_LOAD_OPERATION_LOAD: {
+        attachment.loadOp = do_clear_depth ? VK_ATTACHMENT_LOAD_OP_CLEAR
+                                           : VK_ATTACHMENT_LOAD_OP_LOAD;
+      } break;
+      default: {
+        ERROR("Unsupported attachment load operation!");
+      } break;
+      }
+      switch (attachment_config->store_operation) {
+      case GPU_RENDER_PASS_ATTACHMENT_STORE_OPERATION_DONT_CARE: {
+        attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+      } break;
+      case GPU_RENDER_PASS_ATTACHMENT_STORE_OPERATION_STORE: {
+        attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+      } break;
+      default: {
+        ERROR("Unsupported attachment store operation!");
+      } break;
+      }
+
+      /* TODO: stencil attachments are not supported rn */
+      attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+      attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+      attachment.initialLayout =
+          attachment_config->load_operation ==
+                  GPU_RENDER_PASS_ATTACHMENT_LOAD_OPERATION_LOAD
+              ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+              : VK_IMAGE_LAYOUT_UNDEFINED;
+      attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    }
 
     attachment_descriptions.emplace_back(attachment);
 
@@ -56,6 +120,7 @@ void VulkanRenderPass::Create(
                             : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     if (is_depth_attachment) {
+      /* only 1 depth attachment */
       depth_attachment_reference = attachment_reference;
     } else {
       color_attachment_references.emplace_back(attachment_reference);
@@ -75,25 +140,26 @@ void VulkanRenderPass::Create(
   subpass_description.preserveAttachmentCount = 0;
   subpass_description.pPreserveAttachments = 0;
 
-  /* TODO: do we need to create multiple of those to support multiple render
-   * targets? Rn, all of the dependencies are universal */
-  VkSubpassDependency subpass_dependency = {};
-  subpass_dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-  subpass_dependency.dstSubpass = 0;
-  subpass_dependency.srcStageMask =
-      VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
-      VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-  subpass_dependency.dstStageMask =
-      VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
-      VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-  subpass_dependency.srcAccessMask = 0;
-  subpass_dependency.dstAccessMask =
-      VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
-      VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
-      VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-  subpass_dependency.dependencyFlags = 0;
-
-  /* TODO: create a depth attachment subpass dependency, dont care for now */
+  /* TODO: make this configurable */
+  std::array<VkSubpassDependency, 2> dependencies;
+  dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+  dependencies[0].dstSubpass = 0;
+  dependencies[0].srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+                                 VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+  dependencies[0].dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+                                 VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+  dependencies[0].srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+  dependencies[0].dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
+                                  VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+  dependencies[0].dependencyFlags = 0;
+  dependencies[1].srcSubpass = VK_SUBPASS_EXTERNAL;
+  dependencies[1].dstSubpass = 0;
+  dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+  dependencies[1].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+  dependencies[1].srcAccessMask = 0;
+  dependencies[1].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+                                  VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+  dependencies[1].dependencyFlags = 0;
 
   VkRenderPassCreateInfo render_pass_create_info = {};
   render_pass_create_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -103,8 +169,8 @@ void VulkanRenderPass::Create(
   render_pass_create_info.pAttachments = attachment_descriptions.data();
   render_pass_create_info.subpassCount = 1;
   render_pass_create_info.pSubpasses = &subpass_description;
-  render_pass_create_info.dependencyCount = 1;
-  render_pass_create_info.pDependencies = &subpass_dependency;
+  render_pass_create_info.dependencyCount = dependencies.size();
+  render_pass_create_info.pDependencies = dependencies.data();
 
   VK_CHECK(vkCreateRenderPass(context->device->GetLogicalDevice(),
                               &render_pass_create_info, context->allocator,
