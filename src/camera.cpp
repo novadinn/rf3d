@@ -13,7 +13,7 @@ void Camera::Create(float start_fov, float start_aspect_ratio, float start_near,
 void Camera::Pan(const glm::vec2 &delta) {
   glm::vec2 speed = GetPanSpeed();
   focal_point += -GetRight() * delta.x * speed.x * distance;
-  focal_point += GetUp() * delta.y * speed.y * distance;
+  focal_point += -GetUp() * delta.y * speed.y * distance;
 }
 
 void Camera::Rotate(const glm::vec2 &delta) {
