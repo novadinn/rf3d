@@ -48,6 +48,19 @@ void VulkanDescriptorSet::Create(
                                   VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                   VK_SHADER_STAGE_ALL_GRAPHICS);
     } break;
+    case GPU_DESCRIPTOR_BINDING_TYPE_ATTACHMENT: {
+      VulkanAttachment *native_attachment =
+          (VulkanAttachment *)binding.attachment;
+
+      VkDescriptorImageInfo image_info = {};
+      image_info.sampler = native_attachment->GetSampler();
+      image_info.imageView = native_attachment->GetImageView();
+      image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+      builder = builder.BindImage(binding.binding, &image_info,
+                                  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                  VK_SHADER_STAGE_ALL_GRAPHICS);
+    } break;
     }
   }
 

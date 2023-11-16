@@ -24,7 +24,7 @@ public:
 
   void Bind() override;
   void BindUniformBuffer(GPUDescriptorSet *set, uint32_t offset) override;
-  void BindTexture(GPUDescriptorSet *set) override;
+  void BindSampler(GPUDescriptorSet *set) override;
   void PushConstant(void *value, uint64_t size, uint32_t offset,
                     uint8_t stage_flags) override;
 

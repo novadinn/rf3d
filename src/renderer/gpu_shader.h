@@ -35,7 +35,7 @@ public:
 
   virtual void Bind() = 0;
   virtual void BindUniformBuffer(GPUDescriptorSet *set, uint32_t offset) = 0;
-  virtual void BindTexture(GPUDescriptorSet *set) = 0;
+  virtual void BindSampler(GPUDescriptorSet *set) = 0;
   virtual void PushConstant(void *value, uint64_t size, uint32_t offset,
                             uint8_t stage_flags) = 0;
 

@@ -10,6 +10,8 @@ public:
               uint32_t attachment_width, uint32_t attachment_height) override;
   void Destroy() override;
 
+  inline VkSampler GetSampler() { return sampler; }
+
   void SetImageView(VkImageView new_view) { /* TODO: copy construcor */
     view = new_view;
   }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "gpu_attachment.h"
 #include "gpu_texture.h"
 #include "gpu_uniform_buffer.h"
 
@@ -9,6 +10,7 @@
 enum GPUDescriptorBindingType {
   GPU_DESCRIPTOR_BINDING_TYPE_UNIFORM_BUFFER,
   GPU_DESCRIPTOR_BINDING_TYPE_TEXTURE,
+  GPU_DESCRIPTOR_BINDING_TYPE_ATTACHMENT,
 };
 
 struct GPUDescriptorBinding {
@@ -16,10 +18,12 @@ struct GPUDescriptorBinding {
   GPUDescriptorBindingType type;
   GPUTexture *texture;
   GPUUniformBuffer *uniform_buffer;
+  GPUAttachment *attachment;
 };
 
 class GPUDescriptorSet {
 public:
+  virtual ~GPUDescriptorSet() {}
   virtual void Create(uint32_t set_index,
                       std::vector<GPUDescriptorBinding> &set_bindings) = 0;
   virtual void Destroy() = 0;

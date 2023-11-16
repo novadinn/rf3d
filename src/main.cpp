@@ -138,13 +138,45 @@ int main(int argc, char **argv) {
   vertex_buffer->LoadData(0, vertices.size() * sizeof(vertices[0]),
                           vertices.data());
 
+  GPUAttachment *offscreen_color_attachment = frontend->AttachmentAllocate();
+  offscreen_color_attachment->Create(GPU_FORMAT_DEVICE_COLOR_OPTIMAL,
+                                     GPU_ATTACHMENT_USAGE_COLOR_ATTACHMENT,
+                                     width, height);
+  GPUAttachment *offscreen_depth_attachment = frontend->AttachmentAllocate();
+  offscreen_depth_attachment->Create(
+      GPU_FORMAT_DEVICE_DEPTH_OPTIMAL,
+      GPU_ATTACHMENT_USAGE_DEPTH_STENCIL_ATTACHMENT, width, height);
+  std::vector<GPUAttachment *> offscreen_attachments;
+  offscreen_attachments.emplace_back(offscreen_color_attachment);
+  offscreen_attachments.emplace_back(offscreen_depth_attachment);
+
+  GPURenderPass *offscreen_render_pass = frontend->RenderPassAllocate();
+  offscreen_render_pass->Create(
+      std::vector<GPURenderPassAttachmentConfig>{
+          GPURenderPassAttachmentConfig{
+              GPU_FORMAT_DEVICE_COLOR_OPTIMAL,
+              GPU_ATTACHMENT_USAGE_COLOR_ATTACHMENT,
+              GPU_RENDER_PASS_ATTACHMENT_LOAD_OPERATION_DONT_CARE,
+              GPU_RENDER_PASS_ATTACHMENT_STORE_OPERATION_DONT_CARE, false},
+          GPURenderPassAttachmentConfig{
+              GPU_FORMAT_DEVICE_DEPTH_OPTIMAL,
+              GPU_ATTACHMENT_USAGE_DEPTH_STENCIL_ATTACHMENT,
+              GPU_RENDER_PASS_ATTACHMENT_LOAD_OPERATION_DONT_CARE,
+              GPU_RENDER_PASS_ATTACHMENT_STORE_OPERATION_DONT_CARE, false}},
+      glm::vec4(0, 0, width, height), glm::vec4(0, 0, 0, 1), 1.0f, 0.0f,
+      GPU_RENDER_PASS_CLEAR_FLAG_COLOR | GPU_RENDER_PASS_CLEAR_FLAG_DEPTH |
+          GPU_RENDER_PASS_CLEAR_FLAG_STENCIL);
+  GPURenderTarget *offscreen_render_target = frontend->RenderTargetAllocate();
+  offscreen_render_target->Create(offscreen_render_pass, offscreen_attachments,
+                                  width, height);
+
   std::vector<GPUShaderStageConfig> stage_configs;
   stage_configs.emplace_back(GPUShaderStageConfig{
       GPU_SHADER_STAGE_TYPE_VERTEX, "assets/shaders/object.vert.spv"});
   stage_configs.emplace_back(GPUShaderStageConfig{
       GPU_SHADER_STAGE_TYPE_FRAGMENT, "assets/shaders/object.frag.spv"});
   if (!shader->Create(stage_configs, GPU_SHADER_TOPOLOGY_TYPE_TRIANGLE_LIST,
-                      window_render_pass, width, height)) {
+                      offscreen_render_pass, width, height)) {
     FATAL("Failed to create a shader. Aborting...");
     exit(1);
   }
@@ -187,38 +219,6 @@ int main(int argc, char **argv) {
     meshes[i].texture_descriptor_set->Create(3, bindings);
     bindings.clear();
   }
-
-  GPUAttachment *offscreen_color_attachment = frontend->AttachmentAllocate();
-  offscreen_color_attachment->Create(GPU_FORMAT_DEVICE_COLOR_OPTIMAL,
-                                     GPU_ATTACHMENT_USAGE_COLOR_ATTACHMENT,
-                                     width, height);
-  GPUAttachment *offscreen_depth_attachment = frontend->AttachmentAllocate();
-  offscreen_depth_attachment->Create(
-      GPU_FORMAT_DEVICE_DEPTH_OPTIMAL,
-      GPU_ATTACHMENT_USAGE_DEPTH_STENCIL_ATTACHMENT, width, height);
-  std::vector<GPUAttachment *> offscreen_attachments;
-  offscreen_attachments.emplace_back(offscreen_color_attachment);
-  offscreen_attachments.emplace_back(offscreen_depth_attachment);
-
-  GPURenderPass *offscreen_render_pass = frontend->RenderPassAllocate();
-  offscreen_render_pass->Create(
-      std::vector<GPURenderPassAttachmentConfig>{
-          GPURenderPassAttachmentConfig{
-              GPU_FORMAT_DEVICE_COLOR_OPTIMAL,
-              GPU_ATTACHMENT_USAGE_COLOR_ATTACHMENT,
-              GPU_RENDER_PASS_ATTACHMENT_LOAD_OPERATION_DONT_CARE,
-              GPU_RENDER_PASS_ATTACHMENT_STORE_OPERATION_DONT_CARE, true},
-          GPURenderPassAttachmentConfig{
-              GPU_FORMAT_DEVICE_DEPTH_OPTIMAL,
-              GPU_ATTACHMENT_USAGE_DEPTH_STENCIL_ATTACHMENT,
-              GPU_RENDER_PASS_ATTACHMENT_LOAD_OPERATION_DONT_CARE,
-              GPU_RENDER_PASS_ATTACHMENT_STORE_OPERATION_DONT_CARE, false}},
-      glm::vec4(0, 0, width, height), glm::vec4(0, 0, 0, 1), 1.0f, 0.0f,
-      GPU_RENDER_PASS_CLEAR_FLAG_COLOR | GPU_RENDER_PASS_CLEAR_FLAG_DEPTH |
-          GPU_RENDER_PASS_CLEAR_FLAG_STENCIL);
-  GPURenderTarget *offscreen_render_target = frontend->RenderTargetAllocate();
-  offscreen_render_target->Create(offscreen_render_pass, offscreen_attachments,
-                                  width, height);
 
   Camera *camera = new Camera();
   camera->Create(45, width / height, 0.1f, 1000.0f);
@@ -286,12 +286,44 @@ int main(int argc, char **argv) {
   stage_configs.emplace_back(GPUShaderStageConfig{
       GPU_SHADER_STAGE_TYPE_FRAGMENT, "assets/shaders/grid.frag.spv"});
   grid_shader->Create(stage_configs, GPU_SHADER_TOPOLOGY_TYPE_LINE_LIST,
-                      window_render_pass, width, height);
+                      offscreen_render_pass, width, height);
 
   GPUVertexBuffer *grid_vertex_buffer = frontend->VertexBufferAllocate();
   grid_vertex_buffer->Create(grid_vertices.size() * sizeof(grid_vertices[0]));
   grid_vertex_buffer->LoadData(
       0, grid_vertices.size() * sizeof(grid_vertices[0]), grid_vertices.data());
+
+  GPUShader *post_processing_shader = frontend->ShaderAllocate();
+  stage_configs.clear();
+  stage_configs.emplace_back(GPUShaderStageConfig{
+      GPU_SHADER_STAGE_TYPE_VERTEX, "assets/shaders/postprocessing.vert.spv"});
+  stage_configs.emplace_back(
+      GPUShaderStageConfig{GPU_SHADER_STAGE_TYPE_FRAGMENT,
+                           "assets/shaders/postprocessing.frag.spv"});
+  post_processing_shader->Create(stage_configs,
+                                 GPU_SHADER_TOPOLOGY_TYPE_TRIANGLE_LIST,
+                                 window_render_pass, width, height);
+
+  GPUDescriptorSet *post_processing_set = frontend->DescriptorSetAllocate();
+  bindings.clear();
+  bindings.emplace_back(
+      GPUDescriptorBinding{0, GPU_DESCRIPTOR_BINDING_TYPE_ATTACHMENT, 0, 0,
+                           offscreen_color_attachment});
+  post_processing_set->Create(0, bindings);
+
+  std::vector<float> post_processing_vertices = {
+      -1.0f, 1.0f, 0.0f, 1.0f,  -1.0f, -1.0f,
+      0.0f,  0.0f, 1.0f, -1.0f, 1.0f,  0.0f,
+
+      -1.0f, 1.0f, 0.0f, 1.0f,  1.0f,  -1.0f,
+      1.0f,  0.0f, 1.0f, 1.0f,  1.0f,  1.0f};
+  GPUVertexBuffer *post_processing_vertex_buffer =
+      frontend->VertexBufferAllocate();
+  post_processing_vertex_buffer->Create(post_processing_vertices.size() *
+                                        sizeof(post_processing_vertices[0]));
+  post_processing_vertex_buffer->LoadData(
+      0, post_processing_vertices.size() * sizeof(post_processing_vertices[0]),
+      post_processing_vertices.data());
 
   glm::ivec2 previous_mouse = {0, 0};
   uint32_t last_update_time = SDL_GetTicks();
@@ -358,7 +390,7 @@ int main(int argc, char **argv) {
     }
 
     if (frontend->BeginFrame()) {
-      window_render_pass->Begin(frontend->GetCurrentWindowRenderTarget());
+      offscreen_render_pass->Begin(offscreen_render_target);
 
       static float angle = 0.0f;
       angle += 0.003f;
@@ -402,7 +434,7 @@ int main(int argc, char **argv) {
         shader->BindUniformBuffer(instance_descriptor_set,
                                   i * instance_uniform->GetDynamicAlignment());
 
-        shader->BindTexture(meshes[i].texture_descriptor_set);
+        shader->BindSampler(meshes[i].texture_descriptor_set);
 
         shader->PushConstant(&meshes[i].push_constants, sizeof(PushConsts), 0,
                              GPU_SHADER_STAGE_TYPE_FRAGMENT);
@@ -415,10 +447,14 @@ int main(int argc, char **argv) {
       grid_shader->BindUniformBuffer(global_descriptor_set, 0);
       frontend->Draw(grid_vertices.size());
 
-      window_render_pass->End();
-
-      offscreen_render_pass->Begin(offscreen_render_target);
       offscreen_render_pass->End();
+
+      window_render_pass->Begin(frontend->GetCurrentWindowRenderTarget());
+      post_processing_shader->Bind();
+      post_processing_vertex_buffer->Bind(0);
+      post_processing_shader->BindSampler(post_processing_set);
+      frontend->Draw(post_processing_vertices.size());
+      window_render_pass->End();
 
       frontend->EndFrame();
     }
@@ -433,6 +469,13 @@ int main(int argc, char **argv) {
   }
 
   delete camera;
+
+  post_processing_vertex_buffer->Destroy();
+  delete post_processing_vertex_buffer;
+  post_processing_set->Destroy();
+  delete post_processing_set;
+  post_processing_shader->Destroy();
+  delete post_processing_shader;
 
   grid_vertex_buffer->Destroy();
   delete grid_vertex_buffer;

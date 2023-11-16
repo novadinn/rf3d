@@ -184,7 +184,7 @@ void VulkanShader::BindUniformBuffer(GPUDescriptorSet *set, uint32_t offset) {
                           &offset);
 }
 
-void VulkanShader::BindTexture(GPUDescriptorSet *set) {
+void VulkanShader::BindSampler(GPUDescriptorSet *set) {
   VulkanContext *context = VulkanBackend::GetContext();
 
   VulkanDeviceQueueInfo info =
