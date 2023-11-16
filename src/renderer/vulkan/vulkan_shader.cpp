@@ -14,6 +14,7 @@
 #include <spirv_cross/spirv_glsl.hpp>
 #include <stdio.h>
 #include <stdlib.h>
+#include <vulkan/vulkan_beta.h>
 
 bool VulkanShader::Create(std::vector<GPUShaderStageConfig> stage_configs,
                           GPUShaderTopologyType topology_type,

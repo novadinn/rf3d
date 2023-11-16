@@ -35,7 +35,7 @@ void VulkanAttachment::Create(GPUFormat attachment_format,
   image_create_info.extent.width = width;
   image_create_info.extent.height = height;
   image_create_info.extent.depth = 1;
-  image_create_info.mipLevels = 4;
+  image_create_info.mipLevels = 1;
   image_create_info.arrayLayers = 1;
   image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
   image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;

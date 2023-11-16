@@ -157,7 +157,7 @@ int main(int argc, char **argv) {
               GPU_FORMAT_DEVICE_COLOR_OPTIMAL,
               GPU_ATTACHMENT_USAGE_COLOR_ATTACHMENT,
               GPU_RENDER_PASS_ATTACHMENT_LOAD_OPERATION_DONT_CARE,
-              GPU_RENDER_PASS_ATTACHMENT_STORE_OPERATION_DONT_CARE, false},
+              GPU_RENDER_PASS_ATTACHMENT_STORE_OPERATION_STORE, false},
           GPURenderPassAttachmentConfig{
               GPU_FORMAT_DEVICE_DEPTH_OPTIMAL,
               GPU_ATTACHMENT_USAGE_DEPTH_STENCIL_ATTACHMENT,
@@ -311,20 +311,6 @@ int main(int argc, char **argv) {
                            offscreen_color_attachment});
   post_processing_set->Create(0, bindings);
 
-  std::vector<float> post_processing_vertices = {
-      -1.0f, 1.0f, 0.0f, 1.0f,  -1.0f, -1.0f,
-      0.0f,  0.0f, 1.0f, -1.0f, 1.0f,  0.0f,
-
-      -1.0f, 1.0f, 0.0f, 1.0f,  1.0f,  -1.0f,
-      1.0f,  0.0f, 1.0f, 1.0f,  1.0f,  1.0f};
-  GPUVertexBuffer *post_processing_vertex_buffer =
-      frontend->VertexBufferAllocate();
-  post_processing_vertex_buffer->Create(post_processing_vertices.size() *
-                                        sizeof(post_processing_vertices[0]));
-  post_processing_vertex_buffer->LoadData(
-      0, post_processing_vertices.size() * sizeof(post_processing_vertices[0]),
-      post_processing_vertices.data());
-
   glm::ivec2 previous_mouse = {0, 0};
   uint32_t last_update_time = SDL_GetTicks();
 
@@ -450,10 +436,11 @@ int main(int argc, char **argv) {
       offscreen_render_pass->End();
 
       window_render_pass->Begin(frontend->GetCurrentWindowRenderTarget());
+
       post_processing_shader->Bind();
-      post_processing_vertex_buffer->Bind(0);
       post_processing_shader->BindSampler(post_processing_set);
-      frontend->Draw(post_processing_vertices.size());
+      frontend->Draw(4);
+
       window_render_pass->End();
 
       frontend->EndFrame();
@@ -470,8 +457,6 @@ int main(int argc, char **argv) {
 
   delete camera;
 
-  post_processing_vertex_buffer->Destroy();
-  delete post_processing_vertex_buffer;
   post_processing_set->Destroy();
   delete post_processing_set;
   post_processing_shader->Destroy();
