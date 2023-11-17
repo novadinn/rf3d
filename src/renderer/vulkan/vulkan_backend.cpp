@@ -93,7 +93,7 @@ bool VulkanBackend::Initialize(SDL_Window *sdl_window) {
           GPU_RENDER_PASS_CLEAR_FLAG_STENCIL);
 
   main_framebuffers.resize(context->swapchain->GetImageViews().size());
-  for (int i = 0; i < main_framebuffers.size(); ++i) {
+  for (uint32_t i = 0; i < main_framebuffers.size(); ++i) {
     main_framebuffers[i] = RenderTargetAllocate();
   }
   RegenerateFramebuffers();
@@ -105,7 +105,7 @@ bool VulkanBackend::Initialize(SDL_Window *sdl_window) {
   context->queue_complete_semaphores.resize(
       context->swapchain->GetMaxFramesInFlights());
   context->in_flight_fences.resize(context->swapchain->GetMaxFramesInFlights());
-  for (int i = 0; i < context->swapchain->GetMaxFramesInFlights(); ++i) {
+  for (uint32_t i = 0; i < context->swapchain->GetMaxFramesInFlights(); ++i) {
     VkSemaphoreCreateInfo semaphore_create_info = {};
     semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
     semaphore_create_info.pNext = 0;
@@ -123,7 +123,7 @@ bool VulkanBackend::Initialize(SDL_Window *sdl_window) {
   }
 
   context->images_in_flight.resize(context->swapchain->GetImageCount());
-  for (int i = 0; i < context->images_in_flight.size(); ++i) {
+  for (uint32_t i = 0; i < context->images_in_flight.size(); ++i) {
     context->images_in_flight[i] = 0;
   }
 
@@ -143,7 +143,7 @@ void VulkanBackend::Shutdown() {
   context->descriptor_pools->Shutdown();
   delete context->descriptor_pools;
 
-  for (int i = 0; i < context->swapchain->GetMaxFramesInFlights(); ++i) {
+  for (uint32_t i = 0; i < context->swapchain->GetMaxFramesInFlights(); ++i) {
     vkDestroySemaphore(context->device->GetLogicalDevice(),
                        context->image_available_semaphores[i],
                        context->allocator);
@@ -154,7 +154,7 @@ void VulkanBackend::Shutdown() {
     delete context->in_flight_fences[i];
   }
 
-  for (int i = 0; i < main_framebuffers.size(); ++i) {
+  for (uint32_t i = 0; i < main_framebuffers.size(); ++i) {
     main_framebuffers[i]->Destroy();
     delete main_framebuffers[i];
   }
@@ -371,7 +371,7 @@ void VulkanBackend::RegenerateFramebuffers() {
   std::vector<VkImageView> &image_views = context->swapchain->GetImageViews();
   VulkanAttachment &depth_attachment = context->swapchain->GetDepthAttachment();
   glm::vec4 &render_area = main_render_pass->GetRenderArea();
-  for (int i = 0; i < main_framebuffers.size(); ++i) {
+  for (uint32_t i = 0; i < main_framebuffers.size(); ++i) {
     // std::vector<VkImageView> attachments = {image_views[i],
     //                                         depth_attachment.GetImageView()};
     /* TODO: horrible... */
@@ -396,7 +396,7 @@ bool VulkanBackend::CreateInstance(VkApplicationInfo application_info,
 #ifndef NDEBUG
   required_layers.emplace_back("VK_LAYER_KHRONOS_validation");
   DEBUG("Required validation layers:");
-  for (int i = 0; i < required_layers.size(); ++i) {
+  for (uint32_t i = 0; i < required_layers.size(); ++i) {
     DEBUG("%s", required_layers[i]);
   }
 #endif
@@ -422,7 +422,7 @@ bool VulkanBackend::CreateInstance(VkApplicationInfo application_info,
       VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
 #endif
   DEBUG("Required extensions:");
-  for (int i = 0; i < required_extensions.size(); ++i) {
+  for (uint32_t i = 0; i < required_extensions.size(); ++i) {
     DEBUG(required_extensions[i]);
   }
 
@@ -505,9 +505,9 @@ bool VulkanBackend::RequiredLayersAvailable(
   VK_CHECK(vkEnumerateInstanceLayerProperties(&available_layer_count,
                                               &available_layers[0]));
 
-  for (int i = 0; i < required_layers.size(); ++i) {
+  for (uint32_t i = 0; i < required_layers.size(); ++i) {
     bool found = false;
-    for (int j = 0; j < available_layer_count; ++j) {
+    for (uint32_t j = 0; j < available_layer_count; ++j) {
       if (strcmp(required_layers[i], available_layers[j].layerName) == 0) {
         found = true;
         DEBUG("Required validation layer found: %s.", required_layers[i]);
@@ -535,9 +535,9 @@ bool VulkanBackend::RequiredExtensionsAvailable(
   VK_CHECK(vkEnumerateInstanceExtensionProperties(0, &available_extension_count,
                                                   &available_extensions[0]));
 
-  for (int i = 0; i < required_extensions.size(); ++i) {
+  for (uint32_t i = 0; i < required_extensions.size(); ++i) {
     bool found = false;
-    for (int j = 0; j < available_extension_count; ++j) {
+    for (uint32_t j = 0; j < available_extension_count; ++j) {
       if (strcmp(required_extensions[i],
                  available_extensions[j].extensionName) == 0) {
         found = true;

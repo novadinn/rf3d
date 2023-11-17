@@ -20,17 +20,17 @@ public:
                         uint32_t *out_image_index);
 
   inline VkSwapchainKHR &GetHandle() { return handle; }
-  inline int GetMaxFramesInFlights() const { return max_frames_in_flight; }
+  inline uint32_t GetMaxFramesInFlights() const { return max_frames_in_flight; }
   inline std::vector<VkImageView> &GetImageViews() { return image_views; }
   inline VulkanAttachment &GetDepthAttachment() { return depth_attachment; }
   inline VkSurfaceFormatKHR GetImageFormat() const { return image_format; }
   inline VkExtent2D GetExtent() const { return extent; }
 
-  inline int GetImageCount() const { return images.size(); }
+  inline uint32_t GetImageCount() const { return images.size(); }
 
 private:
   VkSwapchainKHR handle;
-  int max_frames_in_flight;
+  uint32_t max_frames_in_flight;
   std::vector<VkImage> images;
   std::vector<VkImageView> image_views;
   VkSurfaceFormatKHR image_format;

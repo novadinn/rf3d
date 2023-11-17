@@ -15,7 +15,7 @@ void VulkanDescriptorSet::Create(
 
   VulkanDescriptorBuilder builder = VulkanDescriptorBuilder::Begin();
 
-  for (int i = 0; i < bindings.size(); ++i) {
+  for (uint32_t i = 0; i < bindings.size(); ++i) {
     GPUDescriptorBinding &binding = bindings[i];
     switch (binding.type) {
     case GPU_DESCRIPTOR_BINDING_TYPE_UNIFORM_BUFFER: {

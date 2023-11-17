@@ -27,7 +27,7 @@ struct VulkanSwapchainSupportInfo {
 
 /* queue family specific info */
 struct VulkanDeviceQueueInfo {
-  int family_index;
+  uint32_t family_index;
   VkQueue queue;
   VkCommandPool command_pool;
   std::vector<VulkanCommandBuffer> command_buffers;
@@ -64,7 +64,7 @@ public:
 private:
   bool SelectPhysicalDevice(VulkanPhysicalDeviceRequirements *requirements);
   bool DeviceExtensionsAvailable(VkPhysicalDevice physical_device,
-                                 int required_extension_count,
+                                 uint32_t required_extension_count,
                                  const char **required_extensions);
 
   VkPhysicalDevice physical_device;

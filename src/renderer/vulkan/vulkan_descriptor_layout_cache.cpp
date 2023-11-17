@@ -21,9 +21,9 @@ VkDescriptorSetLayout VulkanDescriptorLayoutCache::CreateDescriptorLayout(
   DescriptorLayoutInfo layout_info;
   layout_info.bindings.reserve(layout_create_info->bindingCount);
   bool is_sorted = true;
-  int last_binding = -1;
+  int32_t last_binding = -1;
 
-  for (int i = 0; i < layout_create_info->bindingCount; i++) {
+  for (uint32_t i = 0; i < layout_create_info->bindingCount; i++) {
     layout_info.bindings.push_back(layout_create_info->pBindings[i]);
 
     if (layout_create_info->pBindings[i].binding > last_binding) {
@@ -61,7 +61,7 @@ bool VulkanDescriptorLayoutCache::DescriptorLayoutInfo::operator==(
     return false;
   }
 
-  for (int i = 0; i < bindings.size(); i++) {
+  for (uint32_t i = 0; i < bindings.size(); i++) {
     if (other.bindings[i].binding != bindings[i].binding) {
       return false;
     }

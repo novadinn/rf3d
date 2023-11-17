@@ -33,7 +33,7 @@ bool VulkanShader::Create(std::vector<GPUShaderStageConfig> stage_configs,
   std::vector<VkVertexInputAttributeDescription> attributes;
   uint64_t attributes_stride = 0;
 
-  for (int i = 0; i < stages.size(); ++i) {
+  for (uint32_t i = 0; i < stages.size(); ++i) {
     GPUShaderStageConfig *stage_config = &stage_configs[i];
     FILE *file = fopen(stage_config->file_path, "rb");
     if (!file) {
@@ -100,12 +100,12 @@ bool VulkanShader::Create(std::vector<GPUShaderStageConfig> stage_configs,
   scissor.extent.height = viewport_height;
 
   std::vector<VkDescriptorSetLayout> descriptor_set_layouts;
-  for (int i = 0; i < sets.size(); ++i) {
+  for (uint32_t i = 0; i < sets.size(); ++i) {
     VkDescriptorSetLayout set_layout;
 
     std::vector<VkDescriptorSetLayoutBinding> native_bindings;
     native_bindings.resize(sets[i].bindings.size());
-    for (int j = 0; j < native_bindings.size(); ++j) {
+    for (uint32_t j = 0; j < native_bindings.size(); ++j) {
       native_bindings[j] = sets[i].bindings[j].layout_binding;
     }
 
@@ -141,7 +141,7 @@ bool VulkanShader::Create(std::vector<GPUShaderStageConfig> stage_configs,
     return false;
   }
 
-  for (int i = 0; i < stages.size(); ++i) {
+  for (uint32_t i = 0; i < stages.size(); ++i) {
     vkDestroyShaderModule(context->device->GetLogicalDevice(), stages[i],
                           context->allocator);
   }
@@ -368,9 +368,9 @@ bool VulkanShader::UpdateDescriptorSetsReflection(
     std::vector<VulkanShaderSet> &sets, uint32_t set, uint32_t binding,
     int32_t *out_set_index) {
   /* check if binding is duplicated in shader stages */
-  for (int i = 0; i < sets.size(); ++i) {
+  for (uint32_t i = 0; i < sets.size(); ++i) {
     if (sets[i].index == set) {
-      for (int j = 0; j < sets[i].bindings.size(); ++j) {
+      for (uint32_t j = 0; j < sets[i].bindings.size(); ++j) {
         if (sets[i].bindings[j].layout_binding.binding == binding) {
           return false;
         }
@@ -380,7 +380,7 @@ bool VulkanShader::UpdateDescriptorSetsReflection(
 
   /* check if set is already presented */
   int32_t set_index = -1;
-  for (int i = 0; i < sets.size(); ++i) {
+  for (uint32_t i = 0; i < sets.size(); ++i) {
     if (sets[i].index == set) {
       set_index = i;
       break;

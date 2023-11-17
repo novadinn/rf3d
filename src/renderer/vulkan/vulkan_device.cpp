@@ -30,12 +30,12 @@ bool VulkanDevice::Create(VulkanPhysicalDeviceRequirements *requirements) {
   }
 
   /* retrieve unique queue indices */
-  std::vector<int> indices;
-  std::set<int> unique_queue_indices;
+  std::vector<uint32_t> indices;
+  std::set<uint32_t> unique_queue_indices;
 
   for (auto it = queue_infos.begin(); it != queue_infos.end(); ++it) {
     VulkanDeviceQueueType type = it->first;
-    int index = queue_infos[it->first].family_index;
+    uint32_t index = queue_infos[it->first].family_index;
     if (!unique_queue_indices.contains(index)) {
       indices.emplace_back(index);
     }
@@ -45,7 +45,7 @@ bool VulkanDevice::Create(VulkanPhysicalDeviceRequirements *requirements) {
 
   std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
   queue_create_infos.resize(indices.size());
-  for (int i = 0; i < queue_create_infos.size(); ++i) {
+  for (uint32_t i = 0; i < queue_create_infos.size(); ++i) {
     /* TODO: possibly configurable? */
     float queue_priority = 1.0f;
     queue_create_infos[i].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
@@ -105,7 +105,7 @@ void VulkanDevice::Destroy() {
 
   for (auto it = queue_infos.begin(); it != queue_infos.end(); ++it) {
     if (it->second.command_buffers.size()) {
-      for (int i = 0; i < it->second.command_buffers.size(); ++i) {
+      for (uint32_t i = 0; i < it->second.command_buffers.size(); ++i) {
         it->second.command_buffers[i].Free(it->second.command_pool);
       }
 
@@ -159,12 +159,12 @@ void VulkanDevice::UpdateSwapchainSupport() {
 }
 
 void VulkanDevice::UpdateDepthFormat() {
-  const int candidate_count = 3;
+  const uint32_t candidate_count = 3;
   VkFormat candidates[3] = {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT,
                             VK_FORMAT_D24_UNORM_S8_UINT};
 
   uint32_t flags = VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
-  for (int i = 0; i < candidate_count; ++i) {
+  for (uint32_t i = 0; i < candidate_count; ++i) {
     VkFormatProperties properties;
     vkGetPhysicalDeviceFormatProperties(physical_device, candidates[i],
                                         &properties);
@@ -187,7 +187,7 @@ void VulkanDevice::UpdateCommandBuffers() {
 
   for (auto it = queue_infos.begin(); it != queue_infos.end(); ++it) {
     it->second.command_buffers.resize(context->swapchain->GetImageCount());
-    for (int i = 0; i < it->second.command_buffers.size(); ++i) {
+    for (uint32_t i = 0; i < it->second.command_buffers.size(); ++i) {
       it->second.command_buffers[i].Allocate(it->second.command_pool,
                                              VK_COMMAND_BUFFER_LEVEL_PRIMARY);
     }
@@ -195,7 +195,7 @@ void VulkanDevice::UpdateCommandBuffers() {
 }
 
 bool VulkanDevice::SupportsDeviceLocalHostVisible() const {
-  for (int i = 0; i < memory.memoryTypeCount; ++i) {
+  for (uint32_t i = 0; i < memory.memoryTypeCount; ++i) {
     if (((memory.memoryTypes[i].propertyFlags &
           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0) &&
         ((memory.memoryTypes[i].propertyFlags &
@@ -254,7 +254,7 @@ bool VulkanDevice::SelectPhysicalDevice(
   VK_CHECK(vkEnumeratePhysicalDevices(context->instance, &physical_device_count,
                                       physical_devices.data()));
 
-  for (int i = 0; i < physical_devices.size(); ++i) {
+  for (uint32_t i = 0; i < physical_devices.size(); ++i) {
     VkPhysicalDevice current_physical_device = physical_devices[i];
 
     VkPhysicalDeviceProperties device_properties;
@@ -366,7 +366,7 @@ bool VulkanDevice::SelectPhysicalDevice(
            VK_VERSION_MINOR(device_properties.apiVersion),
            VK_VERSION_PATCH(device_properties.apiVersion));
 
-      for (int j = 0; j < device_memory.memoryHeapCount; ++j) {
+      for (uint32_t j = 0; j < device_memory.memoryHeapCount; ++j) {
         float memory_size_gib = (((float)device_memory.memoryHeaps[j].size) /
                                  1024.0f / 1024.0f / 1024.0f);
         if (device_memory.memoryHeaps[j].flags &
@@ -394,7 +394,7 @@ bool VulkanDevice::SelectPhysicalDevice(
 }
 
 bool VulkanDevice::DeviceExtensionsAvailable(VkPhysicalDevice physical_device,
-                                             int required_extension_count,
+                                             uint32_t required_extension_count,
                                              const char **required_extensions) {
   uint32_t available_extension_count = 0;
   std::vector<VkExtensionProperties> available_extensions;
@@ -407,9 +407,9 @@ bool VulkanDevice::DeviceExtensionsAvailable(VkPhysicalDevice physical_device,
                                                   &available_extension_count,
                                                   &available_extensions[0]));
 
-    for (int i = 0; i < required_extension_count; ++i) {
+    for (uint32_t i = 0; i < required_extension_count; ++i) {
       bool found = false;
-      for (int j = 0; j < available_extension_count; ++j) {
+      for (uint32_t j = 0; j < available_extension_count; ++j) {
         if (strcmp(required_extensions[i],
                    available_extensions[j].extensionName)) {
           DEBUG("Required device extension found: %s", required_extensions[i]);

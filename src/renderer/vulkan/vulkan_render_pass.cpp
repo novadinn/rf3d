@@ -28,7 +28,7 @@ bool VulkanRenderPass::Create(
   std::vector<VkAttachmentReference> color_attachment_references;
   VkAttachmentReference depth_attachment_reference;
 
-  for (int i = 0; i < attachments.size(); ++i) {
+  for (uint32_t i = 0; i < attachments.size(); ++i) {
     GPURenderPassAttachmentConfig *attachment_config = &attachments[i];
     bool is_depth_attachment = GPUUtils::IsDepthFormat(attachments[i].format);
 

@@ -54,7 +54,7 @@ void VulkanAttachment::Create(GPUFormat attachment_format,
                                &memory_requirements);
 
   /* find memory index */
-  int memory_type = VulkanUtils::FindMemoryIndex(
+  int32_t memory_type = VulkanUtils::FindMemoryIndex(
       context->device->GetPhysicalDevice(), memory_requirements.memoryTypeBits,
       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
   if (memory_type == -1) {

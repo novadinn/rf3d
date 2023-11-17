@@ -3,9 +3,9 @@
 #include "../../logger.h"
 #include "vulkan_backend.h"
 
-int VulkanUtils::FindMemoryIndex(VkPhysicalDevice physical_device,
-                                 uint32_t type_filter,
-                                 VkMemoryPropertyFlags property_flags) {
+int32_t VulkanUtils::FindMemoryIndex(VkPhysicalDevice physical_device,
+                                     uint32_t type_filter,
+                                     VkMemoryPropertyFlags property_flags) {
   VkPhysicalDeviceMemoryProperties memory_properties;
   vkGetPhysicalDeviceMemoryProperties(physical_device, &memory_properties);
 

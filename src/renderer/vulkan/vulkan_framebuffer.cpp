@@ -17,7 +17,7 @@ bool VulkanFramebuffer::Create(GPURenderPass *target_render_pass,
   height = target_height;
 
   std::vector<VkImageView> attachment_views;
-  for (int i = 0; i < target_attachments.size(); ++i) {
+  for (uint32_t i = 0; i < target_attachments.size(); ++i) {
     VulkanAttachment *native_attachment =
         ((VulkanAttachment *)target_attachments[i]);
     attachment_views.push_back(native_attachment->GetImageView());

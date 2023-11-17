@@ -30,7 +30,7 @@ bool VulkanBuffer::Create(uint64_t buffer_size, VkBufferUsageFlags usage_flags,
   VkMemoryRequirements requirements;
   vkGetBufferMemoryRequirements(context->device->GetLogicalDevice(), handle,
                                 &requirements);
-  int memory_index =
+  int32_t memory_index =
       VulkanUtils::FindMemoryIndex(context->device->GetPhysicalDevice(),
                                    requirements.memoryTypeBits, memory_flags);
   if (memory_index == -1) {

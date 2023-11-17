@@ -8,11 +8,11 @@ void VulkanDescriptorPools::Initialize() { current_pool = VK_NULL_HANDLE; }
 void VulkanDescriptorPools::Shutdown() {
   VulkanContext *context = VulkanBackend::GetContext();
 
-  for (int i = 0; i < free_pools.size(); ++i) {
+  for (uint32_t i = 0; i < free_pools.size(); ++i) {
     vkDestroyDescriptorPool(context->device->GetLogicalDevice(), free_pools[i],
                             context->allocator);
   }
-  for (int i = 0; i < used_pools.size(); ++i) {
+  for (uint32_t i = 0; i < used_pools.size(); ++i) {
     vkDestroyDescriptorPool(context->device->GetLogicalDevice(), used_pools[i],
                             context->allocator);
   }
@@ -21,7 +21,7 @@ void VulkanDescriptorPools::Shutdown() {
 void VulkanDescriptorPools::Reset() {
   VulkanContext *context = VulkanBackend::GetContext();
 
-  for (int i = 0; i < used_pools.size(); ++i) {
+  for (uint32_t i = 0; i < used_pools.size(); ++i) {
     vkResetDescriptorPool(context->device->GetLogicalDevice(), used_pools[i],
                           0);
     free_pools.emplace_back(used_pools[i]);
@@ -83,7 +83,7 @@ VkDescriptorPool VulkanDescriptorPools::GrabPool() {
     return pool;
   }
 
-  const int size_count = 1000;
+  const uint32_t size_count = 1000;
   const std::vector<std::pair<VkDescriptorType, float>> pool_sizes = {
       {VK_DESCRIPTOR_TYPE_SAMPLER, 0.5f},
       {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4.f},

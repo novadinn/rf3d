@@ -68,7 +68,7 @@ bool VulkanTexture::Create(GPUFormat texture_format,
                                &memory_requirements);
 
   /* find memory index */
-  int memory_type = VulkanUtils::FindMemoryIndex(
+  uint32_t memory_type = VulkanUtils::FindMemoryIndex(
       context->device->GetPhysicalDevice(), memory_requirements.memoryTypeBits,
       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
   if (memory_type == -1) {
@@ -305,7 +305,7 @@ void VulkanTexture::CopyFromBuffer(VulkanBuffer *buffer,
 
   // std::vector<VkBufferImageCopy> image_copies;
   // image_copies.resize(mip_levels);
-  // for (int i = 0; i < image_copies.size(); ++i) {
+  // for (uint32_t i = 0; i < image_copies.size(); ++i) {
   //   VkBufferImageCopy region = {};
   //   region.bufferOffset = offset;
   //   region.bufferRowLength = 0;

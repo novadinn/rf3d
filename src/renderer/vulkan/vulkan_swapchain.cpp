@@ -21,7 +21,7 @@ bool VulkanSwapchain::Create(uint32_t width, uint32_t height) {
 
   /* Select optimal format and present mode. TODO: maybe configurable */
   image_format = swapchain_support_info.formats[0];
-  for (int i = 0; i < swapchain_support_info.formats.size(); ++i) {
+  for (uint32_t i = 0; i < swapchain_support_info.formats.size(); ++i) {
     VkSurfaceFormatKHR format = swapchain_support_info.formats[i];
     if (format.format == VK_FORMAT_B8G8R8A8_UNORM &&
         format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
@@ -31,7 +31,7 @@ bool VulkanSwapchain::Create(uint32_t width, uint32_t height) {
   }
 
   present_mode = swapchain_support_info.present_modes[0];
-  for (int i = 0; i < swapchain_support_info.present_modes.size(); ++i) {
+  for (uint32_t i = 0; i < swapchain_support_info.present_modes.size(); ++i) {
     VkPresentModeKHR mode = swapchain_support_info.present_modes[i];
     if (mode == VK_PRESENT_MODE_MAILBOX_KHR) {
       present_mode = mode;
@@ -50,7 +50,7 @@ bool VulkanSwapchain::Create(uint32_t width, uint32_t height) {
       extent.height, swapchain_support_info.capabilities.minImageExtent.height,
       swapchain_support_info.capabilities.maxImageExtent.height);
 
-  int image_count = swapchain_support_info.capabilities.minImageCount + 1;
+  uint32_t image_count = swapchain_support_info.capabilities.minImageCount + 1;
   if (swapchain_support_info.capabilities.maxImageCount > 0 &&
       image_count > swapchain_support_info.capabilities.maxImageCount) {
     image_count = swapchain_support_info.capabilities.maxImageCount;
@@ -104,7 +104,7 @@ bool VulkanSwapchain::Create(uint32_t width, uint32_t height) {
   VK_CHECK(vkGetSwapchainImagesKHR(context->device->GetLogicalDevice(), handle,
                                    &swapchain_image_count, images.data()));
 
-  for (int i = 0; i < swapchain_image_count; ++i) {
+  for (uint32_t i = 0; i < swapchain_image_count; ++i) {
     VkImage image = images[i];
 
     VkImageViewCreateInfo view_info = {
@@ -135,7 +135,7 @@ void VulkanSwapchain::Destroy() {
   depth_attachment.Destroy();
   depth_attachment = {};
 
-  for (int i = 0; i < image_views.size(); ++i) {
+  for (uint32_t i = 0; i < image_views.size(); ++i) {
     vkDestroyImageView(context->device->GetLogicalDevice(), image_views[i],
                        context->allocator);
   }
