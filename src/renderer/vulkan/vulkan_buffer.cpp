@@ -8,7 +8,8 @@
 #include <string.h>
 
 bool VulkanBuffer::Create(uint64_t buffer_size, VkBufferUsageFlags usage_flags,
-                          VkMemoryPropertyFlags memory_flags) {
+                          VkMemoryPropertyFlags memory_flags,
+                          VmaMemoryUsage vma_usage) {
   VulkanContext *context = VulkanBackend::GetContext();
 
   total_size = buffer_size;
@@ -24,32 +25,18 @@ bool VulkanBuffer::Create(uint64_t buffer_size, VkBufferUsageFlags usage_flags,
   buffer_create_info.queueFamilyIndexCount = 0;
   buffer_create_info.pQueueFamilyIndices = 0;
 
-  VK_CHECK(vkCreateBuffer(context->device->GetLogicalDevice(),
-                          &buffer_create_info, context->allocator, &handle));
+  VmaAllocationCreateInfo vma_allocation_create_info = {};
+  /* vma_allocation_create_info.flags; */
+  vma_allocation_create_info.usage = vma_usage;
+  // vma_allocation_create_info.requiredFlags = memory_flags;
+  /* vma_allocation_create_info.preferredFlags;
+  vma_allocation_create_info.memoryTypeBits;
+  vma_allocation_create_info.pool;
+  vma_allocation_create_info.pUserData;
+  vma_allocation_create_info.priority; */
 
-  VkMemoryRequirements requirements;
-  vkGetBufferMemoryRequirements(context->device->GetLogicalDevice(), handle,
-                                &requirements);
-  int32_t memory_index =
-      VulkanUtils::FindMemoryIndex(context->device->GetPhysicalDevice(),
-                                   requirements.memoryTypeBits, memory_flags);
-  if (memory_index == -1) {
-    ERROR("Unable to create vulkan buffer because the required memory type "
-          "index was not found.");
-    return false;
-  }
-
-  VkMemoryAllocateInfo allocate_info = {};
-  allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-  allocate_info.pNext = 0;
-  allocate_info.allocationSize = requirements.size;
-  allocate_info.memoryTypeIndex = (uint32_t)memory_index;
-
-  VK_CHECK(vkAllocateMemory(context->device->GetLogicalDevice(), &allocate_info,
-                            context->allocator, &memory));
-
-  VK_CHECK(vkBindBufferMemory(context->device->GetLogicalDevice(), handle,
-                              memory, 0));
+  VK_CHECK(vmaCreateBuffer(context->vma_allocator, &buffer_create_info,
+                           &vma_allocation_create_info, &handle, &memory, 0));
 
   return true;
 }
@@ -59,9 +46,7 @@ void VulkanBuffer::Destroy() {
 
   vkDeviceWaitIdle(context->device->GetLogicalDevice());
 
-  vkFreeMemory(context->device->GetLogicalDevice(), memory, context->allocator);
-  vkDestroyBuffer(context->device->GetLogicalDevice(), handle,
-                  context->allocator);
+  vmaDestroyBuffer(context->vma_allocator, handle, memory);
 
   handle = 0;
   memory = 0;
@@ -72,25 +57,22 @@ void *VulkanBuffer::Lock(uint64_t offset, uint64_t size) {
   VulkanContext *context = VulkanBackend::GetContext();
 
   void *data;
-  VK_CHECK(vkMapMemory(context->device->GetLogicalDevice(), memory, offset,
-                       total_size, 0, &data));
+  VK_CHECK(vmaMapMemory(context->vma_allocator, memory, &data));
   return data;
 }
 
 void VulkanBuffer::Unlock() {
   VulkanContext *context = VulkanBackend::GetContext();
 
-  vkUnmapMemory(context->device->GetLogicalDevice(), memory);
+  vmaUnmapMemory(context->vma_allocator, memory);
 }
 
 bool VulkanBuffer::LoadData(uint64_t offset, uint64_t size, void *data) {
   VulkanContext *context = VulkanBackend::GetContext();
 
-  void *data_ptr;
-  VK_CHECK(vkMapMemory(context->device->GetLogicalDevice(), memory, offset,
-                       size, 0, &data_ptr));
+  void *data_ptr = Lock(offset, size);
   memcpy(data_ptr, data, size);
-  vkUnmapMemory(context->device->GetLogicalDevice(), memory);
+  Unlock();
 
   return true;
 }
@@ -101,7 +83,8 @@ bool VulkanBuffer::LoadDataStaging(uint64_t offset, uint64_t size, void *data) {
   VulkanBuffer staging_buffer;
   if (!staging_buffer.Create(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                                 VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
+                                 VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                             VMA_MEMORY_USAGE_CPU_ONLY)) {
     ERROR("Failed to create a staging buffer.");
     return false;
   }

@@ -15,6 +15,12 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <vector>
+#define VMA_IMPLEMENTATION
+#include "vk_mem_alloc.h"
+
+#if PLATFORM_APPLE == 1
+#define VK_ENABLE_BETA_EXTENSIONS
+#endif
 
 VulkanContext *VulkanBackend::context;
 
@@ -65,6 +71,21 @@ bool VulkanBackend::Initialize(SDL_Window *sdl_window) {
   if (!context->device->Create(&requirements)) {
     return false;
   }
+
+  VmaAllocatorCreateInfo vma_allocator_create_info = {};
+  vma_allocator_create_info.flags = 0;
+  vma_allocator_create_info.physicalDevice =
+      context->device->GetPhysicalDevice();
+  vma_allocator_create_info.device = context->device->GetLogicalDevice();
+  /* vma_allocator_create_info.preferredLargeHeapBlockSize; */
+  vma_allocator_create_info.pAllocationCallbacks = context->allocator;
+  /* vma_allocator_create_info.pDeviceMemoryCallbacks; */
+  /* vma_allocator_create_info.pHeapSizeLimit; */
+  /* vma_allocator_create_info.pVulkanFunctions; */
+  vma_allocator_create_info.instance = context->instance;
+  vma_allocator_create_info.vulkanApiVersion = VK_API_VERSION_1_3;
+  VK_CHECK(
+      vmaCreateAllocator(&vma_allocator_create_info, &context->vma_allocator));
 
   int width, height;
   SDL_Vulkan_GetDrawableSize(window, &width, &height);
@@ -166,6 +187,8 @@ void VulkanBackend::Shutdown() {
 
   context->swapchain->Destroy();
   delete context->swapchain;
+
+  vmaDestroyAllocator(context->vma_allocator);
 
   context->device->Destroy();
   delete context->device;

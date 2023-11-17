@@ -224,9 +224,7 @@ int main(int argc, char **argv) {
   camera->Create(45, width / height, 0.1f, 1000.0f);
   camera->SetViewportSize(width, height);
 
-  const float far =
-      64.0f; /* TODO: on macos, only this value will not cause
-                vertex buffers corruption. determine the reason and fix later */
+  const float far = 1000.0f;
   glm::vec3 camera_position = camera->GetPosition();
   std::vector<float> grid_vertices;
   for (float x = camera_position.x - far; x < camera_position.x + far;
@@ -427,13 +425,13 @@ int main(int argc, char **argv) {
         shader->PushConstant(&meshes[i].push_constants, sizeof(PushConsts), 0,
                              GPU_SHADER_STAGE_TYPE_FRAGMENT);
 
-        frontend->Draw(vertices.size());
+        frontend->Draw(vertices.size() / 8);
       }
 
       grid_shader->Bind();
       grid_vertex_buffer->Bind(0);
       grid_shader->BindUniformBuffer(global_descriptor_set, 0);
-      frontend->Draw(grid_vertices.size());
+      frontend->Draw(grid_vertices.size() / 6);
 
       offscreen_render_pass->End();
 

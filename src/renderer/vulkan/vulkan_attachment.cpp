@@ -45,34 +45,19 @@ void VulkanAttachment::Create(GPUFormat attachment_format,
   image_create_info.pQueueFamilyIndices = 0;
   image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-  VkMemoryRequirements memory_requirements = {};
+  VmaAllocationCreateInfo vma_allocation_create_info = {};
+  /* vma_allocation_create_info.flags; */
+  vma_allocation_create_info.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+  vma_allocation_create_info.requiredFlags =
+      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+  /* vma_allocation_create_info.preferredFlags;
+  vma_allocation_create_info.memoryTypeBits;
+  vma_allocation_create_info.pool;
+  vma_allocation_create_info.pUserData;
+  vma_allocation_create_info.priority; */
 
-  VK_CHECK(vkCreateImage(context->device->GetLogicalDevice(),
-                         &image_create_info, context->allocator, &handle));
-
-  vkGetImageMemoryRequirements(context->device->GetLogicalDevice(), handle,
-                               &memory_requirements);
-
-  /* find memory index */
-  int32_t memory_type = VulkanUtils::FindMemoryIndex(
-      context->device->GetPhysicalDevice(), memory_requirements.memoryTypeBits,
-      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-  if (memory_type == -1) {
-    ERROR("Required memory type not found. Image not valid.");
-  }
-
-  VkMemoryAllocateInfo memory_allocate_info = {};
-  memory_allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-  memory_allocate_info.pNext = 0;
-  memory_allocate_info.allocationSize = memory_requirements.size;
-  memory_allocate_info.memoryTypeIndex = memory_type;
-
-  VK_CHECK(vkAllocateMemory(context->device->GetLogicalDevice(),
-                            &memory_allocate_info, context->allocator,
-                            &memory));
-
-  VK_CHECK(vkBindImageMemory(context->device->GetLogicalDevice(), handle,
-                             memory, 0));
+  VK_CHECK(vmaCreateImage(context->vma_allocator, &image_create_info,
+                          &vma_allocation_create_info, &handle, &memory, 0));
 
   VkImageViewCreateInfo view_create_info = {};
   view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -122,9 +107,7 @@ void VulkanAttachment::Destroy() {
 
   vkDestroyImageView(context->device->GetLogicalDevice(), view,
                      context->allocator);
-  vkFreeMemory(context->device->GetLogicalDevice(), memory, context->allocator);
-  vkDestroyImage(context->device->GetLogicalDevice(), handle,
-                 context->allocator);
+  vmaDestroyImage(context->vma_allocator, handle, memory);
 
   format = GPU_FORMAT_NONE;
   aspect = GPU_ATTACHMENT_USAGE_NONE;

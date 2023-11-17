@@ -2,6 +2,7 @@
 
 #include "renderer/gpu_attachment.h"
 
+#include "vk_mem_alloc.h"
 #include <vulkan/vulkan.h>
 
 class VulkanAttachment : public GPUAttachment {
@@ -20,6 +21,6 @@ public:
 private:
   VkImage handle;
   VkImageView view;
-  VkDeviceMemory memory;
+  VmaAllocation memory;
   VkSampler sampler;
 };

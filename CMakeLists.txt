@@ -34,6 +34,7 @@ include_directories(
   ${CMAKE_SOURCE_DIR}/src
   ${CMAKE_SOURCE_DIR}/vendor
   ${CMAKE_SOURCE_DIR}/vendor/glad/include
+  ${CMAKE_SOURCE_DIR}/vendor/VulkanMemoryAllocator/include
 )
 
 add_definitions(
@@ -122,6 +123,4 @@ add_custom_target(
   shaders
   DEPENDS ${SPIRV_BINARY_FILES}
 )
-
-add_custom_target(compile_shaders DEPENDS ${SPIRV_BINARY_FILES})
-add_dependencies(${PROJECT_NAME} compile_shaders)
+add_dependencies(${PROJECT_NAME} shaders)

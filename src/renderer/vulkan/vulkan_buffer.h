@@ -1,11 +1,12 @@
 #pragma once
 
+#include "vk_mem_alloc.h"
 #include <vulkan/vulkan.h>
 
 class VulkanBuffer {
 public:
   bool Create(uint64_t buffer_size, VkBufferUsageFlags usage_flags,
-              VkMemoryPropertyFlags memory_flags);
+              VkMemoryPropertyFlags memory_flags, VmaMemoryUsage vma_usage);
   void Destroy();
 
   void *Lock(uint64_t offset, uint64_t size);
@@ -17,11 +18,11 @@ public:
               uint64_t size);
 
   inline VkBuffer &GetHandle() { return handle; }
-  inline VkDeviceMemory &GetMemory() { return memory; }
+  inline VmaAllocation GetMemory() { return memory; }
   inline uint64_t GetSize() const { return total_size; }
 
 private:
   VkBuffer handle;
-  VkDeviceMemory memory;
+  VmaAllocation memory;
   uint64_t total_size;
 };

@@ -14,11 +14,12 @@ bool VulkanUniformBuffer::Create(uint64_t buffer_element_size,
                                    ? VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
                                    : 0;
 
-  if (!buffer.Create(
-          buffer_size,
-          VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-              VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | device_local_bits)) {
+  /* TODO: vmaCreateBufferWithAlignment()? */
+  if (!buffer.Create(buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                         VK_MEMORY_PROPERTY_HOST_COHERENT_BIT |
+                         device_local_bits,
+                     VMA_MEMORY_USAGE_CPU_TO_GPU)) {
     return false;
   }
 

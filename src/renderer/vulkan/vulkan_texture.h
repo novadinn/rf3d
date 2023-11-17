@@ -4,6 +4,7 @@
 #include "vulkan_buffer.h"
 #include "vulkan_command_buffer.h"
 
+#include "vk_mem_alloc.h"
 #include <stdint.h>
 #include <vulkan/vulkan.h>
 
@@ -17,7 +18,7 @@ public:
 
   inline VkImage GetHandle() const { return handle; }
   inline VkImageView GetImageView() const { return view; }
-  inline VkDeviceMemory GetMemory() const { return memory; }
+  inline VmaAllocation GetMemory() const { return memory; }
   inline VkSampler GetSampler() const { return sampler; }
 
 private:
@@ -29,6 +30,6 @@ private:
 
   VkImage handle;
   VkImageView view;
-  VkDeviceMemory memory;
+  VmaAllocation memory;
   VkSampler sampler;
 };

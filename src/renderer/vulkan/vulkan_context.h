@@ -1,15 +1,16 @@
 #pragma once
 
-#include <assert.h>
-#include <vector>
-#include <vulkan/vulkan.h>
-
 #include "vulkan_command_buffer.h"
 #include "vulkan_descriptor_layout_cache.h"
 #include "vulkan_descriptor_pools.h"
 #include "vulkan_device.h"
 #include "vulkan_fence.h"
 #include "vulkan_swapchain.h"
+
+#include "vk_mem_alloc.h"
+#include <assert.h>
+#include <vector>
+#include <vulkan/vulkan.h>
 
 /* TODO: get rid of that macro and handle errors by our own */
 #define VK_CHECK(result)                                                       \
@@ -18,6 +19,7 @@
 class VulkanContext {
 public:
   VkInstance instance;
+  VmaAllocator vma_allocator;
   VkAllocationCallbacks *allocator;
 #ifndef NDEBUG
   VkDebugUtilsMessengerEXT debug_messenger;
