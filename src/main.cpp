@@ -8,6 +8,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb/stb_image.h"
 #include <SDL2/SDL.h>
+#include <array>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -39,7 +40,7 @@ struct InstanceUBO {
   glm::mat4 model;
 };
 
-void load_texture(GPUTexture *texture, const char *path) {
+void LoadTexture(GPUTexture *texture, const char *path) {
   int texture_width, texture_height, texture_num_channels;
   stbi_set_flip_vertically_on_load(true);
   unsigned char *data = stbi_load(path, &texture_width, &texture_height,
@@ -55,6 +56,37 @@ void load_texture(GPUTexture *texture, const char *path) {
 
   stbi_set_flip_vertically_on_load(false);
   stbi_image_free(data);
+}
+
+void LoadCubemap(GPUTexture *texture, std::array<const char *, 6> paths) {
+  int texture_width, texture_height, texture_num_channels;
+  unsigned char *data = 0;
+
+  for (int i = 0; i < paths.size(); ++i) {
+    unsigned char *texture_data =
+        stbi_load(paths[i], &texture_width, &texture_height,
+                  &texture_num_channels, STBI_rgb_alpha);
+    if (!texture_data) {
+      FATAL("Failed to load image!");
+      return;
+    }
+
+    int image_size = texture_width * texture_height * 4;
+
+    if (!data) {
+      data = (unsigned char *)malloc(sizeof(*data) * image_size * 6);
+    }
+
+    memcpy(data + image_size * i, texture_data, image_size);
+
+    stbi_image_free(texture_data);
+  }
+
+  texture->Create(GPU_FORMAT_RGBA8, GPU_TEXTURE_TYPE_CUBEMAP, texture_width,
+                  texture_height);
+  texture->WriteData(data, 0);
+
+  free(data);
 }
 
 int main(int argc, char **argv) {
@@ -83,14 +115,14 @@ int main(int argc, char **argv) {
     meshes[i].texture = frontend->TextureAllocate();
   }
 
-  load_texture(meshes[0].texture, "assets/textures/metal.png");
+  LoadTexture(meshes[0].texture, "assets/textures/metal.png");
   meshes[0].position = glm::vec3(0, 0, 5.0f);
   meshes[0].push_constants =
       PushConsts{0.1f, 1.0f, 0.672411f, 0.637331f, 0.585456f};
-  load_texture(meshes[1].texture, "assets/textures/wood.png");
+  LoadTexture(meshes[1].texture, "assets/textures/wood.png");
   meshes[1].position = glm::vec3(2, 0, 5.0f);
   meshes[1].push_constants = PushConsts{0.8f, 0.2f, 1, 0, 0};
-  load_texture(meshes[2].texture, "assets/textures/brickwall.jpg");
+  LoadTexture(meshes[2].texture, "assets/textures/brickwall.jpg");
   meshes[2].position = glm::vec3(-2, 0, 5.0f);
   meshes[2].push_constants = PushConsts{0.5f, 0.5f, 0, 1, 0};
 
@@ -311,6 +343,56 @@ int main(int argc, char **argv) {
                            offscreen_color_attachment});
   post_processing_set->Create(0, bindings);
 
+  GPUTexture *cubemap = frontend->TextureAllocate();
+  std::array<const char *, 6> cubemap_paths;
+  cubemap_paths[0] = "assets/textures/skybox_r.jpg";
+  cubemap_paths[1] = "assets/textures/skybox_l.jpg";
+  cubemap_paths[2] = "assets/textures/skybox_u.jpg";
+  cubemap_paths[3] = "assets/textures/skybox_d.jpg";
+  cubemap_paths[4] = "assets/textures/skybox_f.jpg";
+  cubemap_paths[5] = "assets/textures/skybox_b.jpg";
+  LoadCubemap(cubemap, cubemap_paths);
+
+  GPUShader *skybox_shader = frontend->ShaderAllocate();
+  stage_configs.clear();
+  stage_configs.emplace_back(GPUShaderStageConfig{
+      GPU_SHADER_STAGE_TYPE_VERTEX, "assets/shaders/skybox.vert.spv"});
+  stage_configs.emplace_back(GPUShaderStageConfig{
+      GPU_SHADER_STAGE_TYPE_FRAGMENT, "assets/shaders/skybox.frag.spv"});
+  skybox_shader->Create(stage_configs, GPU_SHADER_TOPOLOGY_TYPE_TRIANGLE_LIST,
+                        offscreen_render_pass, width, height);
+  GPUDescriptorSet *skybox_texture_set = frontend->DescriptorSetAllocate();
+  bindings.clear();
+  bindings.emplace_back(GPUDescriptorBinding{
+      0, GPU_DESCRIPTOR_BINDING_TYPE_TEXTURE, cubemap, 0, 0});
+  skybox_texture_set->Create(1, bindings);
+
+  std::vector<float> skybox_vertices = {
+      -1.0f, 1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f,
+      1.0f,  -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f,
+
+      -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f,
+      -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,
+
+      1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,  1.0f,
+      1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f,
+
+      -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,  1.0f,  1.0f,
+      1.0f,  1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,
+
+      -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,
+      1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f,
+
+      -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f,
+      1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f};
+
+  GPUVertexBuffer *skybox_vertex_buffer = frontend->VertexBufferAllocate();
+  skybox_vertex_buffer->Create(skybox_vertices.size() *
+                               sizeof(skybox_vertices[0]));
+  skybox_vertex_buffer->LoadData(
+      0, skybox_vertices.size() * sizeof(skybox_vertices[0]),
+      skybox_vertices.data());
+
   glm::ivec2 previous_mouse = {0, 0};
   uint32_t last_update_time = SDL_GetTicks();
 
@@ -381,15 +463,20 @@ int main(int argc, char **argv) {
       static float angle = 0.0f;
       angle += 0.003f;
 
-      shader->Bind();
-      vertex_buffer->Bind(0);
-
       glm::vec3 camera_position = glm::vec3(0, 0, 0.0f);
       GlobalUBO global_ubo = {};
       global_ubo.view = camera->GetViewMatrix();
       global_ubo.projection = camera->GetProjectionMatrix();
-
       global_uniform->LoadData(0, global_uniform->GetSize(), &global_ubo);
+
+      skybox_shader->Bind();
+      skybox_vertex_buffer->Bind(0);
+      skybox_shader->BindUniformBuffer(global_descriptor_set, 0);
+      skybox_shader->BindSampler(skybox_texture_set);
+      frontend->Draw(skybox_vertices.size() / 3);
+
+      shader->Bind();
+      vertex_buffer->Bind(0);
       shader->BindUniformBuffer(global_descriptor_set, 0);
 
       WorldUBO world_ubo = {};
@@ -456,6 +543,18 @@ int main(int argc, char **argv) {
   }
 
   delete camera;
+
+  cubemap->Destroy();
+  delete cubemap;
+
+  skybox_vertex_buffer->Destroy();
+  delete skybox_vertex_buffer;
+
+  skybox_texture_set->Destroy();
+  delete skybox_texture_set;
+
+  skybox_shader->Destroy();
+  delete skybox_shader;
 
   post_processing_set->Destroy();
   delete post_processing_set;

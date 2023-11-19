@@ -83,7 +83,7 @@ bool VulkanBackend::Initialize(SDL_Window *sdl_window) {
   /* vma_allocator_create_info.pHeapSizeLimit; */
   /* vma_allocator_create_info.pVulkanFunctions; */
   vma_allocator_create_info.instance = context->instance;
-  vma_allocator_create_info.vulkanApiVersion = VK_API_VERSION_1_3;
+  vma_allocator_create_info.vulkanApiVersion = application_info.apiVersion;
   VK_CHECK(
       vmaCreateAllocator(&vma_allocator_create_info, &context->vma_allocator));
 

@@ -47,8 +47,7 @@ VkFormat VulkanUtils::GPUFormatToVulkanFormat(GPUFormat format) {
     return VK_FORMAT_R32G32B32_SFLOAT;
   } break;
   case GPU_FORMAT_RGB8: {
-    return VK_FORMAT_R8G8B8_UNORM; /* TODO: VK_FORMAT_R8G8B8_UNORM is
-                                        unsupported on most devices */
+    return VK_FORMAT_R8G8B8A8_UNORM; /* TODO: what? */
   } break;
   case GPU_FORMAT_RGBA8: {
     /* TODO: this is device specific */

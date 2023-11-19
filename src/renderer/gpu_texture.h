@@ -7,6 +7,7 @@
 enum GPUTextureType {
   GPU_TEXTURE_TYPE_NONE,
   GPU_TEXTURE_TYPE_2D,
+  GPU_TEXTURE_TYPE_CUBEMAP,
 };
 
 class GPUTexture {
