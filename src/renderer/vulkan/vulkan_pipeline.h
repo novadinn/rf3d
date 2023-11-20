@@ -17,6 +17,8 @@ struct VulkanPipelineConfig {
   VkPrimitiveTopology topology;
   VkViewport viewport;
   VkRect2D scissor;
+  bool depth_test_enable;
+  bool depth_write_enable;
 };
 
 class VulkanPipeline {

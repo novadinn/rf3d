@@ -18,8 +18,8 @@
 
 bool VulkanShader::Create(std::vector<GPUShaderStageConfig> stage_configs,
                           GPUShaderTopologyType topology_type,
-                          GPURenderPass *render_pass, float viewport_width,
-                          float viewport_height) {
+                          uint8_t depth_flags, GPURenderPass *render_pass,
+                          float viewport_width, float viewport_height) {
   VulkanContext *context = VulkanBackend::GetContext();
   VulkanRenderPass *native_pass = (VulkanRenderPass *)render_pass;
 
@@ -136,6 +136,10 @@ bool VulkanShader::Create(std::vector<GPUShaderStageConfig> stage_configs,
       VulkanUtils::GPUShaderTopologyTypeToVulkanTopology(topology_type);
   pipeline_config.stride = attributes_stride;
   pipeline_config.viewport = viewport;
+  pipeline_config.depth_test_enable =
+      depth_flags & GPU_SHADER_DEPTH_FLAG_DEPTH_TEST_ENABLE;
+  pipeline_config.depth_write_enable =
+      depth_flags & GPU_SHADER_DEPTH_FLAG_DEPTH_WRITE_ENABLE;
 
   if (!pipeline.Create(&pipeline_config, native_pass)) {
     return false;

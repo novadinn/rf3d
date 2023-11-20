@@ -208,6 +208,8 @@ int main(int argc, char **argv) {
   stage_configs.emplace_back(GPUShaderStageConfig{
       GPU_SHADER_STAGE_TYPE_FRAGMENT, "assets/shaders/object.frag.spv"});
   if (!shader->Create(stage_configs, GPU_SHADER_TOPOLOGY_TYPE_TRIANGLE_LIST,
+                      GPU_SHADER_DEPTH_FLAG_DEPTH_TEST_ENABLE |
+                          GPU_SHADER_DEPTH_FLAG_DEPTH_WRITE_ENABLE,
                       offscreen_render_pass, width, height)) {
     FATAL("Failed to create a shader. Aborting...");
     exit(1);
@@ -318,6 +320,8 @@ int main(int argc, char **argv) {
   stage_configs.emplace_back(GPUShaderStageConfig{
       GPU_SHADER_STAGE_TYPE_FRAGMENT, "assets/shaders/grid.frag.spv"});
   grid_shader->Create(stage_configs, GPU_SHADER_TOPOLOGY_TYPE_LINE_LIST,
+                      GPU_SHADER_DEPTH_FLAG_DEPTH_TEST_ENABLE |
+                          GPU_SHADER_DEPTH_FLAG_DEPTH_WRITE_ENABLE,
                       offscreen_render_pass, width, height);
 
   GPUVertexBuffer *grid_vertex_buffer = frontend->VertexBufferAllocate();
@@ -334,6 +338,8 @@ int main(int argc, char **argv) {
                            "assets/shaders/postprocessing.frag.spv"});
   post_processing_shader->Create(stage_configs,
                                  GPU_SHADER_TOPOLOGY_TYPE_TRIANGLE_LIST,
+                                 GPU_SHADER_DEPTH_FLAG_DEPTH_TEST_ENABLE |
+                                     GPU_SHADER_DEPTH_FLAG_DEPTH_WRITE_ENABLE,
                                  window_render_pass, width, height);
 
   GPUDescriptorSet *post_processing_set = frontend->DescriptorSetAllocate();
@@ -360,7 +366,7 @@ int main(int argc, char **argv) {
   stage_configs.emplace_back(GPUShaderStageConfig{
       GPU_SHADER_STAGE_TYPE_FRAGMENT, "assets/shaders/skybox.frag.spv"});
   skybox_shader->Create(stage_configs, GPU_SHADER_TOPOLOGY_TYPE_TRIANGLE_LIST,
-                        offscreen_render_pass, width, height);
+                        0, offscreen_render_pass, width, height);
   GPUDescriptorSet *skybox_texture_set = frontend->DescriptorSetAllocate();
   bindings.clear();
   bindings.emplace_back(GPUDescriptorBinding{

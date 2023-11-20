@@ -18,6 +18,11 @@ enum GPUShaderTopologyType {
   GPU_SHADER_TOPOLOGY_TYPE_LINE_LIST,
 };
 
+enum GPUShaderDepthFlag {
+  GPU_SHADER_DEPTH_FLAG_DEPTH_TEST_ENABLE = (1 << 0),
+  GPU_SHADER_DEPTH_FLAG_DEPTH_WRITE_ENABLE = (2 << 0),
+};
+
 struct GPUShaderStageConfig {
   GPUShaderStageType type;
   const char *file_path;
@@ -28,7 +33,7 @@ public:
   virtual ~GPUShader(){};
 
   virtual bool Create(std::vector<GPUShaderStageConfig> stage_configs,
-                      GPUShaderTopologyType topology_type,
+                      GPUShaderTopologyType topology_type, uint8_t depth_flags,
                       GPURenderPass *render_pass, float viewport_width,
                       float viewport_height) = 0;
   virtual void Destroy() = 0;

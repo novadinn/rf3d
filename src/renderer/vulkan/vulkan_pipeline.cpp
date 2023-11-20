@@ -51,8 +51,10 @@ bool VulkanPipeline::Create(VulkanPipelineConfig *config,
       VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
   depth_stencil.pNext = 0;
   depth_stencil.flags = 0;
-  depth_stencil.depthTestEnable = VK_TRUE;
-  depth_stencil.depthWriteEnable = VK_TRUE;
+  depth_stencil.depthTestEnable =
+      config->depth_test_enable ? VK_TRUE : VK_FALSE;
+  depth_stencil.depthWriteEnable =
+      config->depth_write_enable ? VK_TRUE : VK_FALSE;
   depth_stencil.depthCompareOp = VK_COMPARE_OP_LESS;
   depth_stencil.depthBoundsTestEnable = VK_FALSE;
   depth_stencil.stencilTestEnable = VK_FALSE;
