@@ -656,9 +656,8 @@ int main(int argc, char **argv) {
       sphere_vertex_buffer->Bind(0);
       sphere_index_buffer->Bind(0);
       reflect_shader->BindUniformBuffer(global_descriptor_set, 0, 0);
-      reflect_shader->BindUniformBuffer(world_descriptor_set, 0, 1);
-      reflect_shader->BindUniformBuffer(reflect_instance_set, 0, 2);
-      reflect_shader->BindSampler(skybox_texture_set, 3);
+      reflect_shader->BindUniformBuffer(reflect_instance_set, 0, 1);
+      reflect_shader->BindSampler(skybox_texture_set, 2);
       frontend->DrawIndexed(sphere_indices.size());
 
       offscreen_render_pass->End();
