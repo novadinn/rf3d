@@ -7,10 +7,9 @@
 #include "vulkan_uniform_buffer.h"
 
 void VulkanDescriptorSet::Create(
-    uint32_t set_index, std::vector<GPUDescriptorBinding> &set_bindings) {
+    std::vector<GPUDescriptorBinding> &set_bindings) {
   VulkanContext *context = VulkanBackend::GetContext();
 
-  index = set_index;
   bindings = set_bindings;
 
   VulkanDescriptorBuilder builder = VulkanDescriptorBuilder::Begin();
@@ -67,7 +66,4 @@ void VulkanDescriptorSet::Create(
   builder.Build(&set, &layout);
 }
 
-void VulkanDescriptorSet::Destroy() {
-  index = 0;
-  bindings.clear();
-}
+void VulkanDescriptorSet::Destroy() { bindings.clear(); }

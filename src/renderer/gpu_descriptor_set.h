@@ -21,17 +21,16 @@ struct GPUDescriptorBinding {
   GPUAttachment *attachment;
 };
 
+/* TODO: remove descriptorset index from gpudescriptorset - we can bind
+ * them at runtime */
 class GPUDescriptorSet {
 public:
   virtual ~GPUDescriptorSet() {}
-  virtual void Create(uint32_t set_index,
-                      std::vector<GPUDescriptorBinding> &set_bindings) = 0;
+  virtual void Create(std::vector<GPUDescriptorBinding> &set_bindings) = 0;
   virtual void Destroy() = 0;
 
-  inline uint32_t GetIndex() const { return index; }
   inline std::vector<GPUDescriptorBinding> &GetBindings() { return bindings; }
 
 protected:
-  uint32_t index;
   std::vector<GPUDescriptorBinding> bindings;
 };

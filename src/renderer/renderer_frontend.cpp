@@ -39,6 +39,10 @@ bool RendererFrontend::Draw(uint32_t element_count) {
   return backend->Draw(element_count);
 }
 
+bool RendererFrontend::DrawIndexed(uint32_t element_count) {
+  return backend->DrawIndexed(element_count);
+}
+
 GPURenderPass *RendererFrontend::GetWindowRenderPass() {
   return backend->GetWindowRenderPass();
 }

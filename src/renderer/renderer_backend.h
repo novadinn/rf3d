@@ -23,6 +23,7 @@ public:
   virtual bool BeginFrame() = 0;
   virtual bool EndFrame() = 0;
   virtual bool Draw(uint32_t element_count) = 0;
+  virtual bool DrawIndexed(uint32_t element_count) = 0;
 
   virtual GPURenderPass *GetWindowRenderPass() = 0;
   virtual GPURenderTarget *GetCurrentWindowRenderTarget() = 0;

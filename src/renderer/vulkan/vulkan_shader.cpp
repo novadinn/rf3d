@@ -174,7 +174,8 @@ void VulkanShader::Bind() {
   pipeline.Bind(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
 }
 
-void VulkanShader::BindUniformBuffer(GPUDescriptorSet *set, uint32_t offset) {
+void VulkanShader::BindUniformBuffer(GPUDescriptorSet *set, uint32_t offset,
+                                     int32_t set_index) {
   VulkanContext *context = VulkanBackend::GetContext();
 
   VulkanDeviceQueueInfo info =
@@ -187,11 +188,10 @@ void VulkanShader::BindUniformBuffer(GPUDescriptorSet *set, uint32_t offset) {
 
   vkCmdBindDescriptorSets(command_buffer->GetHandle(),
                           VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.GetLayout(),
-                          set->GetIndex(), 1, &native_set->GetSet(), 1,
-                          &offset);
+                          set_index, 1, &native_set->GetSet(), 1, &offset);
 }
 
-void VulkanShader::BindSampler(GPUDescriptorSet *set) {
+void VulkanShader::BindSampler(GPUDescriptorSet *set, int32_t set_index) {
   VulkanContext *context = VulkanBackend::GetContext();
 
   VulkanDeviceQueueInfo info =
@@ -204,7 +204,7 @@ void VulkanShader::BindSampler(GPUDescriptorSet *set) {
 
   vkCmdBindDescriptorSets(command_buffer->GetHandle(),
                           VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.GetLayout(),
-                          set->GetIndex(), 1, &native_set->GetSet(), 0, 0);
+                          set_index, 1, &native_set->GetSet(), 0, 0);
 }
 
 void VulkanShader::PushConstant(void *value, uint64_t size, uint32_t offset,
@@ -234,7 +234,7 @@ void VulkanShader::ReflectStageUniforms(spirv_cross::Compiler &compiler,
 
     int32_t set_index = -1;
     if (!UpdateDescriptorSetsReflection(sets, set, binding, &set_index)) {
-      return; /* set and binding are duplicated */
+      continue; /* set and binding are duplicated */
     }
 
     uint32_t binding_size = 0;
@@ -266,7 +266,7 @@ void VulkanShader::ReflectStageUniforms(spirv_cross::Compiler &compiler,
 
     int32_t set_index = -1;
     if (!UpdateDescriptorSetsReflection(sets, set, binding, &set_index)) {
-      return; /* set and binding are duplicated */
+      continue; /* set and binding are duplicated */
     }
 
     VkDescriptorSetLayoutBinding layout_binding = {};
@@ -289,8 +289,6 @@ void VulkanShader::ReflectStagePushConstantRanges(
     spirv_cross::Compiler &compiler, spirv_cross::ShaderResources &resources,
     std::vector<VkPushConstantRange> &push_constant_ranges) {
   for (auto &push_constant : resources.push_constant_buffers) {
-    /* TODO: is a range represented as a full push_constant block, or it is a
-     * every member of a block? */
     uint32_t min_offset = UINT32_MAX;
     uint32_t total_size = 0;
     auto ranges = compiler.get_active_buffer_ranges(push_constant.id);

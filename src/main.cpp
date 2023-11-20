@@ -40,6 +40,90 @@ struct InstanceUBO {
   glm::mat4 model;
 };
 
+std::vector<float> GenerateSphereVertices(float radius, int sectorCount,
+                                          int stackCount) {
+  std::vector<float> vertices;
+
+  const float PI = acos(-1.0f);
+
+  float x, y, z, xy;                           // vertex position
+  float nx, ny, nz, lengthInv = 1.0f / radius; // normal
+  float s, t;                                  // texCoord
+
+  float sectorStep = 2 * PI / sectorCount;
+  float stackStep = PI / stackCount;
+  float sectorAngle, stackAngle;
+
+  for (int i = 0; i <= stackCount; ++i) {
+    stackAngle = PI / 2 - i * stackStep; // starting from pi/2 to -pi/2
+    xy = radius * cosf(stackAngle);      // r * cos(u)
+    z = radius * sinf(stackAngle);       // r * sin(u)
+
+    // add (sectorCount+1) vertices per stack
+    // the first and last vertices have same position and normal, but different
+    // tex coords
+    for (int j = 0; j <= sectorCount; ++j) {
+      sectorAngle = j * sectorStep; // starting from 0 to 2pi
+
+      // vertex position
+      x = xy * cosf(sectorAngle); // r * cos(u) * cos(v)
+      y = xy * sinf(sectorAngle); // r * cos(u) * sin(v)
+      vertices.push_back(x);
+      vertices.push_back(y);
+      vertices.push_back(z);
+
+      // normalized vertex normal
+      nx = x * lengthInv;
+      ny = y * lengthInv;
+      nz = z * lengthInv;
+      vertices.push_back(nx);
+      vertices.push_back(ny);
+      vertices.push_back(nz);
+
+      // vertex tex coord between [0, 1]
+      s = (float)j / sectorCount;
+      t = (float)i / stackCount;
+      vertices.push_back(s);
+      vertices.push_back(t);
+    }
+  }
+
+  return vertices;
+}
+
+std::vector<unsigned int> GenerateSphereIndices(int sectorCount,
+                                                int stackCount) {
+  std::vector<unsigned int> indices;
+
+  // indices
+  //  k1--k1+1
+  //  |  / |
+  //  | /  |
+  //  k2--k2+1
+  unsigned int k1, k2;
+  for (int i = 0; i < stackCount; ++i) {
+    k1 = i * (sectorCount + 1); // beginning of current stack
+    k2 = k1 + sectorCount + 1;  // beginning of next stack
+
+    for (int j = 0; j < sectorCount; ++j, ++k1, ++k2) {
+      // 2 triangles per sector excluding 1st and last stacks
+      if (i != 0) {
+        indices.push_back(k1);
+        indices.push_back(k2);
+        indices.push_back(k1 + 1);
+      }
+
+      if (i != (stackCount - 1)) {
+        indices.push_back(k1 + 1);
+        indices.push_back(k2);
+        indices.push_back(k2 + 1);
+      }
+    }
+  }
+
+  return indices;
+}
+
 void LoadTexture(GPUTexture *texture, const char *path) {
   int texture_width, texture_height, texture_num_channels;
   stbi_set_flip_vertically_on_load(true);
@@ -234,23 +318,23 @@ int main(int argc, char **argv) {
 
   bindings.emplace_back(GPUDescriptorBinding{
       0, GPU_DESCRIPTOR_BINDING_TYPE_UNIFORM_BUFFER, 0, global_uniform});
-  global_descriptor_set->Create(0, bindings);
+  global_descriptor_set->Create(bindings);
   bindings.clear();
 
   bindings.emplace_back(GPUDescriptorBinding{
       0, GPU_DESCRIPTOR_BINDING_TYPE_UNIFORM_BUFFER, 0, world_uniform});
-  world_descriptor_set->Create(1, bindings);
+  world_descriptor_set->Create(bindings);
   bindings.clear();
 
   bindings.emplace_back(GPUDescriptorBinding{
       0, GPU_DESCRIPTOR_BINDING_TYPE_UNIFORM_BUFFER, 0, instance_uniform});
-  instance_descriptor_set->Create(2, bindings);
+  instance_descriptor_set->Create(bindings);
   bindings.clear();
 
   for (int i = 0; i < meshes.size(); ++i) {
     bindings.emplace_back(GPUDescriptorBinding{
         0, GPU_DESCRIPTOR_BINDING_TYPE_TEXTURE, meshes[i].texture, 0});
-    meshes[i].texture_descriptor_set->Create(3, bindings);
+    meshes[i].texture_descriptor_set->Create(bindings);
     bindings.clear();
   }
 
@@ -347,7 +431,7 @@ int main(int argc, char **argv) {
   bindings.emplace_back(
       GPUDescriptorBinding{0, GPU_DESCRIPTOR_BINDING_TYPE_ATTACHMENT, 0, 0,
                            offscreen_color_attachment});
-  post_processing_set->Create(0, bindings);
+  post_processing_set->Create(bindings);
 
   GPUTexture *cubemap = frontend->TextureAllocate();
   std::array<const char *, 6> cubemap_paths;
@@ -371,7 +455,7 @@ int main(int argc, char **argv) {
   bindings.clear();
   bindings.emplace_back(GPUDescriptorBinding{
       0, GPU_DESCRIPTOR_BINDING_TYPE_TEXTURE, cubemap, 0, 0});
-  skybox_texture_set->Create(1, bindings);
+  skybox_texture_set->Create(bindings);
 
   std::vector<float> skybox_vertices = {
       -1.0f, 1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f,
@@ -398,6 +482,42 @@ int main(int argc, char **argv) {
   skybox_vertex_buffer->LoadData(
       0, skybox_vertices.size() * sizeof(skybox_vertices[0]),
       skybox_vertices.data());
+
+  std::vector<float> sphere_vertices = GenerateSphereVertices(1, 36, 18);
+  GPUVertexBuffer *sphere_vertex_buffer = frontend->VertexBufferAllocate();
+  sphere_vertex_buffer->Create(sphere_vertices.size() *
+                               sizeof(sphere_vertices[0]));
+  sphere_vertex_buffer->LoadData(
+      0, sphere_vertices.size() * sizeof(sphere_vertices[0]),
+      sphere_vertices.data());
+
+  std::vector<unsigned int> sphere_indices = GenerateSphereIndices(36, 18);
+  GPUIndexBuffer *sphere_index_buffer = frontend->IndexBufferAllocate();
+  sphere_index_buffer->Create(sphere_indices.size() *
+                              sizeof(sphere_indices[0]));
+  sphere_index_buffer->LoadData(
+      0, sphere_indices.size() * sizeof(sphere_indices[0]),
+      sphere_indices.data());
+
+  GPUShader *reflect_shader = frontend->ShaderAllocate();
+  stage_configs.clear();
+  stage_configs.emplace_back(GPUShaderStageConfig{
+      GPU_SHADER_STAGE_TYPE_VERTEX, "assets/shaders/reflect.vert.spv"});
+  stage_configs.emplace_back(GPUShaderStageConfig{
+      GPU_SHADER_STAGE_TYPE_FRAGMENT, "assets/shaders/reflect.frag.spv"});
+  reflect_shader->Create(stage_configs, GPU_SHADER_TOPOLOGY_TYPE_TRIANGLE_LIST,
+                         GPU_SHADER_DEPTH_FLAG_DEPTH_TEST_ENABLE |
+                             GPU_SHADER_DEPTH_FLAG_DEPTH_WRITE_ENABLE,
+                         offscreen_render_pass, width, height);
+
+  GPUUniformBuffer *reflect_ubo = frontend->UniformBufferAllocate();
+  reflect_ubo->Create(sizeof(InstanceUBO));
+
+  GPUDescriptorSet *reflect_instance_set = frontend->DescriptorSetAllocate();
+  bindings.clear();
+  bindings.emplace_back(GPUDescriptorBinding{
+      0, GPU_DESCRIPTOR_BINDING_TYPE_UNIFORM_BUFFER, 0, reflect_ubo, 0});
+  reflect_instance_set->Create(bindings);
 
   glm::ivec2 previous_mouse = {0, 0};
   uint32_t last_update_time = SDL_GetTicks();
@@ -477,13 +597,13 @@ int main(int argc, char **argv) {
 
       skybox_shader->Bind();
       skybox_vertex_buffer->Bind(0);
-      skybox_shader->BindUniformBuffer(global_descriptor_set, 0);
-      skybox_shader->BindSampler(skybox_texture_set);
+      skybox_shader->BindUniformBuffer(global_descriptor_set, 0, 0);
+      skybox_shader->BindSampler(skybox_texture_set, 1);
       frontend->Draw(skybox_vertices.size() / 3);
 
       shader->Bind();
       vertex_buffer->Bind(0);
-      shader->BindUniformBuffer(global_descriptor_set, 0);
+      shader->BindUniformBuffer(global_descriptor_set, 0, 0);
 
       WorldUBO world_ubo = {};
       const float p = 5.0f;
@@ -493,7 +613,7 @@ int main(int argc, char **argv) {
       world_ubo.lights[3] = glm::vec4(p, p, p, 5.0f);
 
       world_uniform->LoadData(0, world_uniform->GetSize(), &world_ubo);
-      shader->BindUniformBuffer(world_descriptor_set, 0);
+      shader->BindUniformBuffer(world_descriptor_set, 0, 1);
 
       for (int i = 0; i < meshes.size(); ++i) {
         std::vector<InstanceUBO> instance_ubos;
@@ -511,9 +631,10 @@ int main(int argc, char **argv) {
         instance_uniform->LoadData(0, instance_uniform->GetSize(),
                                    instance_ubos.data());
         shader->BindUniformBuffer(instance_descriptor_set,
-                                  i * instance_uniform->GetDynamicAlignment());
+                                  i * instance_uniform->GetDynamicAlignment(),
+                                  2);
 
-        shader->BindSampler(meshes[i].texture_descriptor_set);
+        shader->BindSampler(meshes[i].texture_descriptor_set, 3);
 
         shader->PushConstant(&meshes[i].push_constants, sizeof(PushConsts), 0,
                              GPU_SHADER_STAGE_TYPE_FRAGMENT);
@@ -523,15 +644,29 @@ int main(int argc, char **argv) {
 
       grid_shader->Bind();
       grid_vertex_buffer->Bind(0);
-      grid_shader->BindUniformBuffer(global_descriptor_set, 0);
+      grid_shader->BindUniformBuffer(global_descriptor_set, 0, 0);
       frontend->Draw(grid_vertices.size() / 6);
+
+      InstanceUBO instance_ubo = {};
+      instance_ubo.model = glm::mat4(1.0f);
+      instance_ubo.model = glm::translate(instance_ubo.model, glm::vec3(0.0f));
+      reflect_ubo->LoadData(0, sizeof(InstanceUBO), &instance_ubo);
+
+      reflect_shader->Bind();
+      sphere_vertex_buffer->Bind(0);
+      sphere_index_buffer->Bind(0);
+      reflect_shader->BindUniformBuffer(global_descriptor_set, 0, 0);
+      reflect_shader->BindUniformBuffer(world_descriptor_set, 0, 1);
+      reflect_shader->BindUniformBuffer(reflect_instance_set, 0, 2);
+      reflect_shader->BindSampler(skybox_texture_set, 3);
+      frontend->DrawIndexed(sphere_indices.size());
 
       offscreen_render_pass->End();
 
       window_render_pass->Begin(frontend->GetCurrentWindowRenderTarget());
 
       post_processing_shader->Bind();
-      post_processing_shader->BindSampler(post_processing_set);
+      post_processing_shader->BindSampler(post_processing_set, 0);
       frontend->Draw(4);
 
       window_render_pass->End();
@@ -549,6 +684,21 @@ int main(int argc, char **argv) {
   }
 
   delete camera;
+
+  sphere_vertex_buffer->Destroy();
+  delete sphere_vertex_buffer;
+
+  sphere_index_buffer->Destroy();
+  delete sphere_index_buffer;
+
+  reflect_ubo->Destroy();
+  delete reflect_ubo;
+
+  reflect_instance_set->Destroy();
+  delete reflect_instance_set;
+
+  reflect_shader->Destroy();
+  delete reflect_shader;
 
   cubemap->Destroy();
   delete cubemap;

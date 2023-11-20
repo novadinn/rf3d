@@ -342,6 +342,18 @@ bool VulkanBackend::Draw(uint32_t element_count) {
   return true;
 }
 
+bool VulkanBackend::DrawIndexed(uint32_t element_count) {
+  VulkanDeviceQueueInfo info =
+      context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_GRAPHICS);
+
+  VulkanCommandBuffer *command_buffer =
+      &info.command_buffers[context->image_index];
+
+  vkCmdDrawIndexed(command_buffer->GetHandle(), element_count, 1, 0, 0, 0);
+
+  return true;
+}
+
 GPURenderPass *VulkanBackend::GetWindowRenderPass() { return main_render_pass; }
 
 GPURenderTarget *VulkanBackend::GetCurrentWindowRenderTarget() {

@@ -20,6 +20,7 @@ public:
   bool BeginFrame();
   bool EndFrame();
   bool Draw(uint32_t element_count);
+  bool DrawIndexed(uint32_t element_count);
 
   GPURenderPass *GetWindowRenderPass();
   GPURenderTarget *GetCurrentWindowRenderTarget();

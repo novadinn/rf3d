@@ -20,11 +20,8 @@ bool VulkanIndexBuffer::Bind(uint64_t offset) {
   VulkanCommandBuffer *command_buffer =
       &info.command_buffers[context->image_index];
 
-  VkBuffer vertex_buffers[] = {buffer.GetHandle()};
-  VkDeviceSize offsets[] = {offset};
-
-  vkCmdBindVertexBuffers(command_buffer->GetHandle(), 0, 1, vertex_buffers,
-                         offsets);
+  vkCmdBindIndexBuffer(command_buffer->GetHandle(), buffer.GetHandle(), offset,
+                       VK_INDEX_TYPE_UINT32);
 
   return true;
 }

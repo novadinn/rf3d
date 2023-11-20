@@ -18,6 +18,7 @@ public:
   bool BeginFrame() override;
   bool EndFrame() override;
   bool Draw(uint32_t element_count) override;
+  bool DrawIndexed(uint32_t element_count) override;
 
   GPURenderPass *GetWindowRenderPass() override;
   GPURenderTarget *GetCurrentWindowRenderTarget() override;

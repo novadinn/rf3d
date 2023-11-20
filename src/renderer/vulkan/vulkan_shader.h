@@ -24,8 +24,9 @@ public:
   void Destroy() override;
 
   void Bind() override;
-  void BindUniformBuffer(GPUDescriptorSet *set, uint32_t offset) override;
-  void BindSampler(GPUDescriptorSet *set) override;
+  void BindUniformBuffer(GPUDescriptorSet *set, uint32_t offset,
+                         int32_t set_index) override;
+  void BindSampler(GPUDescriptorSet *set, int32_t set_index) override;
   void PushConstant(void *value, uint64_t size, uint32_t offset,
                     uint8_t stage_flags) override;
 
