@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.9)
 
-project(rf3d)
+include(GNUInstallDirs)
+
+project(rf3d VERSION 1.0.0 DESCRIPTION "Rendering Library" )
 
 set(CMAKE_CXX_STANDARD 20)
 
@@ -22,12 +24,6 @@ else()
     message(STATUS "Using vulkan lib at: ${Vulkan_LIBRARIES}")
 endif()
 
-set(INC
-  ${Vulkan_INCLUDE_DIRS}
-  ${SDL2_INCLUDE_DIRS}
-  ${CMAKE_SOURCE_DIR}/src
-)
-
 include_directories(
   ${Vulkan_INCLUDE_DIRS}
   ${SDL2_INCLUDE_DIRS}
@@ -41,11 +37,10 @@ add_definitions(
   -DGLM_FORCE_LEFT_HANDED
 )
 
+add_subdirectory(vendor/glm EXCLUDE_FROM_ALL)
+
 set(SRC 
-  src/main.cpp 
   src/logger.cpp 
-  src/input.cpp 
-  src/camera.cpp 
   src/renderer/renderer_frontend.cpp 
   src/renderer/gpu_utils.cpp
   src/renderer/vulkan/vulkan_backend.cpp
@@ -70,12 +65,26 @@ set(SRC
   src/renderer/vulkan/vulkan_descriptor_set.cpp
 )
 
-add_executable(
-  ${PROJECT_NAME}
+add_library(
+  ${PROJECT_NAME} SHARED
   ${SRC}
 )
 
-add_subdirectory(vendor/glm EXCLUDE_FROM_ALL)
+set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${PROJECT_VERSION})
+set_target_properties(${PROJECT_NAME} PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
+
+install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+install(DIRECTORY src/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/rf3d
+    FILES_MATCHING
+    PATTERN "*.h"
+)
+
+configure_file(src/${PROJECT_NAME}.pc.in ${PROJECT_NAME}.pc @ONLY)
+install(FILES
+    ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.pc 
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+)
 
 target_link_directories(
   ${PROJECT_NAME}
