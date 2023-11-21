@@ -8,7 +8,7 @@ find_package(SDL2 REQUIRED)
 
 include_directories(
   ${CMAKE_SOURCE_DIR}/src
-  /usr/local/include/rf3d
+  ${RF3D_INCLUDE_DIR}
   ${SDL2_INCLUDE_DIRS}
 )
 
@@ -22,4 +22,7 @@ add_executable(
   ${SRC}
 )
 
+target_link_directories(${PROJECT_NAME} 
+  PRIVATE ${RF3D_LIB_DIR}
+)
 target_link_libraries(${PROJECT_NAME} rf3d ${SDL2_LIBRARIES})
