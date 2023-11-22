@@ -7,8 +7,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <rf3d/logger.h>
 #include <rf3d/renderer/renderer_frontend.h>
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb/stb_image.h"
 
 struct PushConsts {
   float roughness;
@@ -19,8 +17,6 @@ struct PushConsts {
 };
 
 struct MeshParams {
-  GPUDescriptorSet *texture_descriptor_set;
-  GPUTexture *texture;
   glm::vec3 position;
   PushConsts push_constants;
 };
@@ -38,24 +34,6 @@ struct InstanceUBO {
   glm::mat4 model;
 };
 
-void LoadTexture(GPUTexture *texture, const char *path) {
-  int texture_width, texture_height, texture_num_channels;
-  stbi_set_flip_vertically_on_load(true);
-  unsigned char *data = stbi_load(path, &texture_width, &texture_height,
-                                  &texture_num_channels, STBI_rgb_alpha);
-  if (!data) {
-    FATAL("Failed to load image!");
-    return;
-  }
-
-  texture->Create(GPU_FORMAT_RGBA8, GPU_TEXTURE_TYPE_2D, texture_width,
-                  texture_height);
-  texture->WriteData(data, 0);
-
-  stbi_set_flip_vertically_on_load(false);
-  stbi_image_free(data);
-}
-
 int main(int argc, char **argv) {
   if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
     FATAL("Couldn't initialize SLD");
@@ -67,7 +45,7 @@ int main(int argc, char **argv) {
 
   SDL_Window *window =
       SDL_CreateWindow("RF3D", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-                       800, 600, SDL_WINDOW_VULKAN);
+                       width, height, SDL_WINDOW_VULKAN);
   RendererFrontend *frontend = new RendererFrontend();
   if (!frontend->Initialize(window, RendererBackendType::RBT_VULKAN)) {
     exit(1);
@@ -78,18 +56,12 @@ int main(int argc, char **argv) {
   GPURenderPass *window_render_pass = frontend->GetWindowRenderPass();
 
   std::vector<MeshParams> meshes(3);
-  for (int i = 0; i < meshes.size(); ++i) {
-    meshes[i].texture = frontend->TextureAllocate();
-  }
 
-  LoadTexture(meshes[0].texture, "../../assets/textures/metal.png");
   meshes[0].position = glm::vec3(0, 0, 0.0f);
   meshes[0].push_constants =
       PushConsts{0.1f, 1.0f, 0.672411f, 0.637331f, 0.585456f};
-  LoadTexture(meshes[1].texture, "../../assets/textures/wood.png");
   meshes[1].position = glm::vec3(2, 0, 0.0f);
   meshes[1].push_constants = PushConsts{0.8f, 0.2f, 1, 0, 0};
-  LoadTexture(meshes[2].texture, "../../assets/textures/brickwall.jpg");
   meshes[2].position = glm::vec3(-2, 0, 0.0f);
   meshes[2].push_constants = PushConsts{0.5f, 0.5f, 0, 1, 0};
 
@@ -139,10 +111,9 @@ int main(int argc, char **argv) {
 
   std::vector<GPUShaderStageConfig> stage_configs;
   stage_configs.emplace_back(GPUShaderStageConfig{
-      GPU_SHADER_STAGE_TYPE_VERTEX, "../../assets/shaders/textures.vert.spv"});
-  stage_configs.emplace_back(
-      GPUShaderStageConfig{GPU_SHADER_STAGE_TYPE_FRAGMENT,
-                           "../../assets/shaders/textures.frag.spv"});
+      GPU_SHADER_STAGE_TYPE_VERTEX, "../../assets/shaders/pbr.vert.spv"});
+  stage_configs.emplace_back(GPUShaderStageConfig{
+      GPU_SHADER_STAGE_TYPE_FRAGMENT, "../../assets/shaders/pbr.frag.spv"});
   if (!shader->Create(stage_configs, GPU_SHADER_TOPOLOGY_TYPE_TRIANGLE_LIST,
                       GPU_SHADER_DEPTH_FLAG_DEPTH_TEST_ENABLE |
                           GPU_SHADER_DEPTH_FLAG_DEPTH_WRITE_ENABLE,
@@ -162,9 +133,6 @@ int main(int argc, char **argv) {
   GPUDescriptorSet *global_descriptor_set = frontend->DescriptorSetAllocate();
   GPUDescriptorSet *world_descriptor_set = frontend->DescriptorSetAllocate();
   GPUDescriptorSet *instance_descriptor_set = frontend->DescriptorSetAllocate();
-  for (int i = 0; i < meshes.size(); ++i) {
-    meshes[i].texture_descriptor_set = frontend->DescriptorSetAllocate();
-  }
 
   std::vector<GPUDescriptorBinding> bindings;
 
@@ -182,13 +150,6 @@ int main(int argc, char **argv) {
       0, GPU_DESCRIPTOR_BINDING_TYPE_UNIFORM_BUFFER, 0, instance_uniform});
   instance_descriptor_set->Create(bindings);
   bindings.clear();
-
-  for (int i = 0; i < meshes.size(); ++i) {
-    bindings.emplace_back(GPUDescriptorBinding{
-        0, GPU_DESCRIPTOR_BINDING_TYPE_TEXTURE, meshes[i].texture, 0});
-    meshes[i].texture_descriptor_set->Create(bindings);
-    bindings.clear();
-  }
 
   Camera *camera = new Camera();
   camera->Create(45, width / height, 0.1f, 1000.0f);
@@ -294,8 +255,6 @@ int main(int argc, char **argv) {
                                   i * instance_uniform->GetDynamicAlignment(),
                                   2);
 
-        shader->BindSampler(meshes[i].texture_descriptor_set, 3);
-
         shader->PushConstant(&meshes[i].push_constants, sizeof(PushConsts), 0,
                              GPU_SHADER_STAGE_TYPE_FRAGMENT);
 
@@ -318,10 +277,6 @@ int main(int argc, char **argv) {
 
   delete camera;
 
-  for (int i = 0; i < meshes.size(); ++i) {
-    meshes[i].texture->Destroy();
-    delete meshes[i].texture;
-  }
   instance_uniform->Destroy();
   delete instance_uniform;
   world_uniform->Destroy();
