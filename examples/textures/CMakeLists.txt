@@ -6,15 +6,20 @@ set(CMAKE_CXX_STANDARD 20)
 
 find_package(SDL2 REQUIRED)
 
+add_definitions(
+  -DGLM_FORCE_LEFT_HANDED
+)
+
 include_directories(
-  ${CMAKE_SOURCE_DIR}/src
   ${RF3D_INCLUDE_DIR}
   ${SDL2_INCLUDE_DIRS}
+  ${CMAKE_SOURCE_DIR}/vendor
 )
 
 set(SRC 
   src/main.cpp
   src/../../base/camera.cpp
+  src/../../base/input.cpp
 )
 
 add_executable(

@@ -108,7 +108,7 @@ bool VulkanBackend::Initialize(SDL_Window *sdl_window) {
               GPU_ATTACHMENT_USAGE_DEPTH_STENCIL_ATTACHMENT,
               GPU_RENDER_PASS_ATTACHMENT_LOAD_OPERATION_DONT_CARE,
               GPU_RENDER_PASS_ATTACHMENT_STORE_OPERATION_DONT_CARE, false}},
-      glm::vec4(0, 0, width, height), glm::vec4(0.2f, 0.2f, 0.2f, 1.0f), 1.0f,
+      glm::vec4(0, 0, width, height), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f), 1.0f,
       0.0f,
       GPU_RENDER_PASS_CLEAR_FLAG_COLOR | GPU_RENDER_PASS_CLEAR_FLAG_DEPTH |
           GPU_RENDER_PASS_CLEAR_FLAG_STENCIL);

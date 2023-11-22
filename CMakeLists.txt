@@ -14,7 +14,7 @@ endif()
 add_subdirectory(${CMAKE_SOURCE_DIR}/framework)
 add_subdirectory(${CMAKE_SOURCE_DIR}/examples/textures)
 
-file(GLOB TEXTURES
+file(GLOB_RECURSE TEXTURES
   "assets/textures/*.jpg"
   "assets/textures/*.png"
 )
@@ -23,7 +23,7 @@ foreach(TEXTURE ${TEXTURES})
   file(COPY ${TEXTURE} DESTINATION "${PROJECT_BINARY_DIR}/assets/textures/")
 endforeach(TEXTURE)
 
-file(GLOB VK_GLSL_SOURCE_FILES
+file(GLOB_RECURSE VK_GLSL_SOURCE_FILES
   "assets/shaders/*.frag"
   "assets/shaders/*.vert"
 )
