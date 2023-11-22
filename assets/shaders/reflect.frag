@@ -13,6 +13,5 @@ layout(set = 2, binding = 0) uniform samplerCube samplerCubeMap;
 void main() {
   vec3 I = normalize(outWorldPos - outCameraPosition);
   vec3 R = reflect(I, normalize(outNormal));
-  R.xy *= -1.0;
   outColor = vec4(texture(samplerCubeMap, R).rgb, 1.0);
 }

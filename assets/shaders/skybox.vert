@@ -12,7 +12,6 @@ layout(location = 0) out vec3 outTexCoords;
 
 void main() {
   outTexCoords = inPosition;
-  outTexCoords.xy *= -1.0;
   /* remove translation from view matrix */
   gl_Position =
       globalUBO.projection * mat4(mat3(globalUBO.view)) * vec4(inPosition, 1.0);

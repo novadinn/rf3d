@@ -13,6 +13,7 @@ endif()
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/framework)
 add_subdirectory(${CMAKE_SOURCE_DIR}/examples/textures)
+add_subdirectory(${CMAKE_SOURCE_DIR}/examples/skybox)
 
 file(GLOB_RECURSE TEXTURES
   "assets/textures/*.jpg"
