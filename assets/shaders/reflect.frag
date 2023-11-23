@@ -6,8 +6,6 @@ layout(location = 2) in vec3 outCameraPosition;
 
 layout(location = 0) out vec4 outColor;
 
-layout(set = 1, binding = 0) uniform InstanceUBO { mat4 model; }
-instanceUBO;
 layout(set = 2, binding = 0) uniform samplerCube samplerCubeMap;
 
 void main() {

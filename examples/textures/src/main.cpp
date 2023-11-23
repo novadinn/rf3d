@@ -10,19 +10,10 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb/stb_image.h"
 
-struct PushConsts {
-  float roughness;
-  float metallic;
-  float r;
-  float g;
-  float b;
-};
-
 struct MeshParams {
   GPUDescriptorSet *texture_descriptor_set;
   GPUTexture *texture;
   glm::vec3 position;
-  PushConsts push_constants;
 };
 
 struct GlobalUBO {
@@ -84,14 +75,10 @@ int main(int argc, char **argv) {
 
   LoadTexture(meshes[0].texture, "../../assets/textures/metal.png");
   meshes[0].position = glm::vec3(0, 0, 0.0f);
-  meshes[0].push_constants =
-      PushConsts{0.1f, 1.0f, 0.672411f, 0.637331f, 0.585456f};
   LoadTexture(meshes[1].texture, "../../assets/textures/wood.png");
   meshes[1].position = glm::vec3(2, 0, 0.0f);
-  meshes[1].push_constants = PushConsts{0.8f, 0.2f, 1, 0, 0};
   LoadTexture(meshes[2].texture, "../../assets/textures/brickwall.jpg");
   meshes[2].position = glm::vec3(-2, 0, 0.0f);
-  meshes[2].push_constants = PushConsts{0.5f, 0.5f, 0, 1, 0};
 
   std::vector<float> vertices = {
       -0.5f, -0.5f, -0.5f, 0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,  0.5f,  -0.5f,
@@ -152,15 +139,12 @@ int main(int argc, char **argv) {
   }
 
   GPUUniformBuffer *global_uniform = frontend->UniformBufferAllocate();
-  GPUUniformBuffer *world_uniform = frontend->UniformBufferAllocate();
   GPUUniformBuffer *instance_uniform = frontend->UniformBufferAllocate();
 
   global_uniform->Create(sizeof(GlobalUBO));
-  world_uniform->Create(sizeof(WorldUBO));
   instance_uniform->Create(sizeof(InstanceUBO), meshes.size());
 
   GPUDescriptorSet *global_descriptor_set = frontend->DescriptorSetAllocate();
-  GPUDescriptorSet *world_descriptor_set = frontend->DescriptorSetAllocate();
   GPUDescriptorSet *instance_descriptor_set = frontend->DescriptorSetAllocate();
   for (int i = 0; i < meshes.size(); ++i) {
     meshes[i].texture_descriptor_set = frontend->DescriptorSetAllocate();
@@ -171,11 +155,6 @@ int main(int argc, char **argv) {
   bindings.emplace_back(GPUDescriptorBinding{
       0, GPU_DESCRIPTOR_BINDING_TYPE_UNIFORM_BUFFER, 0, global_uniform});
   global_descriptor_set->Create(bindings);
-  bindings.clear();
-
-  bindings.emplace_back(GPUDescriptorBinding{
-      0, GPU_DESCRIPTOR_BINDING_TYPE_UNIFORM_BUFFER, 0, world_uniform});
-  world_descriptor_set->Create(bindings);
   bindings.clear();
 
   bindings.emplace_back(GPUDescriptorBinding{
@@ -267,16 +246,6 @@ int main(int argc, char **argv) {
       vertex_buffer->Bind(0);
       shader->BindUniformBuffer(global_descriptor_set, 0, 0);
 
-      WorldUBO world_ubo = {};
-      const float p = 5.0f;
-      world_ubo.lights[0] = glm::vec4(-p * 0.8f, -p * 0.8f, p * 0.8f, 5.0f);
-      world_ubo.lights[1] = glm::vec4(-p * 2, p * 2, p * 2, 5.0f);
-      world_ubo.lights[2] = glm::vec4(p * 0.2f, -p * 0.2f, p * 0.2f, 5.0f);
-      world_ubo.lights[3] = glm::vec4(p, p, p, 5.0f);
-
-      world_uniform->LoadData(0, world_uniform->GetSize(), &world_ubo);
-      shader->BindUniformBuffer(world_descriptor_set, 0, 1);
-
       for (int i = 0; i < meshes.size(); ++i) {
         std::vector<InstanceUBO> instance_ubos;
         for (int j = 0; j < meshes.size(); ++j) {
@@ -292,14 +261,11 @@ int main(int argc, char **argv) {
                                    instance_ubos.data());
         shader->BindUniformBuffer(instance_descriptor_set,
                                   i * instance_uniform->GetDynamicAlignment(),
-                                  2);
+                                  1);
 
-        shader->BindSampler(meshes[i].texture_descriptor_set, 3);
+        shader->BindSampler(meshes[i].texture_descriptor_set, 2);
 
-        shader->PushConstant(&meshes[i].push_constants, sizeof(PushConsts), 0,
-                             GPU_SHADER_STAGE_TYPE_FRAGMENT);
-
-        frontend->Draw(vertices.size() / 8);
+        frontend->Draw(vertices.size() / 5);
       }
 
       window_render_pass->End();
@@ -324,8 +290,6 @@ int main(int argc, char **argv) {
   }
   instance_uniform->Destroy();
   delete instance_uniform;
-  world_uniform->Destroy();
-  delete world_uniform;
   global_uniform->Destroy();
   delete global_uniform;
   shader->Destroy();

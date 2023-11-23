@@ -9,19 +9,17 @@ layout(set = 0, binding = 0) uniform GlobalUBO {
   mat4 projection;
 }
 globalUBO;
-layout(set = 2, binding = 0) uniform InstanceUBO { mat4 model; }
+layout(set = 1, binding = 0) uniform InstanceUBO { mat4 model; }
 instanceUBO;
 
-layout(location = 0) out vec3 outWorldPos;
-layout(location = 1) out vec3 outNormal;
-layout(location = 2) out vec3 outCameraPosition;
-layout(location = 3) out vec2 outTexCoords;
+layout(location = 0) out vec2 outTexCoords;
 
 void main() {
-  outWorldPos = vec3(instanceUBO.model * vec4(inPosition, 1.0));
-  outNormal = mat3(instanceUBO.model) * inNormal;
-  outCameraPosition = vec3(inverse(globalUBO.view)[3]);
+  vec3 worldPos = vec3(instanceUBO.model * vec4(inPosition, 1.0));
+  /* TODO: seems like we should use attributes in the order specified in layout.
+   * later, we need to sort them in the vulkan_shader */
+  inNormal;
   outTexCoords = inTexCoords;
 
-  gl_Position = globalUBO.projection * globalUBO.view * vec4(outWorldPos, 1.0);
+  gl_Position = globalUBO.projection * globalUBO.view * vec4(worldPos, 1.0);
 }
