@@ -7,8 +7,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <rf3d/framework/logger.h>
 #include <rf3d/framework/renderer/renderer_frontend.h>
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb/stb_image.h"
 
 struct GlobalUBO {
   glm::mat4 view;
@@ -103,37 +101,6 @@ std::vector<unsigned int> GenerateSphereIndices(int sectorCount,
   return indices;
 }
 
-void LoadCubemap(GPUTexture *texture, std::array<const char *, 6> paths) {
-  int texture_width, texture_height, texture_num_channels;
-  unsigned char *data = 0;
-
-  for (int i = 0; i < paths.size(); ++i) {
-    unsigned char *texture_data =
-        stbi_load(paths[i], &texture_width, &texture_height,
-                  &texture_num_channels, STBI_rgb_alpha);
-    if (!texture_data) {
-      FATAL("Failed to load image!");
-      return;
-    }
-
-    int image_size = texture_width * texture_height * 4;
-
-    if (!data) {
-      data = (unsigned char *)malloc(sizeof(*data) * image_size * 6);
-    }
-
-    memcpy(data + image_size * i, texture_data, image_size);
-
-    stbi_image_free(texture_data);
-  }
-
-  texture->Create(GPU_FORMAT_RGBA8, GPU_TEXTURE_TYPE_CUBEMAP, texture_width,
-                  texture_height);
-  texture->WriteData(data, 0);
-
-  free(data);
-}
-
 int main(int argc, char **argv) {
   if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
     FATAL("Couldn't initialize SLD");
@@ -178,57 +145,6 @@ int main(int argc, char **argv) {
   camera->Create(45, width / height, 0.1f, 1000.0f);
   camera->SetViewportSize(width, height);
 
-  GPUTexture *cubemap = frontend->TextureAllocate();
-  std::array<const char *, 6> cubemap_paths;
-  cubemap_paths[0] = "../../assets/textures/skybox_r.jpg";
-  cubemap_paths[1] = "../../assets/textures/skybox_l.jpg";
-  cubemap_paths[2] = "../../assets/textures/skybox_u.jpg";
-  cubemap_paths[3] = "../../assets/textures/skybox_d.jpg";
-  cubemap_paths[4] = "../../assets/textures/skybox_f.jpg";
-  cubemap_paths[5] = "../../assets/textures/skybox_b.jpg";
-  LoadCubemap(cubemap, cubemap_paths);
-
-  std::vector<GPUShaderStageConfig> stage_configs;
-  GPUShader *skybox_shader = frontend->ShaderAllocate();
-  stage_configs.clear();
-  stage_configs.emplace_back(GPUShaderStageConfig{
-      GPU_SHADER_STAGE_TYPE_VERTEX, "../../assets/shaders/skybox.vert.spv"});
-  stage_configs.emplace_back(GPUShaderStageConfig{
-      GPU_SHADER_STAGE_TYPE_FRAGMENT, "../../assets/shaders/skybox.frag.spv"});
-  skybox_shader->Create(stage_configs, GPU_SHADER_TOPOLOGY_TYPE_TRIANGLE_LIST,
-                        0, window_render_pass, width, height);
-  GPUDescriptorSet *skybox_texture_set = frontend->DescriptorSetAllocate();
-  bindings.clear();
-  bindings.emplace_back(GPUDescriptorBinding{
-      0, GPU_DESCRIPTOR_BINDING_TYPE_TEXTURE, cubemap, 0, 0});
-  skybox_texture_set->Create(bindings);
-
-  std::vector<float> skybox_vertices = {
-      -1.0f, 1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f,
-      1.0f,  -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f,
-
-      -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f,
-      -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,
-
-      1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,  1.0f,
-      1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f,
-
-      -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,  1.0f,  1.0f,
-      1.0f,  1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,
-
-      -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,
-      1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f,
-
-      -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f,
-      1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f};
-
-  GPUVertexBuffer *skybox_vertex_buffer = frontend->VertexBufferAllocate();
-  skybox_vertex_buffer->Create(skybox_vertices.size() *
-                               sizeof(skybox_vertices[0]));
-  skybox_vertex_buffer->LoadData(
-      0, skybox_vertices.size() * sizeof(skybox_vertices[0]),
-      skybox_vertices.data());
-
   std::vector<float> sphere_vertices = GenerateSphereVertices(1, 36, 18);
   GPUVertexBuffer *sphere_vertex_buffer = frontend->VertexBufferAllocate();
   sphere_vertex_buffer->Create(sphere_vertices.size() *
@@ -245,16 +161,19 @@ int main(int argc, char **argv) {
       0, sphere_indices.size() * sizeof(sphere_indices[0]),
       sphere_indices.data());
 
-  GPUShader *reflect_shader = frontend->ShaderAllocate();
+  std::vector<GPUShaderStageConfig> stage_configs;
+  GPUShader *normal_shader = frontend->ShaderAllocate();
   stage_configs.clear();
   stage_configs.emplace_back(GPUShaderStageConfig{
-      GPU_SHADER_STAGE_TYPE_VERTEX, "../../assets/shaders/reflect.vert.spv"});
+      GPU_SHADER_STAGE_TYPE_VERTEX, "../../assets/shaders/normal.vert.spv"});
   stage_configs.emplace_back(GPUShaderStageConfig{
-      GPU_SHADER_STAGE_TYPE_FRAGMENT, "../../assets/shaders/reflect.frag.spv"});
-  reflect_shader->Create(stage_configs, GPU_SHADER_TOPOLOGY_TYPE_TRIANGLE_LIST,
-                         GPU_SHADER_DEPTH_FLAG_DEPTH_TEST_ENABLE |
-                             GPU_SHADER_DEPTH_FLAG_DEPTH_WRITE_ENABLE,
-                         window_render_pass, width, height);
+      GPU_SHADER_STAGE_TYPE_GEOMETRY, "../../assets/shaders/normal.geom.spv"});
+  stage_configs.emplace_back(GPUShaderStageConfig{
+      GPU_SHADER_STAGE_TYPE_FRAGMENT, "../../assets/shaders/normal.frag.spv"});
+  normal_shader->Create(stage_configs, GPU_SHADER_TOPOLOGY_TYPE_TRIANGLE_LIST,
+                        GPU_SHADER_DEPTH_FLAG_DEPTH_TEST_ENABLE |
+                            GPU_SHADER_DEPTH_FLAG_DEPTH_WRITE_ENABLE,
+                        window_render_pass, width, height);
 
   glm::ivec2 previous_mouse = {0, 0};
   uint32_t last_update_time = SDL_GetTicks();
@@ -328,23 +247,16 @@ int main(int argc, char **argv) {
       global_ubo.projection = camera->GetProjectionMatrix();
       global_uniform->LoadData(0, global_uniform->GetSize(), &global_ubo);
 
-      skybox_shader->Bind();
-      skybox_vertex_buffer->Bind(0);
-      skybox_shader->BindUniformBuffer(global_descriptor_set, 0, 0);
-      skybox_shader->BindSampler(skybox_texture_set, 1);
-      frontend->Draw(skybox_vertices.size() / 3);
-
       InstanceUBO instance_ubo = {};
       instance_ubo.model = glm::mat4(1.0f);
       instance_ubo.model = glm::translate(instance_ubo.model, glm::vec3(0.0f));
       instance_uniform->LoadData(0, sizeof(InstanceUBO), &instance_ubo);
 
-      reflect_shader->Bind();
+      normal_shader->Bind();
       sphere_vertex_buffer->Bind(0);
       sphere_index_buffer->Bind(0);
-      reflect_shader->BindUniformBuffer(global_descriptor_set, 0, 0);
-      reflect_shader->BindUniformBuffer(instance_descriptor_set, 0, 1);
-      reflect_shader->BindSampler(skybox_texture_set, 2);
+      normal_shader->BindUniformBuffer(global_descriptor_set, 0, 0);
+      normal_shader->BindUniformBuffer(instance_descriptor_set, 0, 1);
       frontend->DrawIndexed(sphere_indices.size());
 
       window_render_pass->End();
@@ -369,20 +281,8 @@ int main(int argc, char **argv) {
   sphere_index_buffer->Destroy();
   delete sphere_index_buffer;
 
-  reflect_shader->Destroy();
-  delete reflect_shader;
-
-  cubemap->Destroy();
-  delete cubemap;
-
-  skybox_vertex_buffer->Destroy();
-  delete skybox_vertex_buffer;
-
-  skybox_texture_set->Destroy();
-  delete skybox_texture_set;
-
-  skybox_shader->Destroy();
-  delete skybox_shader;
+  normal_shader->Destroy();
+  delete normal_shader;
 
   instance_uniform->Destroy();
   delete instance_uniform;

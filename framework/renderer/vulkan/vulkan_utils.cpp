@@ -82,6 +82,15 @@ VulkanUtils::GPUShaderStageTypeToVulkanStage(GPUShaderStageType stage) {
   case GPU_SHADER_STAGE_TYPE_FRAGMENT: {
     return VK_SHADER_STAGE_FRAGMENT_BIT;
   } break;
+  case GPU_SHADER_STAGE_TYPE_GEOMETRY: {
+    return VK_SHADER_STAGE_GEOMETRY_BIT;
+  } break;
+  case GPU_SHADER_STAGE_TYPE_TESSELATION_CONTROL: {
+    return VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+  } break;
+  case GPU_SHADER_STAGE_TYPE_TESSELATION_EVALUATION: {
+    return VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+  } break;
   default: {
     ERROR("Unsupported shader stage!")
     return VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
@@ -117,12 +126,21 @@ VulkanUtils::GPUTextureUsageToVulkanAspectFlags(GPUAttachmentUsage usage) {
 
 VkShaderStageFlags
 VulkanUtils::GPUShaderStageFlagsToVulkanShaderStageFlags(uint8_t stage_flags) {
-  VkShaderStageFlags result = VK_SHADER_STAGE_ALL_GRAPHICS;
+  VkShaderStageFlags result = VK_SHADER_STAGE_ALL_GRAPHICS; /* TODO: */
   if (stage_flags & GPU_SHADER_STAGE_TYPE_VERTEX) {
     result |= VK_SHADER_STAGE_FRAGMENT_BIT;
   }
   if (stage_flags & GPU_SHADER_STAGE_TYPE_FRAGMENT) {
     result |= VK_SHADER_STAGE_VERTEX_BIT;
+  }
+  if (stage_flags & GPU_SHADER_STAGE_TYPE_GEOMETRY) {
+    result |= VK_SHADER_STAGE_GEOMETRY_BIT;
+  }
+  if (stage_flags & GPU_SHADER_STAGE_TYPE_TESSELATION_CONTROL) {
+    result |= VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+  }
+  if (stage_flags & GPU_SHADER_STAGE_TYPE_TESSELATION_EVALUATION) {
+    result |= VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
   }
 
   return result;

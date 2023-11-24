@@ -5,8 +5,8 @@
 #include <SDL2/SDL.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <rf3d/logger.h>
-#include <rf3d/renderer/renderer_frontend.h>
+#include <rf3d/framework/logger.h>
+#include <rf3d/framework/renderer/renderer_frontend.h>
 
 struct PushConsts {
   float roughness;

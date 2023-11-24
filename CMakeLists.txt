@@ -15,7 +15,8 @@ add_subdirectory(${CMAKE_SOURCE_DIR}/framework)
 add_subdirectory(${CMAKE_SOURCE_DIR}/examples/textures)
 add_subdirectory(${CMAKE_SOURCE_DIR}/examples/skybox)
 add_subdirectory(${CMAKE_SOURCE_DIR}/examples/pbr)
-add_subdirectory(${CMAKE_SOURCE_DIR}/examples/postprocessing)
+add_subdirectory(${CMAKE_SOURCE_DIR}/examples/fxaa)
+add_subdirectory(${CMAKE_SOURCE_DIR}/examples/geometry_shader)
 
 file(GLOB_RECURSE TEXTURES
   "assets/textures/*.jpg"
@@ -28,6 +29,7 @@ endforeach(TEXTURE)
 
 file(GLOB_RECURSE VK_GLSL_SOURCE_FILES
   "assets/shaders/*.frag"
+  "assets/shaders/*.geom"
   "assets/shaders/*.vert"
 )
 set(GLSLANG "glslangValidator")
