@@ -1,24 +1,19 @@
 #include <iostream>
 
-#include "../../base/camera.h"
-#include "../../base/input.h"
+#include "../base/camera.h"
+#include "../base/input.h"
 #include <SDL2/SDL.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <rf3d/framework/logger.h>
 #include <rf3d/framework/renderer/renderer_frontend.h>
-
-struct PushConsts {
-  float roughness;
-  float metallic;
-  float r;
-  float g;
-  float b;
-};
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb/stb_image.h"
 
 struct MeshParams {
+  GPUDescriptorSet *texture_descriptor_set;
+  GPUTexture *texture;
   glm::vec3 position;
-  PushConsts push_constants;
 };
 
 struct GlobalUBO {
@@ -34,6 +29,24 @@ struct InstanceUBO {
   glm::mat4 model;
 };
 
+void LoadTexture(GPUTexture *texture, const char *path) {
+  int texture_width, texture_height, texture_num_channels;
+  stbi_set_flip_vertically_on_load(true);
+  unsigned char *data = stbi_load(path, &texture_width, &texture_height,
+                                  &texture_num_channels, STBI_rgb_alpha);
+  if (!data) {
+    FATAL("Failed to load image!");
+    return;
+  }
+
+  texture->Create(GPU_FORMAT_RGBA8, GPU_TEXTURE_TYPE_2D, texture_width,
+                  texture_height);
+  texture->WriteData(data, 0);
+
+  stbi_set_flip_vertically_on_load(false);
+  stbi_image_free(data);
+}
+
 int main(int argc, char **argv) {
   if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
     FATAL("Couldn't initialize SLD");
@@ -45,7 +58,7 @@ int main(int argc, char **argv) {
 
   SDL_Window *window =
       SDL_CreateWindow("RF3D", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-                       width, height, SDL_WINDOW_VULKAN);
+                       800, 600, SDL_WINDOW_VULKAN);
   RendererFrontend *frontend = new RendererFrontend();
   if (!frontend->Initialize(window, RendererBackendType::RBT_VULKAN)) {
     exit(1);
@@ -56,14 +69,16 @@ int main(int argc, char **argv) {
   GPURenderPass *window_render_pass = frontend->GetWindowRenderPass();
 
   std::vector<MeshParams> meshes(3);
+  for (int i = 0; i < meshes.size(); ++i) {
+    meshes[i].texture = frontend->TextureAllocate();
+  }
 
+  LoadTexture(meshes[0].texture, "assets/textures/metal.png");
   meshes[0].position = glm::vec3(0, 0, 0.0f);
-  meshes[0].push_constants =
-      PushConsts{0.1f, 1.0f, 0.672411f, 0.637331f, 0.585456f};
+  LoadTexture(meshes[1].texture, "assets/textures/wood.png");
   meshes[1].position = glm::vec3(2, 0, 0.0f);
-  meshes[1].push_constants = PushConsts{0.8f, 0.2f, 1, 0, 0};
+  LoadTexture(meshes[2].texture, "assets/textures/brickwall.jpg");
   meshes[2].position = glm::vec3(-2, 0, 0.0f);
-  meshes[2].push_constants = PushConsts{0.5f, 0.5f, 0, 1, 0};
 
   std::vector<float> vertices = {
       -0.5f, -0.5f, -0.5f, 0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,  0.5f,  -0.5f,
@@ -111,9 +126,9 @@ int main(int argc, char **argv) {
 
   std::vector<GPUShaderStageConfig> stage_configs;
   stage_configs.emplace_back(GPUShaderStageConfig{
-      GPU_SHADER_STAGE_TYPE_VERTEX, "../../assets/shaders/pbr.vert.spv"});
+      GPU_SHADER_STAGE_TYPE_VERTEX, "assets/shaders/textures.vert.spv"});
   stage_configs.emplace_back(GPUShaderStageConfig{
-      GPU_SHADER_STAGE_TYPE_FRAGMENT, "../../assets/shaders/pbr.frag.spv"});
+      GPU_SHADER_STAGE_TYPE_FRAGMENT, "assets/shaders/textures.frag.spv"});
   if (!shader->Create(stage_configs, GPU_SHADER_TOPOLOGY_TYPE_TRIANGLE_LIST,
                       GPU_SHADER_DEPTH_FLAG_DEPTH_TEST_ENABLE |
                           GPU_SHADER_DEPTH_FLAG_DEPTH_WRITE_ENABLE,
@@ -123,16 +138,16 @@ int main(int argc, char **argv) {
   }
 
   GPUUniformBuffer *global_uniform = frontend->UniformBufferAllocate();
-  GPUUniformBuffer *world_uniform = frontend->UniformBufferAllocate();
   GPUUniformBuffer *instance_uniform = frontend->UniformBufferAllocate();
 
   global_uniform->Create(sizeof(GlobalUBO));
-  world_uniform->Create(sizeof(WorldUBO));
   instance_uniform->Create(sizeof(InstanceUBO), meshes.size());
 
   GPUDescriptorSet *global_descriptor_set = frontend->DescriptorSetAllocate();
-  GPUDescriptorSet *world_descriptor_set = frontend->DescriptorSetAllocate();
   GPUDescriptorSet *instance_descriptor_set = frontend->DescriptorSetAllocate();
+  for (int i = 0; i < meshes.size(); ++i) {
+    meshes[i].texture_descriptor_set = frontend->DescriptorSetAllocate();
+  }
 
   std::vector<GPUDescriptorBinding> bindings;
 
@@ -142,14 +157,16 @@ int main(int argc, char **argv) {
   bindings.clear();
 
   bindings.emplace_back(GPUDescriptorBinding{
-      0, GPU_DESCRIPTOR_BINDING_TYPE_UNIFORM_BUFFER, 0, world_uniform});
-  world_descriptor_set->Create(bindings);
-  bindings.clear();
-
-  bindings.emplace_back(GPUDescriptorBinding{
       0, GPU_DESCRIPTOR_BINDING_TYPE_UNIFORM_BUFFER, 0, instance_uniform});
   instance_descriptor_set->Create(bindings);
   bindings.clear();
+
+  for (int i = 0; i < meshes.size(); ++i) {
+    bindings.emplace_back(GPUDescriptorBinding{
+        0, GPU_DESCRIPTOR_BINDING_TYPE_TEXTURE, meshes[i].texture, 0});
+    meshes[i].texture_descriptor_set->Create(bindings);
+    bindings.clear();
+  }
 
   Camera *camera = new Camera();
   camera->Create(45, width / height, 0.1f, 1000.0f);
@@ -228,16 +245,6 @@ int main(int argc, char **argv) {
       vertex_buffer->Bind(0);
       shader->BindUniformBuffer(global_descriptor_set, 0, 0);
 
-      WorldUBO world_ubo = {};
-      const float p = 5.0f;
-      world_ubo.lights[0] = glm::vec4(-p * 0.8f, -p * 0.8f, p * 0.8f, 5.0f);
-      world_ubo.lights[1] = glm::vec4(-p * 2, p * 2, p * 2, 5.0f);
-      world_ubo.lights[2] = glm::vec4(p * 0.2f, -p * 0.2f, p * 0.2f, 5.0f);
-      world_ubo.lights[3] = glm::vec4(p, p, p, 5.0f);
-
-      world_uniform->LoadData(0, world_uniform->GetSize(), &world_ubo);
-      shader->BindUniformBuffer(world_descriptor_set, 0, 1);
-
       for (int i = 0; i < meshes.size(); ++i) {
         std::vector<InstanceUBO> instance_ubos;
         for (int j = 0; j < meshes.size(); ++j) {
@@ -253,12 +260,11 @@ int main(int argc, char **argv) {
                                    instance_ubos.data());
         shader->BindUniformBuffer(instance_descriptor_set,
                                   i * instance_uniform->GetDynamicAlignment(),
-                                  2);
+                                  1);
 
-        shader->PushConstant(&meshes[i].push_constants, sizeof(PushConsts), 0,
-                             GPU_SHADER_STAGE_TYPE_FRAGMENT);
+        shader->BindSampler(meshes[i].texture_descriptor_set, 2);
 
-        frontend->Draw(vertices.size() / 8);
+        frontend->Draw(vertices.size() / 5);
       }
 
       window_render_pass->End();
@@ -277,10 +283,12 @@ int main(int argc, char **argv) {
 
   delete camera;
 
+  for (int i = 0; i < meshes.size(); ++i) {
+    meshes[i].texture->Destroy();
+    delete meshes[i].texture;
+  }
   instance_uniform->Destroy();
   delete instance_uniform;
-  world_uniform->Destroy();
-  delete world_uniform;
   global_uniform->Destroy();
   delete global_uniform;
   shader->Destroy();

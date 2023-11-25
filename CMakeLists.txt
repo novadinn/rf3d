@@ -11,20 +11,18 @@ if(NOT DEFINED RF3D_LIB_DIR)
   message(FATAL_ERROR "RF3D library directory (RF3D_LIB_DIR) is not provided. Aborting..." )
 endif()
 
-add_subdirectory(${CMAKE_SOURCE_DIR}/framework)
-add_subdirectory(${CMAKE_SOURCE_DIR}/examples/textures)
-add_subdirectory(${CMAKE_SOURCE_DIR}/examples/skybox)
-add_subdirectory(${CMAKE_SOURCE_DIR}/examples/pbr)
-add_subdirectory(${CMAKE_SOURCE_DIR}/examples/fxaa)
-add_subdirectory(${CMAKE_SOURCE_DIR}/examples/geometry_shader)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/")
 
-file(GLOB_RECURSE TEXTURES
+add_subdirectory(${CMAKE_SOURCE_DIR}/framework)
+add_subdirectory(${CMAKE_SOURCE_DIR}/examples)
+
+file(GLOB_RECURSE TEXTURE_ASSETS
   "assets/textures/*.jpg"
   "assets/textures/*.png"
 )
-foreach(TEXTURE ${TEXTURES})
+foreach(TEXTURE ${TEXTURE_ASSETS})
   get_filename_component(FILE_NAME ${TEXTURE} NAME)
-  file(COPY ${TEXTURE} DESTINATION "${PROJECT_BINARY_DIR}/assets/textures/")
+  file(COPY ${TEXTURE} DESTINATION "${PROJECT_BINARY_DIR}/bin/assets/textures/")
 endforeach(TEXTURE)
 
 file(GLOB_RECURSE VK_GLSL_SOURCE_FILES
@@ -35,10 +33,10 @@ file(GLOB_RECURSE VK_GLSL_SOURCE_FILES
 set(GLSLANG "glslangValidator")
 foreach(GLSL ${VK_GLSL_SOURCE_FILES})
   get_filename_component(FILE_NAME ${GLSL} NAME)
-  set(SPIRV "${PROJECT_BINARY_DIR}/assets/shaders/${FILE_NAME}.spv")
+  set(SPIRV "${PROJECT_BINARY_DIR}/bin/assets/shaders/${FILE_NAME}.spv")
   add_custom_command(
     OUTPUT ${SPIRV}
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_BINARY_DIR}/assets/shaders/"
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_BINARY_DIR}/bin/assets/shaders/"
     COMMAND ${GLSLANG} --target-env vulkan1.2 ${GLSL} -o ${SPIRV}
     DEPENDS ${GLSL})
   list(APPEND SPIRV_BINARY_FILES ${SPIRV})
