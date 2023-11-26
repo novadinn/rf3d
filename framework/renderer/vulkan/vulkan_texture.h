@@ -16,6 +16,9 @@ public:
 
   void WriteData(void *pixels, uint32_t offset) override;
 
+  void SetDebugName(const char *name) override;
+  void SetDebugTag(const void *tag, size_t tag_size) override;
+
   inline VkImage GetHandle() const { return handle; }
   inline VkImageView GetImageView() const { return view; }
   inline VmaAllocation GetMemory() const { return memory; }

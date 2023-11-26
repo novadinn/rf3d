@@ -3,6 +3,7 @@
 #include "../../logger.h"
 #include "../../platform.h"
 #include "../gpu_shader.h"
+#include "vulkan_debug_marker.h"
 #include "vulkan_descriptor_set.h"
 #include "vulkan_index_buffer.h"
 #include "vulkan_render_pass.h"
@@ -71,6 +72,10 @@ bool VulkanBackend::Initialize(SDL_Window *sdl_window) {
   if (!context->device->Create(&requirements)) {
     return false;
   }
+
+#ifndef NDEBUG
+  VulkanDebugUtils::Initialize();
+#endif
 
   VmaAllocatorCreateInfo vma_allocator_create_info = {};
   vma_allocator_create_info.flags = 0;
@@ -368,6 +373,38 @@ uint32_t VulkanBackend::GetMaxFramesInFlight() {
   return context->swapchain->GetMaxFramesInFlights();
 }
 
+void VulkanBackend::BeginDebugRegion(const char *name, glm::vec4 color) {
+  /* TODO: assumes that this is used only for graphics commands. do we need to
+   * workaround this, or we could use any command buffer we have? */
+  VulkanDeviceQueueInfo info =
+      context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_GRAPHICS);
+
+  VulkanCommandBuffer *command_buffer =
+      &info.command_buffers[context->image_index];
+
+  VulkanDebugUtils::BeginRegion(name, command_buffer, color);
+}
+
+void VulkanBackend::InsertDebugMarker(const char *name, glm::vec4 color) {
+  VulkanDeviceQueueInfo info =
+      context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_GRAPHICS);
+
+  VulkanCommandBuffer *command_buffer =
+      &info.command_buffers[context->image_index];
+
+  VulkanDebugUtils::Insert(name, command_buffer, color);
+}
+
+void VulkanBackend::EndDebugRegion() {
+  VulkanDeviceQueueInfo info =
+      context->device->GetQueueInfo(VULKAN_DEVICE_QUEUE_TYPE_GRAPHICS);
+
+  VulkanCommandBuffer *command_buffer =
+      &info.command_buffers[context->image_index];
+
+  VulkanDebugUtils::EndRegion(command_buffer);
+}
+
 GPUVertexBuffer *VulkanBackend::VertexBufferAllocate() {
   return new VulkanVertexBuffer();
 }
@@ -523,9 +560,6 @@ bool VulkanBackend::CreateDebugMessanger(
           context->instance, "vkCreateDebugUtilsMessengerEXT");
   VK_CHECK(func(context->instance, &debug_create_info, context->allocator,
                 out_debug_messenger));
-
-  /* TODO: there is a lot more debugging function pointers, like
-   * PFN_vkSetDebugUtilsObjectNameEXT */
 
   return true;
 }

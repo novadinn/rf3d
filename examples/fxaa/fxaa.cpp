@@ -21,6 +21,7 @@ public:
     vertex_buffer->Create(vertices.size() * sizeof(vertices[0]));
     vertex_buffer->LoadData(0, vertices.size() * sizeof(vertices[0]),
                             vertices.data());
+    vertex_buffer->SetDebugName("Cube vertex buffer");
 
     meshes.resize(3);
     for (int i = 0; i < meshes.size(); ++i) {
@@ -28,20 +29,25 @@ public:
     }
 
     Utils::LoadTexture(meshes[0].texture, "assets/textures/metal.png");
+    meshes[0].texture->SetDebugName("Metal texture");
     meshes[0].position = glm::vec3(0, 0, 5.0f);
     Utils::LoadTexture(meshes[1].texture, "assets/textures/wood.png");
+    meshes[1].texture->SetDebugName("Wood texture");
     meshes[1].position = glm::vec3(2, 0, 5.0f);
     Utils::LoadTexture(meshes[2].texture, "assets/textures/brickwall.jpg");
+    meshes[2].texture->SetDebugName("Brickwall texture");
     meshes[2].position = glm::vec3(-2, 0, 5.0f);
 
     offscreen_color_attachment = frontend->AttachmentAllocate();
     offscreen_color_attachment->Create(GPU_FORMAT_DEVICE_COLOR_OPTIMAL,
                                        GPU_ATTACHMENT_USAGE_COLOR_ATTACHMENT,
                                        width, height);
+    offscreen_color_attachment->SetDebugName("Offscreen color attachment");
     offscreen_depth_attachment = frontend->AttachmentAllocate();
     offscreen_depth_attachment->Create(
         GPU_FORMAT_DEVICE_DEPTH_OPTIMAL,
         GPU_ATTACHMENT_USAGE_DEPTH_STENCIL_ATTACHMENT, width, height);
+    offscreen_depth_attachment->SetDebugName("Offscreen depth attachment");
 
     offscreen_render_pass = frontend->RenderPassAllocate();
     offscreen_render_pass->Create(
@@ -59,12 +65,14 @@ public:
         glm::vec4(0, 0, width, height), glm::vec4(0, 0, 0, 1), 1.0f, 0.0f,
         GPU_RENDER_PASS_CLEAR_FLAG_COLOR | GPU_RENDER_PASS_CLEAR_FLAG_DEPTH |
             GPU_RENDER_PASS_CLEAR_FLAG_STENCIL);
+    offscreen_render_pass->SetDebugName("Offscreen render pass");
     offscreen_render_target = frontend->RenderTargetAllocate();
     offscreen_render_target->Create(
         offscreen_render_pass,
         std::vector<GPUAttachment *>{offscreen_color_attachment,
                                      offscreen_depth_attachment},
         width, height);
+    offscreen_render_target->SetDebugName("Offscreen framebuffer");
 
     shader = frontend->ShaderAllocate();
     std::vector<GPUShaderStageConfig> stage_configs;
@@ -76,11 +84,14 @@ public:
                    GPU_SHADER_DEPTH_FLAG_DEPTH_TEST_ENABLE |
                        GPU_SHADER_DEPTH_FLAG_DEPTH_WRITE_ENABLE,
                    offscreen_render_pass, width, height);
+    shader->SetDebugName("Texture shader");
 
     global_uniform = frontend->UniformBufferAllocate();
     global_uniform->Create(sizeof(GlobalUBO));
+    global_uniform->SetDebugName("Global uniform buffer");
     instance_uniform = frontend->UniformBufferAllocate();
     instance_uniform->Create(sizeof(InstanceUBO), meshes.size());
+    global_uniform->SetDebugName("Instance uniform buffer");
 
     std::vector<GPUDescriptorBinding> bindings;
 
@@ -88,12 +99,14 @@ public:
     bindings.emplace_back(GPUDescriptorBinding{
         0, GPU_DESCRIPTOR_BINDING_TYPE_UNIFORM_BUFFER, 0, global_uniform});
     global_descriptor_set->Create(bindings);
+    global_descriptor_set->SetDebugName("Global descriptor set");
     bindings.clear();
 
     instance_descriptor_set = frontend->DescriptorSetAllocate();
     bindings.emplace_back(GPUDescriptorBinding{
         0, GPU_DESCRIPTOR_BINDING_TYPE_UNIFORM_BUFFER, 0, instance_uniform});
     instance_descriptor_set->Create(bindings);
+    instance_descriptor_set->SetDebugName("Instance descriptor set");
     bindings.clear();
 
     for (int i = 0; i < meshes.size(); ++i) {
@@ -101,6 +114,7 @@ public:
       bindings.emplace_back(GPUDescriptorBinding{
           0, GPU_DESCRIPTOR_BINDING_TYPE_TEXTURE, meshes[i].texture, 0});
       meshes[i].texture_descriptor_set->Create(bindings);
+      meshes[i].texture_descriptor_set->SetDebugName("Texture descriptor set");
       bindings.clear();
     }
 
@@ -115,6 +129,7 @@ public:
         GPU_SHADER_DEPTH_FLAG_DEPTH_TEST_ENABLE |
             GPU_SHADER_DEPTH_FLAG_DEPTH_WRITE_ENABLE,
         frontend->GetWindowRenderPass(), width, height);
+    post_processing_shader->SetDebugName("FXAA shader");
 
     post_processing_set = frontend->DescriptorSetAllocate();
     bindings.clear();
@@ -122,6 +137,7 @@ public:
         GPUDescriptorBinding{0, GPU_DESCRIPTOR_BINDING_TYPE_ATTACHMENT, 0, 0,
                              offscreen_color_attachment});
     post_processing_set->Create(bindings);
+    post_processing_set->SetDebugName("Post processing descriptor set");
   }
   virtual ~FXAAExamle() {
     post_processing_set->Destroy();
@@ -158,6 +174,8 @@ public:
 
       if (frontend->BeginFrame()) {
         offscreen_render_pass->Begin(offscreen_render_target);
+        frontend->BeginDebugRegion("Offscreen pass",
+                                   glm::vec4(1.0, 0.0, 0.0, 1.0));
 
         static float angle = 0.0f;
         angle += 0.003f;
@@ -196,15 +214,18 @@ public:
           frontend->Draw(vertices.size() / 8);
         }
 
+        frontend->EndDebugRegion();
         offscreen_render_pass->End();
 
         frontend->GetWindowRenderPass()->Begin(
             frontend->GetCurrentWindowRenderTarget());
+        frontend->BeginDebugRegion("Main pass", glm::vec4(0.0, 1.0, 0.0, 1.0));
 
         post_processing_shader->Bind();
         post_processing_shader->BindSampler(post_processing_set, 0);
         frontend->Draw(4);
 
+        frontend->EndDebugRegion();
         frontend->GetWindowRenderPass()->End();
 
         frontend->EndFrame();

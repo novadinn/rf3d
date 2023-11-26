@@ -30,6 +30,9 @@ public:
   void PushConstant(void *value, uint64_t size, uint32_t offset,
                     uint8_t stage_flags) override;
 
+  void SetDebugName(const char *name) override;
+  void SetDebugTag(const void *tag, size_t tag_size) override;
+
   inline VulkanPipeline &GetPipeline() { return pipeline; }
 
 private:

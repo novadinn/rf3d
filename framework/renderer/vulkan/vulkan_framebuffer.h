@@ -16,6 +16,9 @@ public:
 
   bool Resize(uint32_t new_width, uint32_t new_height) override;
 
+  void SetDebugName(const char *name) override;
+  void SetDebugTag(const void *tag, size_t tag_size) override;
+
   inline VkFramebuffer &GetHandle() { return handle; }
 
 private:

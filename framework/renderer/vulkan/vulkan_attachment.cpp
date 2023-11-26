@@ -3,6 +3,7 @@
 #include "../../logger.h"
 #include "../gpu_utils.h"
 #include "vulkan_backend.h"
+#include "vulkan_debug_marker.h"
 #include "vulkan_utils.h"
 
 void VulkanAttachment::Create(GPUFormat attachment_format,
@@ -114,4 +115,15 @@ void VulkanAttachment::Destroy() {
   handle = 0;
   view = 0;
   memory = 0;
+}
+
+void VulkanAttachment::SetDebugName(const char *name) {
+  VulkanDebugUtils::SetObjectName(name, (uint64_t)handle, VK_OBJECT_TYPE_IMAGE);
+  /* TODO: set sampler and view names. other structures that have those
+   * functions should set their data accordingly */
+}
+
+void VulkanAttachment::SetDebugTag(const void *tag, size_t tag_size) {
+  VulkanDebugUtils::SetObjectTag(tag, (uint64_t)handle, VK_OBJECT_TYPE_IMAGE, 0,
+                                 tag_size);
 }

@@ -25,6 +25,10 @@ public:
   uint32_t GetCurrentFrameIndex() override;
   uint32_t GetMaxFramesInFlight() override;
 
+  void BeginDebugRegion(const char *name, glm::vec4 color) override;
+  void InsertDebugMarker(const char *name, glm::vec4 color) override;
+  void EndDebugRegion() override;
+
   GPUVertexBuffer *VertexBufferAllocate() override;
   GPUIndexBuffer *IndexBufferAllocate() override;
   GPUUniformBuffer *UniformBufferAllocate() override;

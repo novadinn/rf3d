@@ -61,6 +61,7 @@ set(SRC
   renderer/vulkan/vulkan_descriptor_layout_cache.cpp
   renderer/vulkan/vulkan_descriptor_builder.cpp
   renderer/vulkan/vulkan_descriptor_set.cpp
+  renderer/vulkan/vulkan_debug_marker.cpp
 )
 
 add_library(

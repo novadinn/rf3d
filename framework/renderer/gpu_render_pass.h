@@ -5,6 +5,7 @@
 
 #include <glm/glm.hpp>
 #include <stdint.h>
+#include <stdio.h>
 
 enum GPURenderPassClearFlag {
   GPU_RENDER_PASS_CLEAR_FLAG_NONE = (1 << 0),
@@ -43,6 +44,9 @@ public:
 
   virtual void Begin(GPURenderTarget *target) = 0;
   virtual void End() = 0;
+
+  virtual void SetDebugName(const char *name) = 0;
+  virtual void SetDebugTag(const void *tag, size_t tag_size) = 0;
 
   inline glm::vec4 &GetRenderArea() { return render_area; }
   inline void SetRenderArea(glm::vec4 new_render_area) {

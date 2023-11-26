@@ -17,8 +17,11 @@ public:
 
     global_uniform = frontend->UniformBufferAllocate();
     global_uniform->Create(sizeof(GlobalUBO));
+    global_uniform->SetDebugName("Global uniform buffer");
+
     instance_uniform = frontend->UniformBufferAllocate();
     instance_uniform->Create(sizeof(InstanceUBO));
+    instance_uniform->SetDebugName("Instance uniform buffer");
 
     std::vector<GPUDescriptorBinding> bindings;
 
@@ -26,12 +29,14 @@ public:
     bindings.emplace_back(GPUDescriptorBinding{
         0, GPU_DESCRIPTOR_BINDING_TYPE_UNIFORM_BUFFER, 0, global_uniform});
     global_descriptor_set->Create(bindings);
+    global_descriptor_set->SetDebugName("Global descriptor set");
     bindings.clear();
 
     instance_descriptor_set = frontend->DescriptorSetAllocate();
     bindings.emplace_back(GPUDescriptorBinding{
         0, GPU_DESCRIPTOR_BINDING_TYPE_UNIFORM_BUFFER, 0, instance_uniform});
     instance_descriptor_set->Create(bindings);
+    instance_descriptor_set->SetDebugName("Instance descriptor set");
     bindings.clear();
 
     cubemap = frontend->TextureAllocate();
@@ -43,6 +48,7 @@ public:
     cubemap_paths[4] = "assets/textures/skybox_f.jpg";
     cubemap_paths[5] = "assets/textures/skybox_b.jpg";
     Utils::LoadCubemap(cubemap, cubemap_paths);
+    cubemap->SetDebugName("Cubemap texture");
 
     std::vector<GPUShaderStageConfig> stage_configs;
     skybox_shader = frontend->ShaderAllocate();
@@ -53,12 +59,14 @@ public:
         GPU_SHADER_STAGE_TYPE_FRAGMENT, "assets/shaders/skybox.frag.spv"});
     skybox_shader->Create(stage_configs, GPU_SHADER_TOPOLOGY_TYPE_TRIANGLE_LIST,
                           0, frontend->GetWindowRenderPass(), width, height);
+    skybox_shader->SetDebugName("Skybox shader");
 
     skybox_texture_set = frontend->DescriptorSetAllocate();
     bindings.clear();
     bindings.emplace_back(GPUDescriptorBinding{
         0, GPU_DESCRIPTOR_BINDING_TYPE_TEXTURE, cubemap, 0, 0});
     skybox_texture_set->Create(bindings);
+    skybox_texture_set->SetDebugName("Skybox texture descriptor set");
 
     skybox_vertices = Utils::GetCubeVerticesPositionsOnly();
     skybox_vertex_buffer = frontend->VertexBufferAllocate();
@@ -67,6 +75,7 @@ public:
     skybox_vertex_buffer->LoadData(
         0, skybox_vertices.size() * sizeof(skybox_vertices[0]),
         skybox_vertices.data());
+    skybox_vertex_buffer->SetDebugName("Skybox vertex buffer");
 
     sphere_vertices = Utils::GenerateSphereVertices(1, 36, 18);
     sphere_indices = Utils::GenerateSphereIndices(36, 18);
@@ -77,6 +86,7 @@ public:
     sphere_vertex_buffer->LoadData(
         0, sphere_vertices.size() * sizeof(sphere_vertices[0]),
         sphere_vertices.data());
+    sphere_vertex_buffer->SetDebugName("Sphere vertex buffer");
 
     sphere_index_buffer = frontend->IndexBufferAllocate();
     sphere_index_buffer->Create(sphere_indices.size() *
@@ -84,6 +94,7 @@ public:
     sphere_index_buffer->LoadData(
         0, sphere_indices.size() * sizeof(sphere_indices[0]),
         sphere_indices.data());
+    sphere_index_buffer->SetDebugName("Sphere index buffer");
 
     reflect_shader = frontend->ShaderAllocate();
     stage_configs.clear();
@@ -96,6 +107,7 @@ public:
                            GPU_SHADER_DEPTH_FLAG_DEPTH_TEST_ENABLE |
                                GPU_SHADER_DEPTH_FLAG_DEPTH_WRITE_ENABLE,
                            frontend->GetWindowRenderPass(), width, height);
+    reflect_shader->SetDebugName("Reflect shader");
   }
 
   virtual ~SkyboxExample() {
@@ -138,6 +150,7 @@ public:
       if (frontend->BeginFrame()) {
         frontend->GetWindowRenderPass()->Begin(
             frontend->GetCurrentWindowRenderTarget());
+        frontend->BeginDebugRegion("Main pass", glm::vec4(0.0, 1.0, 0.0, 1.0));
 
         GlobalUBO global_ubo = {};
         global_ubo.view = camera->GetViewMatrix();
@@ -164,6 +177,7 @@ public:
         reflect_shader->BindSampler(skybox_texture_set, 2);
         frontend->DrawIndexed(sphere_indices.size());
 
+        frontend->EndDebugRegion();
         frontend->GetWindowRenderPass()->End();
 
         frontend->EndFrame();

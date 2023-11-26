@@ -5,6 +5,7 @@
 #include "vulkan_backend.h"
 #include "vulkan_buffer.h"
 #include "vulkan_command_buffer.h"
+#include "vulkan_debug_marker.h"
 #include "vulkan_utils.h"
 
 bool VulkanTexture::Create(GPUFormat texture_format,
@@ -218,6 +219,15 @@ void VulkanTexture::WriteData(void *pixels, uint32_t offset) {
                        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     }
   }
+}
+
+void VulkanTexture::SetDebugName(const char *name) {
+  VulkanDebugUtils::SetObjectName(name, (uint64_t)handle, VK_OBJECT_TYPE_IMAGE);
+}
+
+void VulkanTexture::SetDebugTag(const void *tag, size_t tag_size) {
+  VulkanDebugUtils::SetObjectTag(tag, (uint64_t)handle, VK_OBJECT_TYPE_IMAGE, 0,
+                                 tag_size);
 }
 
 void VulkanTexture::TransitionLayout(VulkanCommandBuffer *command_buffer,

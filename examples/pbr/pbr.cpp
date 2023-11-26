@@ -27,6 +27,7 @@ public:
     vertex_buffer->Create(vertices.size() * sizeof(vertices[0]));
     vertex_buffer->LoadData(0, vertices.size() * sizeof(vertices[0]),
                             vertices.data());
+    vertex_buffer->SetDebugName("Cube vertex buffer");
 
     shader = frontend->ShaderAllocate();
     std::vector<GPUShaderStageConfig> stage_configs;
@@ -38,15 +39,19 @@ public:
                    GPU_SHADER_DEPTH_FLAG_DEPTH_TEST_ENABLE |
                        GPU_SHADER_DEPTH_FLAG_DEPTH_WRITE_ENABLE,
                    frontend->GetWindowRenderPass(), width, height);
+    shader->SetDebugName("PBR shader");
 
     global_uniform = frontend->UniformBufferAllocate();
     global_uniform->Create(sizeof(GlobalUBO));
+    global_uniform->SetDebugName("Global uniform buffer");
 
     world_uniform = frontend->UniformBufferAllocate();
     world_uniform->Create(sizeof(WorldUBO));
+    world_uniform->SetDebugName("World uniform buffer");
 
     instance_uniform = frontend->UniformBufferAllocate();
     instance_uniform->Create(sizeof(InstanceUBO), meshes.size());
+    instance_uniform->SetDebugName("Instance uniform buffer");
 
     std::vector<GPUDescriptorBinding> bindings;
 
@@ -54,18 +59,21 @@ public:
     bindings.emplace_back(GPUDescriptorBinding{
         0, GPU_DESCRIPTOR_BINDING_TYPE_UNIFORM_BUFFER, 0, global_uniform});
     global_descriptor_set->Create(bindings);
+    global_descriptor_set->SetDebugName("Global descriptor set");
     bindings.clear();
 
     world_descriptor_set = frontend->DescriptorSetAllocate();
     bindings.emplace_back(GPUDescriptorBinding{
         0, GPU_DESCRIPTOR_BINDING_TYPE_UNIFORM_BUFFER, 0, world_uniform});
     world_descriptor_set->Create(bindings);
+    world_descriptor_set->SetDebugName("World descriptor set");
     bindings.clear();
 
     instance_descriptor_set = frontend->DescriptorSetAllocate();
     bindings.emplace_back(GPUDescriptorBinding{
         0, GPU_DESCRIPTOR_BINDING_TYPE_UNIFORM_BUFFER, 0, instance_uniform});
     instance_descriptor_set->Create(bindings);
+    instance_descriptor_set->SetDebugName("Instance descriptor set");
     bindings.clear();
   }
 
@@ -95,6 +103,7 @@ public:
       if (frontend->BeginFrame()) {
         frontend->GetWindowRenderPass()->Begin(
             frontend->GetCurrentWindowRenderTarget());
+        frontend->BeginDebugRegion("Main pass", glm::vec4(0.0, 1.0, 0.0, 1.0));
 
         glm::vec3 camera_position = glm::vec3(0, 0, 0.0f);
         GlobalUBO global_ubo = {};
@@ -139,6 +148,7 @@ public:
           frontend->Draw(vertices.size() / 8);
         }
 
+        frontend->EndDebugRegion();
         frontend->GetWindowRenderPass()->End();
 
         frontend->EndFrame();

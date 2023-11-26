@@ -5,6 +5,7 @@
 #include "vulkan_backend.h"
 #include "vulkan_command_buffer.h"
 #include "vulkan_context.h"
+#include "vulkan_debug_marker.h"
 #include "vulkan_device.h"
 #include "vulkan_swapchain.h"
 #include "vulkan_utils.h"
@@ -254,4 +255,14 @@ void VulkanRenderPass::End() {
       &info.command_buffers[context->image_index];
 
   vkCmdEndRenderPass(command_buffer->GetHandle());
+}
+
+void VulkanRenderPass::SetDebugName(const char *name) {
+  VulkanDebugUtils::SetObjectName(name, (uint64_t)handle,
+                                  VK_OBJECT_TYPE_RENDER_PASS);
+}
+
+void VulkanRenderPass::SetDebugTag(const void *tag, size_t tag_size) {
+  VulkanDebugUtils::SetObjectTag(tag, (uint64_t)handle,
+                                 VK_OBJECT_TYPE_RENDER_PASS, 0, tag_size);
 }

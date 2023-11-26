@@ -4,6 +4,7 @@
 #include "vulkan_attachment.h"
 #include "vulkan_backend.h"
 #include "vulkan_context.h"
+#include "vulkan_debug_marker.h"
 #include "vulkan_device.h"
 #include "vulkan_render_pass.h"
 
@@ -59,4 +60,14 @@ void VulkanFramebuffer::Destroy() {
 bool VulkanFramebuffer::Resize(uint32_t new_width, uint32_t new_height) {
   /* TODO: */
   return true;
+}
+
+void VulkanFramebuffer::SetDebugName(const char *name) {
+  VulkanDebugUtils::SetObjectName(name, (uint64_t)handle,
+                                  VK_OBJECT_TYPE_FRAMEBUFFER);
+}
+
+void VulkanFramebuffer::SetDebugTag(const void *tag, size_t tag_size) {
+  VulkanDebugUtils::SetObjectTag(tag, (uint64_t)handle,
+                                 VK_OBJECT_TYPE_FRAMEBUFFER, 0, tag_size);
 }

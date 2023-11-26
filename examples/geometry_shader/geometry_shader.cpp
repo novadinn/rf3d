@@ -16,8 +16,10 @@ public:
 
     global_uniform = frontend->UniformBufferAllocate();
     global_uniform->Create(sizeof(GlobalUBO));
+    global_uniform->SetDebugName("Global uniform");
     instance_uniform = frontend->UniformBufferAllocate();
     instance_uniform->Create(sizeof(InstanceUBO));
+    instance_uniform->SetDebugName("Instance uniform");
 
     std::vector<GPUDescriptorBinding> bindings;
 
@@ -25,12 +27,14 @@ public:
     bindings.emplace_back(GPUDescriptorBinding{
         0, GPU_DESCRIPTOR_BINDING_TYPE_UNIFORM_BUFFER, 0, global_uniform});
     global_descriptor_set->Create(bindings);
+    global_descriptor_set->SetDebugName("Global descriptor set");
     bindings.clear();
 
     instance_descriptor_set = frontend->DescriptorSetAllocate();
     bindings.emplace_back(GPUDescriptorBinding{
         0, GPU_DESCRIPTOR_BINDING_TYPE_UNIFORM_BUFFER, 0, instance_uniform});
     instance_descriptor_set->Create(bindings);
+    instance_descriptor_set->SetDebugName("Instance descriptor set");
     bindings.clear();
 
     vertices = Utils::GenerateSphereVertices(1, 36, 18);
@@ -40,11 +44,13 @@ public:
     vertex_buffer->Create(vertices.size() * sizeof(vertices[0]));
     vertex_buffer->LoadData(0, vertices.size() * sizeof(vertices[0]),
                             vertices.data());
+    vertex_buffer->SetDebugName("Sphere vertex buffer");
 
     index_buffer = frontend->IndexBufferAllocate();
     index_buffer->Create(indices.size() * sizeof(indices[0]));
     index_buffer->LoadData(0, indices.size() * sizeof(indices[0]),
                            indices.data());
+    index_buffer->SetDebugName("Sphere index buffer");
 
     std::vector<GPUShaderStageConfig> stage_configs;
     shader = frontend->ShaderAllocate();
@@ -59,6 +65,7 @@ public:
                    GPU_SHADER_DEPTH_FLAG_DEPTH_TEST_ENABLE |
                        GPU_SHADER_DEPTH_FLAG_DEPTH_WRITE_ENABLE,
                    frontend->GetWindowRenderPass(), width, height);
+    shader->SetDebugName("Normals debug shader");
   }
 
   virtual ~GeometryShaderExample() {
@@ -88,6 +95,7 @@ public:
       if (frontend->BeginFrame()) {
         frontend->GetWindowRenderPass()->Begin(
             frontend->GetCurrentWindowRenderTarget());
+        frontend->BeginDebugRegion("Main pass", glm::vec4(0.0, 1.0, 0.0, 1.0));
 
         GlobalUBO global_ubo = {};
         global_ubo.view = camera->GetViewMatrix();
@@ -109,6 +117,7 @@ public:
 
         frontend->GetWindowRenderPass()->End();
 
+        frontend->EndDebugRegion();
         frontend->EndFrame();
       }
     }

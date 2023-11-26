@@ -21,10 +21,13 @@ public:
     }
 
     Utils::LoadTexture(meshes[0].texture, "assets/textures/metal.png");
+    meshes[0].texture->SetDebugName("Metal texture");
     meshes[0].position = glm::vec3(0, 0, 0.0f);
     Utils::LoadTexture(meshes[1].texture, "assets/textures/wood.png");
+    meshes[1].texture->SetDebugName("Wood texture");
     meshes[1].position = glm::vec3(2, 0, 0.0f);
     Utils::LoadTexture(meshes[2].texture, "assets/textures/brickwall.jpg");
+    meshes[2].texture->SetDebugName("Brickwall texture");
     meshes[2].position = glm::vec3(-2, 0, 0.0f);
 
     vertices = Utils::GetCubeVertices();
@@ -32,6 +35,7 @@ public:
     vertex_buffer->Create(vertices.size() * sizeof(vertices[0]));
     vertex_buffer->LoadData(0, vertices.size() * sizeof(vertices[0]),
                             vertices.data());
+    vertex_buffer->SetDebugName("Cube vertex buffer");
 
     shader = frontend->ShaderAllocate();
     std::vector<GPUShaderStageConfig> stage_configs;
@@ -43,12 +47,15 @@ public:
                    GPU_SHADER_DEPTH_FLAG_DEPTH_TEST_ENABLE |
                        GPU_SHADER_DEPTH_FLAG_DEPTH_WRITE_ENABLE,
                    frontend->GetWindowRenderPass(), width, height);
+    shader->SetDebugName("Textures shader");
 
     global_uniform = frontend->UniformBufferAllocate();
     global_uniform->Create(sizeof(GlobalUBO));
+    global_uniform->SetDebugName("Global uniform buffer");
 
     instance_uniform = frontend->UniformBufferAllocate();
     instance_uniform->Create(sizeof(InstanceUBO), meshes.size());
+    instance_uniform->SetDebugName("Instance uniform buffer");
 
     std::vector<GPUDescriptorBinding> bindings;
 
@@ -56,12 +63,14 @@ public:
     bindings.emplace_back(GPUDescriptorBinding{
         0, GPU_DESCRIPTOR_BINDING_TYPE_UNIFORM_BUFFER, 0, global_uniform});
     global_descriptor_set->Create(bindings);
+    global_descriptor_set->SetDebugName("Global descriptor set");
     bindings.clear();
 
     instance_descriptor_set = frontend->DescriptorSetAllocate();
     bindings.emplace_back(GPUDescriptorBinding{
         0, GPU_DESCRIPTOR_BINDING_TYPE_UNIFORM_BUFFER, 0, instance_uniform});
     instance_descriptor_set->Create(bindings);
+    instance_descriptor_set->SetDebugName("Instance descriptor set");
     bindings.clear();
 
     for (int i = 0; i < meshes.size(); ++i) {
@@ -69,6 +78,7 @@ public:
       bindings.emplace_back(GPUDescriptorBinding{
           0, GPU_DESCRIPTOR_BINDING_TYPE_TEXTURE, meshes[i].texture, 0});
       meshes[i].texture_descriptor_set->Create(bindings);
+      meshes[i].texture_descriptor_set->SetDebugName("Texture descriptor set");
       bindings.clear();
     }
   }
@@ -103,6 +113,7 @@ public:
       if (frontend->BeginFrame()) {
         frontend->GetWindowRenderPass()->Begin(
             frontend->GetCurrentWindowRenderTarget());
+        frontend->BeginDebugRegion("Main pass", glm::vec4(0.0, 1.0, 0.0, 1.0));
 
         glm::vec3 camera_position = glm::vec3(0, 0, 0.0f);
         GlobalUBO global_ubo = {};
@@ -136,6 +147,7 @@ public:
           frontend->Draw(vertices.size() / 5);
         }
 
+        frontend->EndDebugRegion();
         frontend->GetWindowRenderPass()->End();
 
         frontend->EndFrame();

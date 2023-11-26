@@ -2,6 +2,8 @@
 
 #include "renderer_backend.h"
 
+#include <glm/glm.hpp>
+
 struct SDL_Window;
 
 enum RendererBackendType {
@@ -28,6 +30,10 @@ public:
    * all of the writable resources should be arrays and use those 2 methodss */
   uint32_t GetCurrentFrameIndex();
   uint32_t GetMaxFramesInFlight();
+
+  void BeginDebugRegion(const char *name, glm::vec4 color);
+  void InsertDebugMarker(const char *name, glm::vec4 color);
+  void EndDebugRegion();
 
   GPUVertexBuffer *VertexBufferAllocate();
   GPUIndexBuffer *IndexBufferAllocate();

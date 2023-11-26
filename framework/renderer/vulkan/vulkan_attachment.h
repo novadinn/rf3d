@@ -11,6 +11,9 @@ public:
               uint32_t attachment_width, uint32_t attachment_height) override;
   void Destroy() override;
 
+  void SetDebugName(const char *name) override;
+  void SetDebugTag(const void *tag, size_t tag_size) override;
+
   inline VkSampler GetSampler() { return sampler; }
 
   void SetImageView(VkImageView new_view) { /* TODO: copy construcor */

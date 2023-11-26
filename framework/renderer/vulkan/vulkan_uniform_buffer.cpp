@@ -1,6 +1,7 @@
 #include "vulkan_uniform_buffer.h"
 
 #include "vulkan_backend.h"
+#include "vulkan_debug_marker.h"
 #include "vulkan_utils.h"
 
 bool VulkanUniformBuffer::Create(uint64_t buffer_element_size,
@@ -36,6 +37,16 @@ void VulkanUniformBuffer::Unlock() { buffer.Unlock(); }
 
 bool VulkanUniformBuffer::LoadData(uint64_t offset, uint64_t size, void *data) {
   return buffer.LoadData(offset, size, data);
+}
+
+void VulkanUniformBuffer::SetDebugName(const char *name) {
+  VulkanDebugUtils::SetObjectName(name, (uint64_t)buffer.GetHandle(),
+                                  VK_OBJECT_TYPE_BUFFER);
+}
+
+void VulkanUniformBuffer::SetDebugTag(const void *tag, size_t tag_size) {
+  VulkanDebugUtils::SetObjectTag(tag, (uint64_t)buffer.GetHandle(),
+                                 VK_OBJECT_TYPE_BUFFER, 0, tag_size);
 }
 
 uint64_t VulkanUniformBuffer::GetSize() const { return buffer.GetSize(); }

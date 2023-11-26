@@ -19,6 +19,9 @@ public:
   void Begin(GPURenderTarget *target) override;
   void End() override;
 
+  void SetDebugName(const char *name) override;
+  void SetDebugTag(const void *tag, size_t tag_size) override;
+
   inline VkRenderPass GetHandle() const { return handle; }
 
 private:

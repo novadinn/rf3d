@@ -17,6 +17,9 @@ public:
 
   bool LoadData(uint64_t offset, uint64_t size, void *data) override;
 
+  void SetDebugName(const char *name) override;
+  void SetDebugTag(const void *tag, size_t tag_size) override;
+
   inline uint64_t GetSize() const override;
   inline VulkanBuffer &GetBuffer() { return buffer; }
 

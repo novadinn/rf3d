@@ -3,6 +3,7 @@
 #include "gpu_core.h"
 
 #include <stdint.h>
+#include <stdio.h>
 
 enum GPUAttachmentUsage {
   GPU_ATTACHMENT_USAGE_NONE,
@@ -19,6 +20,9 @@ public:
                       GPUAttachmentUsage attachment_usage,
                       uint32_t texture_width, uint32_t texture_height) = 0;
   virtual void Destroy() = 0;
+
+  virtual void SetDebugName(const char *name) = 0;
+  virtual void SetDebugTag(const void *tag, size_t tag_size) = 0;
 
   inline GPUFormat GetFormat() const { return format; }
   inline GPUAttachmentUsage GetUsage() const { return aspect; }

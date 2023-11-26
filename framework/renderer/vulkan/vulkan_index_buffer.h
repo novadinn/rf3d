@@ -16,6 +16,9 @@ public:
 
   uint64_t GetSize() const override;
 
+  void SetDebugName(const char *name) override;
+  void SetDebugTag(const void *tag, size_t tag_size) override;
+
 private:
   VulkanBuffer buffer;
 };

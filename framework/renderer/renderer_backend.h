@@ -30,6 +30,10 @@ public:
   virtual uint32_t GetCurrentFrameIndex() = 0;
   virtual uint32_t GetMaxFramesInFlight() = 0;
 
+  virtual void BeginDebugRegion(const char *name, glm::vec4 color) = 0;
+  virtual void InsertDebugMarker(const char *name, glm::vec4 color) = 0;
+  virtual void EndDebugRegion() = 0;
+
   virtual GPUVertexBuffer *VertexBufferAllocate() = 0;
   virtual GPUIndexBuffer *IndexBufferAllocate() = 0;
   virtual GPUUniformBuffer *UniformBufferAllocate() = 0;

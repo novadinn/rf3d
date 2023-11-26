@@ -3,6 +3,7 @@
 #include "gpu_core.h"
 
 #include <stdint.h>
+#include <stdio.h>
 
 enum GPUTextureType {
   GPU_TEXTURE_TYPE_NONE,
@@ -19,6 +20,9 @@ public:
   virtual void Destroy() = 0;
 
   virtual void WriteData(void *pixels, uint32_t offset) = 0;
+
+  virtual void SetDebugName(const char *name) = 0;
+  virtual void SetDebugTag(const void *tag, size_t tag_size) = 0;
 
   inline GPUFormat GetFormat() const { return format; }
   inline GPUTextureType GetType() const { return type; }

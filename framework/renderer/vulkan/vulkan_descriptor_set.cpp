@@ -2,6 +2,7 @@
 
 #include "../../logger.h"
 #include "vulkan_backend.h"
+#include "vulkan_debug_marker.h"
 #include "vulkan_descriptor_builder.h"
 #include "vulkan_texture.h"
 #include "vulkan_uniform_buffer.h"
@@ -67,3 +68,13 @@ void VulkanDescriptorSet::Create(
 }
 
 void VulkanDescriptorSet::Destroy() { bindings.clear(); }
+
+void VulkanDescriptorSet::SetDebugName(const char *name) {
+  VulkanDebugUtils::SetObjectName(name, (uint64_t)set,
+                                  VK_OBJECT_TYPE_DESCRIPTOR_SET);
+}
+
+void VulkanDescriptorSet::SetDebugTag(const void *tag, size_t tag_size) {
+  VulkanDebugUtils::SetObjectTag(tag, (uint64_t)set,
+                                 VK_OBJECT_TYPE_DESCRIPTOR_SET, 0, tag_size);
+}

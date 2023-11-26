@@ -3,6 +3,7 @@
 #include "gpu_core.h"
 
 #include <stdint.h>
+#include <stdio.h>
 
 class GPUUniformBuffer {
 public:
@@ -18,6 +19,9 @@ public:
   virtual bool LoadData(uint64_t offset, uint64_t size, void *data) = 0;
 
   virtual uint64_t GetSize() const = 0;
+
+  virtual void SetDebugName(const char *name) = 0;
+  virtual void SetDebugTag(const void *tag, size_t tag_size) = 0;
 
   inline uint64_t GetDynamicAlignment() const { return dynamic_alignment; }
 

@@ -29,7 +29,8 @@ public:
   void Bind(VulkanCommandBuffer *command_buffer,
             VkPipelineBindPoint bind_point);
 
-  inline VkPipelineLayout &GetLayout() { return layout; }
+  inline VkPipeline GetHandle() { return handle; }
+  inline VkPipelineLayout GetLayout() { return layout; }
 
 private:
   VkPipeline handle;

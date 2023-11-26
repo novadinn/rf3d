@@ -5,6 +5,7 @@
 #include "gpu_uniform_buffer.h"
 
 #include <stdint.h>
+#include <stdio.h>
 #include <vector>
 
 enum GPUDescriptorBindingType {
@@ -28,6 +29,9 @@ public:
   virtual ~GPUDescriptorSet() {}
   virtual void Create(std::vector<GPUDescriptorBinding> &set_bindings) = 0;
   virtual void Destroy() = 0;
+
+  virtual void SetDebugName(const char *name) = 0;
+  virtual void SetDebugTag(const void *tag, size_t tag_size) = 0;
 
   inline std::vector<GPUDescriptorBinding> &GetBindings() { return bindings; }
 

@@ -3,6 +3,7 @@
 #include "gpu_attachment.h"
 
 #include <stdint.h>
+#include <stdio.h>
 #include <vector>
 
 class GPURenderPass;
@@ -17,6 +18,9 @@ public:
   virtual void Destroy() = 0;
 
   virtual bool Resize(uint32_t new_width, uint32_t new_height) = 0;
+
+  virtual void SetDebugName(const char *name) = 0;
+  virtual void SetDebugTag(const void *tag, size_t tag_size) = 0;
 
   inline std::vector<GPUAttachment *> &GetAttachments() { return attachments; }
   inline uint32_t GetWidth() const { return width; }

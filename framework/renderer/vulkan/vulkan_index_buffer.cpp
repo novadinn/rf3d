@@ -1,6 +1,7 @@
 #include "vulkan_index_buffer.h"
 
 #include "vulkan_backend.h"
+#include "vulkan_debug_marker.h"
 
 bool VulkanIndexBuffer::Create(uint64_t buffer_size) {
   return buffer.Create(
@@ -37,3 +38,13 @@ bool VulkanIndexBuffer::LoadData(uint64_t offset, uint64_t size, void *data) {
 }
 
 uint64_t VulkanIndexBuffer::GetSize() const { return buffer.GetSize(); }
+
+void VulkanIndexBuffer::SetDebugName(const char *name) {
+  VulkanDebugUtils::SetObjectName(name, (uint64_t)buffer.GetHandle(),
+                                  VK_OBJECT_TYPE_BUFFER);
+}
+
+void VulkanIndexBuffer::SetDebugTag(const void *tag, size_t tag_size) {
+  VulkanDebugUtils::SetObjectTag(tag, (uint64_t)buffer.GetHandle(),
+                                 VK_OBJECT_TYPE_BUFFER, 0, tag_size);
+}

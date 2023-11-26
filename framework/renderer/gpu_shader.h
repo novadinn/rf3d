@@ -6,6 +6,8 @@
 #include "gpu_texture.h"
 #include "gpu_uniform_buffer.h"
 
+#include <stdint.h>
+#include <stdio.h>
 #include <vector>
 
 enum GPUShaderStageType {
@@ -47,6 +49,9 @@ public:
   virtual void BindSampler(GPUDescriptorSet *set, int32_t set_index) = 0;
   virtual void PushConstant(void *value, uint64_t size, uint32_t offset,
                             uint8_t stage_flags) = 0;
+
+  virtual void SetDebugName(const char *name) = 0;
+  virtual void SetDebugTag(const void *tag, size_t tag_size) = 0;
 
 protected:
 };

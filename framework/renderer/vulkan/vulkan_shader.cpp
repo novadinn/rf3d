@@ -4,6 +4,7 @@
 #include "../gpu_utils.h"
 #include "vulkan_backend.h"
 #include "vulkan_context.h"
+#include "vulkan_debug_marker.h"
 #include "vulkan_descriptor_builder.h"
 #include "vulkan_descriptor_set.h"
 #include "vulkan_texture.h"
@@ -205,6 +206,16 @@ void VulkanShader::BindSampler(GPUDescriptorSet *set, int32_t set_index) {
   vkCmdBindDescriptorSets(command_buffer->GetHandle(),
                           VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.GetLayout(),
                           set_index, 1, &native_set->GetSet(), 0, 0);
+}
+
+void VulkanShader::SetDebugName(const char *name) {
+  VulkanDebugUtils::SetObjectName(name, (uint64_t)pipeline.GetHandle(),
+                                  VK_OBJECT_TYPE_PIPELINE);
+}
+
+void VulkanShader::SetDebugTag(const void *tag, size_t tag_size) {
+  VulkanDebugUtils::SetObjectTag(tag, (uint64_t)pipeline.GetHandle(),
+                                 VK_OBJECT_TYPE_PIPELINE, 0, tag_size);
 }
 
 void VulkanShader::PushConstant(void *value, uint64_t size, uint32_t offset,

@@ -59,6 +59,16 @@ uint32_t RendererFrontend::GetMaxFramesInFlight() {
   return backend->GetMaxFramesInFlight();
 }
 
+void RendererFrontend::BeginDebugRegion(const char *name, glm::vec4 color) {
+  backend->BeginDebugRegion(name, color);
+}
+
+void RendererFrontend::InsertDebugMarker(const char *name, glm::vec4 color) {
+  backend->InsertDebugMarker(name, color);
+}
+
+void RendererFrontend::EndDebugRegion() { backend->EndDebugRegion(); }
+
 GPUVertexBuffer *RendererFrontend::VertexBufferAllocate() {
   return backend->VertexBufferAllocate();
 }
