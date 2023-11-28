@@ -16,14 +16,19 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/")
 add_subdirectory(${CMAKE_SOURCE_DIR}/framework)
 add_subdirectory(${CMAKE_SOURCE_DIR}/examples)
 
-file(GLOB_RECURSE TEXTURE_ASSETS
+file(GLOB_RECURSE ASSETS
   "assets/textures/*.jpg"
   "assets/textures/*.png"
+  "assets/textures/*.tga"
+  "assets/models/*.obj"
+  "assets/models/*.mtl"
 )
-foreach(TEXTURE ${TEXTURE_ASSETS})
-  get_filename_component(FILE_NAME ${TEXTURE} NAME)
-  file(COPY ${TEXTURE} DESTINATION "${PROJECT_BINARY_DIR}/bin/assets/textures/")
-endforeach(TEXTURE)
+foreach(ASSET ${ASSETS})
+  get_filename_component(FILE_NAME ${ASSET} NAME)
+  get_filename_component(FILE_PATH ${ASSET} PATH)
+  get_filename_component(LAST_DIR ${FILE_PATH} NAME)
+  file(COPY ${ASSET} DESTINATION "${PROJECT_BINARY_DIR}/bin/assets/${LAST_DIR}/")
+endforeach(ASSETS)
 
 file(GLOB_RECURSE VK_GLSL_SOURCE_FILES
   "assets/shaders/*.frag"

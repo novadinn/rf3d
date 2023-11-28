@@ -2,18 +2,42 @@
 
 #include "stb/stb_image.h"
 #include <rf3d/framework/logger.h>
+#include <rf3d/framework/platform.h>
 #include <rf3d/framework/renderer/renderer_frontend.h>
+#include <string>
 #include <vector>
+
+#if defined(PLATFORM_WINDOWS)
+#define SLASH_CHAR '\\'
+#elif defined(PLATFORM_LINUX) || defined(PLATFORM_IOS) ||                      \
+    defined(PLATFORM_MACOS) || defined(PLATFORM_ANDROID)
+#define SLASH_CHAR '/'
+#endif
 
 class Utils {
 public:
+  static std::string PlatformPath(const char *path) {
+    std::string result;
+
+    for (int i = 0; i < strlen(path); ++i) {
+      if (path[i] == '/' || path[i] == '\\') {
+        result += SLASH_CHAR;
+        continue;
+      }
+
+      result += path[i];
+    }
+
+    return result;
+  }
+
   static void LoadTexture(GPUTexture *texture, const char *path) {
     int texture_width, texture_height, texture_num_channels;
     stbi_set_flip_vertically_on_load(true);
     unsigned char *data = stbi_load(path, &texture_width, &texture_height,
                                     &texture_num_channels, STBI_rgb_alpha);
     if (!data) {
-      FATAL("Failed to load image!");
+      FATAL("Failed to load image at path %s!", path);
       return;
     }
 

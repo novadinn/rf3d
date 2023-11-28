@@ -356,8 +356,8 @@ void VulkanTexture::CopyFromBuffer(VulkanBuffer *buffer,
       region.imageOffset.x = 0;
       region.imageOffset.y = 0;
       region.imageOffset.z = 0;
-      region.imageExtent.width = width >> j;
-      region.imageExtent.height = height >> j;
+      region.imageExtent.width = std::max(1u, width >> j);
+      region.imageExtent.height = std::max(1u, height >> j);
       region.imageExtent.depth = 1;
 
       image_copies.emplace_back(region);

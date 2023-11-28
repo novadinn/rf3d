@@ -84,7 +84,9 @@ bool VulkanShader::Create(std::vector<GPUShaderStageConfig> stage_configs,
         VulkanUtils::GPUShaderStageTypeToVulkanStage(stage_config->type);
     pipeline_stage_create_infos[i].module = stages[i];
     pipeline_stage_create_infos[i].pName = "main";
-    /* pipeline_stage_create_infos[i].pSpecializationInfo; */
+    /* pipeline_stage_create_infos[i].pSpecializationInfo; */ /* TODO:
+                                                                 specialization
+                                                                 constants */
   }
 
   VkViewport viewport = {};

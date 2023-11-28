@@ -32,7 +32,7 @@ VulkanDescriptorBuilder &VulkanDescriptorBuilder::BindBuffer(
   write_descriptor_set.pBufferInfo = buffer_info;
   write_descriptor_set.pTexelBufferView = 0;
 
-  writes.push_back(write_descriptor_set);
+  writes.emplace_back(write_descriptor_set);
   return *this;
 }
 
@@ -60,7 +60,7 @@ VulkanDescriptorBuilder &VulkanDescriptorBuilder::BindImage(
   write_descriptor_set.pBufferInfo = 0;
   write_descriptor_set.pTexelBufferView = 0;
 
-  writes.push_back(write_descriptor_set);
+  writes.emplace_back(write_descriptor_set);
   return *this;
 }
 
