@@ -18,7 +18,7 @@ Example::Example(const char *example_name, int window_width,
   }
 
   camera = new Camera();
-  camera->Create(45, width / height, 0.1f, 1000.0f);
+  camera->Create(45, width / height, 0.1f, 100000.0f);
   camera->SetViewportSize(width, height);
 
   running = true;

@@ -7,6 +7,8 @@
 #include "vulkan_texture.h"
 #include "vulkan_uniform_buffer.h"
 
+#include <vector>
+
 void VulkanDescriptorSet::Create(
     std::vector<GPUDescriptorBinding> &set_bindings) {
   VulkanContext *context = VulkanBackend::GetContext();
@@ -15,6 +17,17 @@ void VulkanDescriptorSet::Create(
 
   VulkanDescriptorBuilder builder = VulkanDescriptorBuilder::Begin();
 
+  /* TODO: seriosly? */
+  std::vector<VkDescriptorBufferInfo> uniform_buffers_info;
+  uniform_buffers_info.resize(bindings.size());
+  uint32_t uniform_buffer_count = 0;
+  std::vector<VkDescriptorImageInfo> texture_infos;
+  texture_infos.resize(bindings.size());
+  uint32_t texture_count = 0;
+  std::vector<VkDescriptorImageInfo> attachment_infos;
+  attachment_infos.resize(bindings.size());
+  uint32_t attachment_count = 0;
+
   for (uint32_t i = 0; i < bindings.size(); ++i) {
     GPUDescriptorBinding &binding = bindings[i];
     switch (binding.type) {
@@ -22,44 +35,53 @@ void VulkanDescriptorSet::Create(
       VulkanUniformBuffer *native_uniform_buffer =
           (VulkanUniformBuffer *)binding.uniform_buffer;
 
-      VkDescriptorBufferInfo buffer_info = {};
-      buffer_info.buffer = native_uniform_buffer->GetBuffer().GetHandle();
-      buffer_info.offset = 0;
-      buffer_info.range = native_uniform_buffer->GetDynamicAlignment();
+      uniform_buffers_info[uniform_buffer_count].buffer =
+          native_uniform_buffer->GetBuffer().GetHandle();
+      uniform_buffers_info[uniform_buffer_count].offset = 0;
+      uniform_buffers_info[uniform_buffer_count].range =
+          native_uniform_buffer->GetDynamicAlignment();
 
       // VK_CHECK(vkBindBufferMemory(
       //     context->device->GetLogicalDevice(),
       //     native_uniform_buffer->GetBuffer().GetHandle(),
       //     native_uniform_buffer->GetBuffer().GetMemory(), 0));
 
-      builder = builder.BindBuffer(binding.binding, &buffer_info,
+      builder = builder.BindBuffer(binding.binding,
+                                   &uniform_buffers_info[uniform_buffer_count],
                                    VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
                                    VK_SHADER_STAGE_ALL_GRAPHICS);
+      ++uniform_buffer_count;
     } break;
     case GPU_DESCRIPTOR_BINDING_TYPE_TEXTURE: {
       VulkanTexture *native_texture = (VulkanTexture *)binding.texture;
 
-      VkDescriptorImageInfo image_info = {};
-      image_info.sampler = native_texture->GetSampler();
-      image_info.imageView = native_texture->GetImageView();
-      image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+      texture_infos[texture_count].sampler = native_texture->GetSampler();
+      texture_infos[texture_count].imageView = native_texture->GetImageView();
+      texture_infos[texture_count].imageLayout =
+          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-      builder = builder.BindImage(binding.binding, &image_info,
-                                  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                  VK_SHADER_STAGE_ALL_GRAPHICS);
+      builder =
+          builder.BindImage(binding.binding, &texture_infos[texture_count],
+                            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                            VK_SHADER_STAGE_ALL_GRAPHICS);
+      texture_count++;
     } break;
     case GPU_DESCRIPTOR_BINDING_TYPE_ATTACHMENT: {
       VulkanAttachment *native_attachment =
           (VulkanAttachment *)binding.attachment;
 
-      VkDescriptorImageInfo image_info = {};
-      image_info.sampler = native_attachment->GetSampler();
-      image_info.imageView = native_attachment->GetImageView();
-      image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+      attachment_infos[attachment_count].sampler =
+          native_attachment->GetSampler();
+      attachment_infos[attachment_count].imageView =
+          native_attachment->GetImageView();
+      attachment_infos[attachment_count].imageLayout =
+          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-      builder = builder.BindImage(binding.binding, &image_info,
+      builder = builder.BindImage(binding.binding,
+                                  &attachment_infos[attachment_count],
                                   VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                   VK_SHADER_STAGE_ALL_GRAPHICS);
+      attachment_count++;
     } break;
     }
   }
