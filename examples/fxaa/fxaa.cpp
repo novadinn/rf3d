@@ -180,7 +180,6 @@ public:
         static float angle = 0.0f;
         angle += 0.003f;
 
-        glm::vec3 camera_position = glm::vec3(0, 0, 0.0f);
         GlobalUBO global_ubo = {};
         global_ubo.view = camera->GetViewMatrix();
         global_ubo.projection = camera->GetProjectionMatrix();

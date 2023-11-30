@@ -18,6 +18,9 @@ int GPUUtils::GetGPUFormatSize(GPUFormat format) {
   case GPU_FORMAT_RGBA8: {
     return sizeof(uint8_t);
   } break;
+  case GPU_FORMAT_R16G16B16A16F: {
+    return sizeof(float);
+  } break;
   default: {
     ERROR("Failed to get gpu format size!");
     return 0;
@@ -43,6 +46,9 @@ int GPUUtils::GetGPUFormatCount(GPUFormat format) {
   } break;
   case GPU_FORMAT_D24_S8: {
     return 2;
+  } break;
+  case GPU_FORMAT_R16G16B16A16F: {
+    return 4;
   } break;
   default: {
     ERROR("Failed to get gpu format count!");

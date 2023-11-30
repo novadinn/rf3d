@@ -63,19 +63,25 @@ bool VulkanPipeline::Create(VulkanPipelineConfig *config,
   depth_stencil.minDepthBounds = 0.0f;
   depth_stencil.maxDepthBounds = 1.0f;
 
-  VkPipelineColorBlendAttachmentState color_blend_attachment_state = {};
-  color_blend_attachment_state.blendEnable = VK_TRUE;
-  color_blend_attachment_state.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-  color_blend_attachment_state.dstColorBlendFactor =
-      VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-  color_blend_attachment_state.colorBlendOp = VK_BLEND_OP_ADD;
-  color_blend_attachment_state.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-  color_blend_attachment_state.dstAlphaBlendFactor =
-      VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-  color_blend_attachment_state.alphaBlendOp = VK_BLEND_OP_ADD;
-  color_blend_attachment_state.colorWriteMask =
-      VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
-      VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+  std::vector<VkPipelineColorBlendAttachmentState>
+      color_blend_attachment_states;
+  color_blend_attachment_states.resize(config->fragment_output_count);
+  for (uint32_t i = 0; i < config->fragment_output_count; ++i) {
+    color_blend_attachment_states[i].blendEnable = VK_TRUE;
+    color_blend_attachment_states[i].srcColorBlendFactor =
+        VK_BLEND_FACTOR_SRC_ALPHA;
+    color_blend_attachment_states[i].dstColorBlendFactor =
+        VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    color_blend_attachment_states[i].colorBlendOp = VK_BLEND_OP_ADD;
+    color_blend_attachment_states[i].srcAlphaBlendFactor =
+        VK_BLEND_FACTOR_SRC_ALPHA;
+    color_blend_attachment_states[i].dstAlphaBlendFactor =
+        VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    color_blend_attachment_states[i].alphaBlendOp = VK_BLEND_OP_ADD;
+    color_blend_attachment_states[i].colorWriteMask =
+        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+        VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+  }
 
   VkPipelineColorBlendStateCreateInfo color_blend_state_create_info = {};
   color_blend_state_create_info.sType =
@@ -84,8 +90,10 @@ bool VulkanPipeline::Create(VulkanPipelineConfig *config,
   color_blend_state_create_info.flags = 0;
   color_blend_state_create_info.logicOpEnable = VK_FALSE;
   color_blend_state_create_info.logicOp = VK_LOGIC_OP_COPY;
-  color_blend_state_create_info.attachmentCount = 1;
-  color_blend_state_create_info.pAttachments = &color_blend_attachment_state;
+  color_blend_state_create_info.attachmentCount =
+      color_blend_attachment_states.size();
+  color_blend_state_create_info.pAttachments =
+      color_blend_attachment_states.data();
   /* color_blend_state_create_info.blendConstants[4]; */
 
   VkPipelineDynamicStateCreateInfo dynamic_state_create_info = {};

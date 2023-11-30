@@ -33,6 +33,7 @@ bool VulkanShader::Create(std::vector<GPUShaderStageConfig> stage_configs,
   std::vector<VulkanShaderSet> sets;
   std::vector<VkVertexInputAttributeDescription> attributes;
   uint64_t attributes_stride = 0;
+  uint32_t fragment_output_count = 0;
 
   for (uint32_t i = 0; i < stages.size(); ++i) {
     GPUShaderStageConfig *stage_config = &stage_configs[i];
@@ -69,6 +70,8 @@ bool VulkanShader::Create(std::vector<GPUShaderStageConfig> stage_configs,
                                    &attributes_stride)) {
         return false;
       }
+    } else if (stage_config->type == GPU_SHADER_STAGE_TYPE_FRAGMENT) {
+      fragment_output_count = ReflectFragmentOutputs(compiler, resources);
     }
 
     file_data.clear();
@@ -143,6 +146,7 @@ bool VulkanShader::Create(std::vector<GPUShaderStageConfig> stage_configs,
       depth_flags & GPU_SHADER_DEPTH_FLAG_DEPTH_TEST_ENABLE;
   pipeline_config.depth_write_enable =
       depth_flags & GPU_SHADER_DEPTH_FLAG_DEPTH_WRITE_ENABLE;
+  pipeline_config.fragment_output_count = fragment_output_count;
 
   if (!pipeline.Create(&pipeline_config, native_pass)) {
     return false;
@@ -377,6 +381,17 @@ bool VulkanShader::ReflectVertexAttributes(
   *out_stride = offset;
 
   return true;
+}
+
+uint32_t
+VulkanShader::ReflectFragmentOutputs(spirv_cross::Compiler &compiler,
+                                     spirv_cross::ShaderResources &resources) {
+  uint32_t result = 0;
+  for (auto &output : resources.stage_outputs) {
+    ++result;
+  }
+
+  return result;
 }
 
 bool VulkanShader::UpdateDescriptorSetsReflection(

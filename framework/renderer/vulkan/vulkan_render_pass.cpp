@@ -204,17 +204,22 @@ void VulkanRenderPass::Begin(GPURenderTarget *target) {
 
   std::vector<VkClearValue> clear_values;
   if (clear_flags & GPU_RENDER_PASS_CLEAR_FLAG_COLOR) {
-    VkClearValue value;
-    value.color.float32[0] = clear_color.r;
-    value.color.float32[1] = clear_color.g;
-    value.color.float32[2] = clear_color.b;
-    value.color.float32[3] = clear_color.a;
+    for (int i = 0; i < attachments.size(); ++i) {
+      bool is_depth_attachment = GPUUtils::IsDepthFormat(attachments[i].format);
+      if (!is_depth_attachment) {
+        VkClearValue value = {};
+        value.color.float32[0] = clear_color.r;
+        value.color.float32[1] = clear_color.g;
+        value.color.float32[2] = clear_color.b;
+        value.color.float32[3] = clear_color.a;
 
-    clear_values.emplace_back(value);
+        clear_values.emplace_back(value);
+      }
+    }
   }
   if (clear_flags & GPU_RENDER_PASS_CLEAR_FLAG_DEPTH ||
       clear_flags & GPU_RENDER_PASS_CLEAR_FLAG_STENCIL) {
-    VkClearValue value;
+    VkClearValue value = {};
     if (clear_flags & GPU_RENDER_PASS_CLEAR_FLAG_DEPTH) {
       value.depthStencil.depth = depth;
     }

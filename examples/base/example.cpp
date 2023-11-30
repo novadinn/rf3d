@@ -92,7 +92,7 @@ void Example::UpdateStart() {
     }
   }
   if (wheel_movement.y != 0) {
-    camera->Zoom(delta_time * wheel_movement.y);
+    camera->Zoom(delta_time * wheel_movement.y * 5);
   }
 }
 

@@ -19,6 +19,7 @@ struct VulkanPipelineConfig {
   VkRect2D scissor;
   bool depth_test_enable;
   bool depth_write_enable;
+  uint32_t fragment_output_count;
 };
 
 class VulkanPipeline {

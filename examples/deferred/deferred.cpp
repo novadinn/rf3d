@@ -18,6 +18,66 @@ public:
     MeshRequiredFormat format = {true, true, true, true};
     sponza_scene = MeshLoader::Load(&format, "assets/models/sponza.obj");
 
+    offscreen_position_attachment = frontend->AttachmentAllocate();
+    offscreen_position_attachment->Create(GPU_FORMAT_R16G16B16A16F,
+                                          GPU_ATTACHMENT_USAGE_COLOR_ATTACHMENT,
+                                          width, height);
+    offscreen_position_attachment->SetDebugName(
+
+        "Offscreen position attachment");
+    offscreen_normal_attachment = frontend->AttachmentAllocate();
+    offscreen_normal_attachment->Create(GPU_FORMAT_R16G16B16A16F,
+                                        GPU_ATTACHMENT_USAGE_COLOR_ATTACHMENT,
+                                        width, height);
+    offscreen_normal_attachment->SetDebugName("Offscreen normal attachment");
+
+    offscreen_albedo_attachment = frontend->AttachmentAllocate();
+    offscreen_albedo_attachment->Create(GPU_FORMAT_DEVICE_COLOR_OPTIMAL,
+                                        GPU_ATTACHMENT_USAGE_COLOR_ATTACHMENT,
+                                        width, height);
+    offscreen_albedo_attachment->SetDebugName("Offscreen albedo attachment");
+
+    offscreen_depth_attachment = frontend->AttachmentAllocate();
+    offscreen_depth_attachment->Create(
+        GPU_FORMAT_DEVICE_DEPTH_OPTIMAL,
+        GPU_ATTACHMENT_USAGE_DEPTH_STENCIL_ATTACHMENT, width, height);
+    offscreen_depth_attachment->SetDebugName("Offscreen depth attachment");
+
+    offscreen_render_pass = frontend->RenderPassAllocate();
+    offscreen_render_pass->Create(
+        std::vector<GPURenderPassAttachmentConfig>{
+            GPURenderPassAttachmentConfig{
+                GPU_FORMAT_R16G16B16A16F, GPU_ATTACHMENT_USAGE_COLOR_ATTACHMENT,
+                GPU_RENDER_PASS_ATTACHMENT_LOAD_OPERATION_DONT_CARE,
+                GPU_RENDER_PASS_ATTACHMENT_STORE_OPERATION_STORE, false},
+            GPURenderPassAttachmentConfig{
+                GPU_FORMAT_R16G16B16A16F, GPU_ATTACHMENT_USAGE_COLOR_ATTACHMENT,
+                GPU_RENDER_PASS_ATTACHMENT_LOAD_OPERATION_DONT_CARE,
+                GPU_RENDER_PASS_ATTACHMENT_STORE_OPERATION_STORE, false},
+            GPURenderPassAttachmentConfig{
+                GPU_FORMAT_DEVICE_COLOR_OPTIMAL,
+                GPU_ATTACHMENT_USAGE_COLOR_ATTACHMENT,
+                GPU_RENDER_PASS_ATTACHMENT_LOAD_OPERATION_DONT_CARE,
+                GPU_RENDER_PASS_ATTACHMENT_STORE_OPERATION_STORE, false},
+            GPURenderPassAttachmentConfig{
+                GPU_FORMAT_DEVICE_DEPTH_OPTIMAL,
+                GPU_ATTACHMENT_USAGE_DEPTH_STENCIL_ATTACHMENT,
+                GPU_RENDER_PASS_ATTACHMENT_LOAD_OPERATION_DONT_CARE,
+                GPU_RENDER_PASS_ATTACHMENT_STORE_OPERATION_DONT_CARE, false}},
+        glm::vec4(0, 0, width, height), glm::vec4(0, 0, 0, 1), 1.0f, 0.0f,
+        GPU_RENDER_PASS_CLEAR_FLAG_COLOR | GPU_RENDER_PASS_CLEAR_FLAG_DEPTH |
+            GPU_RENDER_PASS_CLEAR_FLAG_STENCIL);
+    offscreen_render_pass->SetDebugName("Offscreen render pass");
+
+    offscreen_render_target = frontend->RenderTargetAllocate();
+    offscreen_render_target->Create(
+        offscreen_render_pass,
+        std::vector<GPUAttachment *>{
+            offscreen_position_attachment, offscreen_normal_attachment,
+            offscreen_albedo_attachment, offscreen_depth_attachment},
+        width, height);
+    offscreen_render_target->SetDebugName("Offscreen framebuffer");
+
     for (int i = 0; i < sponza_scene.size(); ++i) {
       GPUVertexBuffer *vertex_buffer = frontend->VertexBufferAllocate();
       vertex_buffer->Create(sponza_scene[i].vertices.size() *
@@ -112,7 +172,7 @@ public:
     mrt_shader->Create(stage_configs, GPU_SHADER_TOPOLOGY_TYPE_TRIANGLE_LIST,
                        GPU_SHADER_DEPTH_FLAG_DEPTH_TEST_ENABLE |
                            GPU_SHADER_DEPTH_FLAG_DEPTH_WRITE_ENABLE,
-                       frontend->GetWindowRenderPass(), width, height);
+                       offscreen_render_pass, width, height);
     mrt_shader->SetDebugName("MRT shader");
 
     mrt_global_uniform = frontend->UniformBufferAllocate();
@@ -158,9 +218,80 @@ public:
 
       mtr_texture_descriptor_sets.emplace_back(texture_descriptor_set);
     }
+
+    stage_configs.clear();
+    stage_configs.emplace_back(GPUShaderStageConfig{
+        GPU_SHADER_STAGE_TYPE_VERTEX, "assets/shaders/deferred.vert.spv"});
+    stage_configs.emplace_back(GPUShaderStageConfig{
+        GPU_SHADER_STAGE_TYPE_FRAGMENT, "assets/shaders/deferred.frag.spv"});
+    deferred_shader = frontend->ShaderAllocate();
+    deferred_shader->Create(stage_configs,
+                            GPU_SHADER_TOPOLOGY_TYPE_TRIANGLE_LIST,
+                            GPU_SHADER_DEPTH_FLAG_DEPTH_TEST_ENABLE |
+                                GPU_SHADER_DEPTH_FLAG_DEPTH_WRITE_ENABLE,
+                            frontend->GetWindowRenderPass(), width, height);
+    deferred_shader->SetDebugName("Deferred shader");
+
+    deferred_world_uniform = frontend->UniformBufferAllocate();
+    deferred_world_uniform->Create(sizeof(WorldUBO));
+    deferred_world_uniform->SetDebugName("World uniform buffer");
+
+    bindings.clear();
+    bindings.emplace_back(
+        GPUDescriptorBinding{0, GPU_DESCRIPTOR_BINDING_TYPE_ATTACHMENT, 0, 0,
+                             offscreen_position_attachment});
+    bindings.emplace_back(
+        GPUDescriptorBinding{1, GPU_DESCRIPTOR_BINDING_TYPE_ATTACHMENT, 0, 0,
+                             offscreen_normal_attachment});
+    bindings.emplace_back(
+        GPUDescriptorBinding{2, GPU_DESCRIPTOR_BINDING_TYPE_ATTACHMENT, 0, 0,
+                             offscreen_albedo_attachment});
+    deferred_texture_descriptor_set = frontend->DescriptorSetAllocate();
+    deferred_texture_descriptor_set->Create(bindings);
+    deferred_texture_descriptor_set->SetDebugName(
+        "Deferred texture descriptor set");
+
+    bindings.clear();
+    bindings.emplace_back(
+        GPUDescriptorBinding{0, GPU_DESCRIPTOR_BINDING_TYPE_UNIFORM_BUFFER, 0,
+                             deferred_world_uniform, 0});
+    deferred_world_descriptor_set = frontend->DescriptorSetAllocate();
+    deferred_world_descriptor_set->Create(bindings);
+    deferred_world_descriptor_set->SetDebugName(
+        "Deferred world descriptor set");
   }
 
   virtual ~DeferredExample() {
+    offscreen_position_attachment->Destroy();
+    delete offscreen_position_attachment;
+
+    offscreen_normal_attachment->Destroy();
+    delete offscreen_normal_attachment;
+
+    offscreen_albedo_attachment->Destroy();
+    delete offscreen_albedo_attachment;
+
+    offscreen_depth_attachment->Destroy();
+    delete offscreen_depth_attachment;
+
+    offscreen_render_pass->Destroy();
+    delete offscreen_render_pass;
+
+    offscreen_render_target->Destroy();
+    delete offscreen_render_target;
+
+    deferred_world_uniform->Destroy();
+    delete deferred_world_uniform;
+
+    deferred_shader->Destroy();
+    delete deferred_shader;
+
+    deferred_world_descriptor_set->Destroy();
+    delete deferred_world_descriptor_set;
+
+    deferred_texture_descriptor_set->Destroy();
+    delete deferred_texture_descriptor_set;
+
     mrt_instance_descriptor_set->Destroy();
     delete mrt_instance_descriptor_set;
 
@@ -199,8 +330,7 @@ public:
       UpdateStart();
 
       if (frontend->BeginFrame()) {
-        frontend->GetWindowRenderPass()->Begin(
-            frontend->GetCurrentWindowRenderTarget());
+        offscreen_render_pass->Begin(offscreen_render_target);
         frontend->BeginDebugRegion("Offscreen pass",
                                    glm::vec4(1.0, 0.0, 0.0, 1.0));
 
@@ -228,6 +358,52 @@ public:
         }
 
         frontend->EndDebugRegion();
+        offscreen_render_pass->End();
+
+        frontend->GetWindowRenderPass()->Begin(
+            frontend->GetCurrentWindowRenderTarget());
+        frontend->BeginDebugRegion("Main pass",
+                                   glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
+
+        WorldUBO world_ubo = {};
+        world_ubo.viewPos =
+            glm::vec4(glm::vec3(glm::inverse(global_ubo.view)[3]), 1.0);
+
+        const float scene_multiplier = 250.0f;
+        world_ubo.lights[0].position =
+            glm::vec4(0.0f, 0.5f, 0.0f, 0.0f) * glm::vec4(scene_multiplier);
+        world_ubo.lights[0].color = glm::vec3(1.5f);
+        world_ubo.lights[0].radius = 15.0f * 0.25f * scene_multiplier * 10;
+        world_ubo.lights[1].position =
+            glm::vec4(2.0f, 0.5f, 3.0f, 0.0f) * glm::vec4(scene_multiplier);
+        world_ubo.lights[1].color = glm::vec3(1.0f, 0.0f, 0.0f);
+        world_ubo.lights[1].radius = 15.0f * scene_multiplier * 10;
+        world_ubo.lights[2].position =
+            glm::vec4(-5.0f, 0.5f, 0.0f, 1.0f) * glm::vec4(scene_multiplier);
+        world_ubo.lights[2].color = glm::vec3(0.0f, 0.0f, 2.5f);
+        world_ubo.lights[2].radius = 5.0f * scene_multiplier * 10;
+        world_ubo.lights[3].position =
+            glm::vec4(-1.0f, 0.5f, 1.0f, 0.0f) * glm::vec4(scene_multiplier);
+        world_ubo.lights[3].color = glm::vec3(1.0f, 1.0f, 0.0f);
+        world_ubo.lights[3].radius = 2.0f * scene_multiplier * 10;
+        world_ubo.lights[4].position =
+            glm::vec4(6.0f, 0.5f, -2.0f, 0.0f) * glm::vec4(scene_multiplier);
+        world_ubo.lights[4].color = glm::vec3(0.0f, 1.0f, 0.2f);
+        world_ubo.lights[4].radius = 5.0f * scene_multiplier * 10;
+        world_ubo.lights[5].position =
+            glm::vec4(3.0f, 0.5f, 3.0f, 0.0f) * glm::vec4(scene_multiplier);
+        world_ubo.lights[5].color = glm::vec3(1.0f, 0.7f, 0.3f);
+        world_ubo.lights[5].radius = 25.0f * scene_multiplier * 10;
+
+        deferred_world_uniform->LoadData(0, deferred_world_uniform->GetSize(),
+                                         &world_ubo);
+
+        deferred_shader->Bind();
+        deferred_shader->BindUniformBuffer(deferred_world_descriptor_set, 0, 0);
+        deferred_shader->BindSampler(deferred_texture_descriptor_set, 1);
+        frontend->Draw(4);
+
+        frontend->EndDebugRegion();
         frontend->GetWindowRenderPass()->End();
 
         frontend->EndFrame();
@@ -246,6 +422,17 @@ private:
     glm::mat4 model;
   };
 
+  struct Light {
+    glm::vec4 position;
+    glm::vec3 color;
+    float radius;
+  };
+
+  struct WorldUBO {
+    Light lights[6];
+    glm::vec4 viewPos;
+  };
+
   std::vector<Mesh> sponza_scene;
   /* TODO: just use 1 giant vertex and index buffers */
   std::vector<GPUVertexBuffer *> sponza_vertex_buffers;
@@ -262,6 +449,19 @@ private:
   GPUDescriptorSet *mrt_global_descriptor_set;
   GPUDescriptorSet *mrt_instance_descriptor_set;
   std::vector<GPUDescriptorSet *> mtr_texture_descriptor_sets;
+
+  GPUAttachment *offscreen_position_attachment;
+  GPUAttachment *offscreen_normal_attachment;
+  GPUAttachment *offscreen_albedo_attachment;
+  GPUAttachment *offscreen_depth_attachment;
+  GPURenderPass *offscreen_render_pass;
+  GPURenderTarget *offscreen_render_target;
+
+  GPUShader *deferred_shader;
+  GPUUniformBuffer *deferred_world_uniform;
+
+  GPUDescriptorSet *deferred_texture_descriptor_set;
+  GPUDescriptorSet *deferred_world_descriptor_set;
 };
 
 int main(int argc, char **argv) {

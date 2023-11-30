@@ -53,6 +53,9 @@ VkFormat VulkanUtils::GPUFormatToVulkanFormat(GPUFormat format) {
     /* TODO: this is device specific */
     return VK_FORMAT_R8G8B8A8_SRGB;
   } break;
+  case GPU_FORMAT_R16G16B16A16F: {
+    return VK_FORMAT_R16G16B16A16_SFLOAT;
+  } break;
   case GPU_FORMAT_D24_S8: {
     /* TODO: on my device, d24_s8 is not supported :( fix possibility to use
      * stencil buffer later */

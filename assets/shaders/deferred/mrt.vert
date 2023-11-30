@@ -18,16 +18,13 @@ layout(location = 0) out vec3 outWorldPosition;
 layout(location = 1) out vec3 outNormal;
 layout(location = 2) out vec2 outTexCoords;
 layout(location = 3) out vec3 outTangent;
-layout(location = 4) out vec3 outBitangent;
-layout(location = 5) out vec3 outCameraPosition;
 
 void main() {
   outWorldPosition = vec3(instanceUBO.model * vec4(inPosition, 1.0));
-  outNormal = mat3(instanceUBO.model) * inNormal;
+  mat3 mNormal = transpose(inverse(mat3(instanceUBO.model)));
+  outNormal = mNormal * normalize(inNormal);
   outTexCoords = inTexCoords;
-  outTangent = inTangent;
-  outBitangent = inBitangent;
-  outCameraPosition = vec3(inverse(globalUBO.view)[3]);
+  outTangent = mNormal * normalize(inTangent);
 
   gl_Position =
       globalUBO.projection * globalUBO.view * vec4(outWorldPosition, 1.0);
