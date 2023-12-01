@@ -36,21 +36,17 @@ public:
   inline VulkanPipeline &GetPipeline() { return pipeline; }
 
 private:
-  /* used for reflection */
-  struct VulkanShaderBinding {
-    VkDescriptorSetLayoutBinding layout_binding;
-    uint64_t size;
-  };
-
-  /* used for reflection */
+  /* used for reflection. TODO: just use unordered_map instead */
   struct VulkanShaderSet {
-    std::vector<VulkanShaderBinding> bindings;
+    std::vector<VkDescriptorSetLayoutBinding> bindings;
     uint32_t index;
   };
 
   void ReflectStagePushConstantRanges(
       spirv_cross::Compiler &compiler, spirv_cross::ShaderResources &resources,
       std::vector<VkPushConstantRange> &push_constant_ranges);
+  /* TODO: for some reason, this function returns incorrect results when shader
+   * sets are not places in the increasing order */
   void ReflectStageUniforms(spirv_cross::Compiler &compiler,
                             spirv_cross::ShaderResources &resources,
                             std::vector<VulkanShaderSet> &sets);

@@ -36,6 +36,7 @@ class GPURenderPass {
 public:
   virtual ~GPURenderPass() {}
 
+  /* TODO: pass a GPUAttachment * and a config instead */
   virtual bool
   Create(std::vector<GPURenderPassAttachmentConfig> pass_render_attachments,
          glm::vec4 pass_render_area, glm::vec4 pass_clear_color,

@@ -109,19 +109,13 @@ bool VulkanShader::Create(std::vector<GPUShaderStageConfig> stage_configs,
   for (uint32_t i = 0; i < sets.size(); ++i) {
     VkDescriptorSetLayout set_layout;
 
-    std::vector<VkDescriptorSetLayoutBinding> native_bindings;
-    native_bindings.resize(sets[i].bindings.size());
-    for (uint32_t j = 0; j < native_bindings.size(); ++j) {
-      native_bindings[j] = sets[i].bindings[j].layout_binding;
-    }
-
     VkDescriptorSetLayoutCreateInfo layout_create_info = {};
     layout_create_info.sType =
         VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     layout_create_info.pNext = 0;
     layout_create_info.flags = 0;
-    layout_create_info.bindingCount = native_bindings.size();
-    layout_create_info.pBindings = native_bindings.data();
+    layout_create_info.bindingCount = sets[i].bindings.size();
+    layout_create_info.pBindings = sets[i].bindings.data();
 
     set_layout =
         context->layout_cache->CreateDescriptorLayout(&layout_create_info);
@@ -268,11 +262,7 @@ void VulkanShader::ReflectStageUniforms(spirv_cross::Compiler &compiler,
                            not checking in which stages this is presented */
     layout_binding.pImmutableSamplers = 0; /* texture samplers */
 
-    VulkanShaderBinding shader_binding;
-    shader_binding.layout_binding = layout_binding;
-    shader_binding.size = binding_size;
-
-    sets[set_index].bindings.emplace_back(shader_binding);
+    sets[set_index].bindings.emplace_back(layout_binding);
   }
 
   for (auto &image : resources.sampled_images) {
@@ -294,11 +284,7 @@ void VulkanShader::ReflectStageUniforms(spirv_cross::Compiler &compiler,
                            not checking in which stages this is presented */
     layout_binding.pImmutableSamplers = 0; /* texture samplers */
 
-    VulkanShaderBinding shader_binding;
-    shader_binding.layout_binding = layout_binding;
-    shader_binding.size = 0;
-
-    sets[set_index].bindings.emplace_back(shader_binding);
+    sets[set_index].bindings.emplace_back(layout_binding);
   }
 }
 
@@ -401,7 +387,7 @@ bool VulkanShader::UpdateDescriptorSetsReflection(
   for (uint32_t i = 0; i < sets.size(); ++i) {
     if (sets[i].index == set) {
       for (uint32_t j = 0; j < sets[i].bindings.size(); ++j) {
-        if (sets[i].bindings[j].layout_binding.binding == binding) {
+        if (sets[i].bindings[j].binding == binding) {
           return false;
         }
       }
