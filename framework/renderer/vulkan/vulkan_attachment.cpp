@@ -127,3 +127,16 @@ void VulkanAttachment::SetDebugTag(const void *tag, size_t tag_size) {
   VulkanDebugUtils::SetObjectTag(tag, (uint64_t)handle, VK_OBJECT_TYPE_IMAGE, 0,
                                  tag_size);
 }
+
+void VulkanAttachment::CreateAsSwapchainAttachment(VkImage new_handle,
+                                                   VkImageView new_view) {
+  handle = new_handle;
+  view = new_view;
+}
+
+void VulkanAttachment::DestroyAsSwapchainAttachment() {
+  VulkanContext *context = VulkanBackend::GetContext();
+
+  vkDestroyImageView(context->device->GetLogicalDevice(), view,
+                     context->allocator);
+}

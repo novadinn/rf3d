@@ -96,11 +96,15 @@ bool VulkanSwapchain::Create(uint32_t width, uint32_t height) {
                                 &swapchain_create_info, context->allocator,
                                 &handle));
 
+  std::vector<VkImage> images;
+  std::vector<VkImageView> image_views;
+
   uint32_t swapchain_image_count = 0;
   VK_CHECK(vkGetSwapchainImagesKHR(context->device->GetLogicalDevice(), handle,
                                    &swapchain_image_count, 0));
   images.resize(swapchain_image_count);
   image_views.resize(swapchain_image_count);
+  color_attachments.resize(swapchain_image_count);
   VK_CHECK(vkGetSwapchainImagesKHR(context->device->GetLogicalDevice(), handle,
                                    &swapchain_image_count, images.data()));
 
@@ -120,6 +124,11 @@ bool VulkanSwapchain::Create(uint32_t width, uint32_t height) {
 
     VK_CHECK(vkCreateImageView(context->device->GetLogicalDevice(), &view_info,
                                context->allocator, &image_views[i]));
+
+    color_attachments[i] = new VulkanAttachment();
+    VulkanAttachment *native_attachment =
+        (VulkanAttachment *)color_attachments[i];
+    native_attachment->CreateAsSwapchainAttachment(images[i], image_views[i]);
   }
 
   depth_attachment.Create(GPU_FORMAT_D24_S8,
@@ -135,9 +144,11 @@ void VulkanSwapchain::Destroy() {
   depth_attachment.Destroy();
   depth_attachment = {};
 
-  for (uint32_t i = 0; i < image_views.size(); ++i) {
-    vkDestroyImageView(context->device->GetLogicalDevice(), image_views[i],
-                       context->allocator);
+  for (uint32_t i = 0; i < color_attachments.size(); ++i) {
+    VulkanAttachment *native_attachment =
+        (VulkanAttachment *)color_attachments[i];
+    native_attachment->DestroyAsSwapchainAttachment();
+    delete color_attachments[i];
   }
 
   vkDestroySwapchainKHR(context->device->GetLogicalDevice(), handle,
@@ -145,8 +156,7 @@ void VulkanSwapchain::Destroy() {
 
   handle = 0;
   max_frames_in_flight = 0;
-  images.clear();
-  image_views.clear();
+  color_attachments.clear();
   image_format = {};
   present_mode = {};
   extent = {};

@@ -14,11 +14,10 @@ public:
   void SetDebugName(const char *name) override;
   void SetDebugTag(const void *tag, size_t tag_size) override;
 
-  inline VkSampler GetSampler() { return sampler; }
+  void CreateAsSwapchainAttachment(VkImage new_handle, VkImageView new_view);
+  void DestroyAsSwapchainAttachment();
 
-  void SetImageView(VkImageView new_view) { /* TODO: copy construcor */
-    view = new_view;
-  }
+  inline VkSampler GetSampler() { return sampler; }
   inline VkImageView GetImageView() const { return view; }
 
 private:

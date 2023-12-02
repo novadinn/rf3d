@@ -118,7 +118,7 @@ bool VulkanBackend::Initialize(SDL_Window *sdl_window) {
       GPU_RENDER_PASS_CLEAR_FLAG_COLOR | GPU_RENDER_PASS_CLEAR_FLAG_DEPTH |
           GPU_RENDER_PASS_CLEAR_FLAG_STENCIL);
 
-  main_framebuffers.resize(context->swapchain->GetImageViews().size());
+  main_framebuffers.resize(context->swapchain->GetImageCount());
   for (uint32_t i = 0; i < main_framebuffers.size(); ++i) {
     main_framebuffers[i] = RenderTargetAllocate();
   }
@@ -440,18 +440,13 @@ GPUDescriptorSet *VulkanBackend::DescriptorSetAllocate() {
 VulkanContext *VulkanBackend::GetContext() { return context; }
 
 void VulkanBackend::RegenerateFramebuffers() {
-  std::vector<VkImageView> &image_views = context->swapchain->GetImageViews();
+  std::vector<GPUAttachment *> &color_attachments =
+      context->swapchain->GetColorAttachments();
   VulkanAttachment &depth_attachment = context->swapchain->GetDepthAttachment();
   glm::vec4 &render_area = main_render_pass->GetRenderArea();
   for (uint32_t i = 0; i < main_framebuffers.size(); ++i) {
-    // std::vector<VkImageView> attachments = {image_views[i],
-    //                                         depth_attachment.GetImageView()};
-    /* TODO: horrible... */
-    VulkanAttachment color_texture;
-    color_texture.SetImageView(image_views[i]);
-
     std::vector<GPUAttachment *> attachments;
-    attachments.emplace_back(&color_texture);
+    attachments.emplace_back(color_attachments[i]);
     attachments.emplace_back(&depth_attachment);
 
     main_framebuffers[i]->Create(main_render_pass, attachments, render_area.z,

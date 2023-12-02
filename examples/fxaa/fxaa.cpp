@@ -53,13 +53,13 @@ public:
     offscreen_render_pass->Create(
         std::vector<GPURenderPassAttachmentConfig>{
             GPURenderPassAttachmentConfig{
-                GPU_FORMAT_DEVICE_COLOR_OPTIMAL,
-                GPU_ATTACHMENT_USAGE_COLOR_ATTACHMENT,
+                offscreen_color_attachment->GetFormat(),
+                offscreen_color_attachment->GetUsage(),
                 GPU_RENDER_PASS_ATTACHMENT_LOAD_OPERATION_DONT_CARE,
                 GPU_RENDER_PASS_ATTACHMENT_STORE_OPERATION_STORE, false},
             GPURenderPassAttachmentConfig{
-                GPU_FORMAT_DEVICE_DEPTH_OPTIMAL,
-                GPU_ATTACHMENT_USAGE_DEPTH_STENCIL_ATTACHMENT,
+                offscreen_depth_attachment->GetFormat(),
+                offscreen_depth_attachment->GetUsage(),
                 GPU_RENDER_PASS_ATTACHMENT_LOAD_OPERATION_DONT_CARE,
                 GPU_RENDER_PASS_ATTACHMENT_STORE_OPERATION_DONT_CARE, false}},
         glm::vec4(0, 0, width, height), glm::vec4(0, 0, 0, 1), 1.0f, 0.0f,
