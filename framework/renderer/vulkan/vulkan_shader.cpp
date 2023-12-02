@@ -34,6 +34,7 @@ bool VulkanShader::Create(std::vector<GPUShaderStageConfig> stage_configs,
   std::vector<VkVertexInputAttributeDescription> attributes;
   uint64_t attributes_stride = 0;
   uint32_t fragment_output_count = 0;
+  uint32_t tesselation_control_points = 0;
 
   for (uint32_t i = 0; i < stages.size(); ++i) {
     GPUShaderStageConfig *stage_config = &stage_configs[i];
@@ -72,6 +73,10 @@ bool VulkanShader::Create(std::vector<GPUShaderStageConfig> stage_configs,
       }
     } else if (stage_config->type == GPU_SHADER_STAGE_TYPE_FRAGMENT) {
       fragment_output_count = ReflectFragmentOutputs(compiler, resources);
+    } else if (stage_config->type ==
+               GPU_SHADER_STAGE_TYPE_TESSELLATION_CONTROL) {
+      tesselation_control_points =
+          ReflectTesselationControlPoints(compiler, resources);
     }
 
     file_data.clear();
@@ -141,6 +146,7 @@ bool VulkanShader::Create(std::vector<GPUShaderStageConfig> stage_configs,
   pipeline_config.depth_write_enable =
       depth_flags & GPU_SHADER_DEPTH_FLAG_DEPTH_WRITE_ENABLE;
   pipeline_config.fragment_output_count = fragment_output_count;
+  pipeline_config.control_point_count = tesselation_control_points;
 
   if (!pipeline.Create(&pipeline_config, native_pass)) {
     return false;
@@ -378,6 +384,13 @@ VulkanShader::ReflectFragmentOutputs(spirv_cross::Compiler &compiler,
   }
 
   return result;
+}
+
+uint32_t VulkanShader::ReflectTesselationControlPoints(
+    spirv_cross::Compiler &compiler, spirv_cross::ShaderResources &resources) {
+  auto &entry_point =
+      compiler.get_entry_point("main", spv::ExecutionModelTessellationControl);
+  return entry_point.output_vertices;
 }
 
 bool VulkanShader::UpdateDescriptorSetsReflection(

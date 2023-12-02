@@ -42,6 +42,7 @@ set(EXAMPLES
   fxaa
   geometry_shader
   deferred
+  tesselation
 )
 
 function(buildExamples)

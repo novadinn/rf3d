@@ -66,6 +66,7 @@ bool VulkanDevice::Create(VulkanPhysicalDeviceRequirements *requirements) {
   /* TODO: those may not be supported */
   device_features.samplerAnisotropy = VK_TRUE;
   device_features.geometryShader = VK_TRUE;
+  device_features.tessellationShader = VK_TRUE;
 
   VkDeviceCreateInfo device_create_info = {};
   device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;

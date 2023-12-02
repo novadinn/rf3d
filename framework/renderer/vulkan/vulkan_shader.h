@@ -56,6 +56,9 @@ private:
       uint64_t *out_stride);
   uint32_t ReflectFragmentOutputs(spirv_cross::Compiler &compiler,
                                   spirv_cross::ShaderResources &resources);
+  uint32_t
+  ReflectTesselationControlPoints(spirv_cross::Compiler &compiler,
+                                  spirv_cross::ShaderResources &resources);
   bool UpdateDescriptorSetsReflection(std::vector<VulkanShaderSet> &sets,
                                       uint32_t set, uint32_t binding,
                                       int32_t *out_set_index);

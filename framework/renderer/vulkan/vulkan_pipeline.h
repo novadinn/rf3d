@@ -20,6 +20,8 @@ struct VulkanPipelineConfig {
   bool depth_test_enable;
   bool depth_write_enable;
   uint32_t fragment_output_count;
+  /* used for tessellation. 0 if no tessellation is needed */
+  uint32_t control_point_count;
 };
 
 class VulkanPipeline {

@@ -145,6 +145,14 @@ bool VulkanPipeline::Create(VulkanPipelineConfig *config,
                                   &pipeline_layout_create_info,
                                   context->allocator, &layout));
 
+  VkPipelineTessellationStateCreateInfo tesselation_state_create_info = {};
+  tesselation_state_create_info.sType =
+      VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
+  tesselation_state_create_info.pNext = 0;
+  tesselation_state_create_info.flags = 0;
+  tesselation_state_create_info.patchControlPoints =
+      config->control_point_count;
+
   VkGraphicsPipelineCreateInfo pipeline_create_info = {};
   pipeline_create_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
   pipeline_create_info.pNext = 0;
@@ -153,7 +161,8 @@ bool VulkanPipeline::Create(VulkanPipelineConfig *config,
   pipeline_create_info.pStages = &config->stages[0];
   pipeline_create_info.pVertexInputState = &vertex_input_info;
   pipeline_create_info.pInputAssemblyState = &input_assembly;
-  pipeline_create_info.pTessellationState = 0;
+  pipeline_create_info.pTessellationState =
+      config->control_point_count == 0 ? 0 : &tesselation_state_create_info;
   pipeline_create_info.pViewportState = &viewport_state;
   pipeline_create_info.pRasterizationState = &rasterizer_create_info;
   pipeline_create_info.pMultisampleState = &multisampling_create_info;

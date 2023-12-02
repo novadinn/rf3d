@@ -228,4 +228,40 @@ public:
 
     return indices;
   }
+  static std::vector<float> GenerateTerrainVertices(int rezolution, int width,
+                                                    int height) {
+    std::vector<float> vertices;
+
+    for (unsigned int i = 0; i <= rezolution - 1; i++) {
+      for (unsigned int j = 0; j <= rezolution - 1; j++) {
+        vertices.push_back(-width / 2.0f + width * i / (float)rezolution);
+        vertices.push_back(0.0f);
+        vertices.push_back(-height / 2.0f + height * j / (float)rezolution);
+        vertices.push_back(i / (float)rezolution);
+        vertices.push_back(j / (float)rezolution);
+
+        vertices.push_back(-width / 2.0f + width * (i + 1) / (float)rezolution);
+        vertices.push_back(0.0f);
+        vertices.push_back(-height / 2.0f + height * j / (float)rezolution);
+        vertices.push_back((i + 1) / (float)rezolution);
+        vertices.push_back(j / (float)rezolution);
+
+        vertices.push_back(-width / 2.0f + width * i / (float)rezolution);
+        vertices.push_back(0.0f);
+        vertices.push_back(-height / 2.0f +
+                           height * (j + 1) / (float)rezolution);
+        vertices.push_back(i / (float)rezolution);
+        vertices.push_back((j + 1) / (float)rezolution);
+
+        vertices.push_back(-width / 2.0f + width * (i + 1) / (float)rezolution);
+        vertices.push_back(0.0f);
+        vertices.push_back(-height / 2.0f +
+                           height * (j + 1) / (float)rezolution);
+        vertices.push_back((i + 1) / (float)rezolution);
+        vertices.push_back((j + 1) / (float)rezolution);
+      }
+    }
+
+    return vertices;
+  }
 };

@@ -88,10 +88,10 @@ VulkanUtils::GPUShaderStageTypeToVulkanStage(GPUShaderStageType stage) {
   case GPU_SHADER_STAGE_TYPE_GEOMETRY: {
     return VK_SHADER_STAGE_GEOMETRY_BIT;
   } break;
-  case GPU_SHADER_STAGE_TYPE_TESSELATION_CONTROL: {
+  case GPU_SHADER_STAGE_TYPE_TESSELLATION_CONTROL: {
     return VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
   } break;
-  case GPU_SHADER_STAGE_TYPE_TESSELATION_EVALUATION: {
+  case GPU_SHADER_STAGE_TYPE_TESSELLATION_EVALUATION: {
     return VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
   } break;
   default: {
@@ -139,10 +139,10 @@ VulkanUtils::GPUShaderStageFlagsToVulkanShaderStageFlags(uint8_t stage_flags) {
   if (stage_flags & GPU_SHADER_STAGE_TYPE_GEOMETRY) {
     result |= VK_SHADER_STAGE_GEOMETRY_BIT;
   }
-  if (stage_flags & GPU_SHADER_STAGE_TYPE_TESSELATION_CONTROL) {
+  if (stage_flags & GPU_SHADER_STAGE_TYPE_TESSELLATION_CONTROL) {
     result |= VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
   }
-  if (stage_flags & GPU_SHADER_STAGE_TYPE_TESSELATION_EVALUATION) {
+  if (stage_flags & GPU_SHADER_STAGE_TYPE_TESSELLATION_EVALUATION) {
     result |= VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
   }
 
@@ -157,6 +157,9 @@ VulkanUtils::GPUShaderTopologyTypeToVulkanTopology(GPUShaderTopologyType type) {
   } break;
   case GPU_SHADER_TOPOLOGY_TYPE_LINE_LIST: {
     return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+  } break;
+  case GPU_SHADER_TOPOLOGY_TYPE_PATCH_LIST: {
+    return VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
   } break;
   default: {
     ERROR("Unsupported topology type!");
