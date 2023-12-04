@@ -22,11 +22,13 @@ function(buildExample EXAMPLE_NAME)
     ${RF3D_INCLUDE_DIR} 
     ${SDL2_INCLUDE_DIRS} 
     ${ASSIMP_INCLUDE_DIR} 
-    ${CMAKE_SOURCE_DIR}/vendor
+    ${CMAKE_CURRENT_SOURCE_DIR}/../vendor
   )
   target_link_directories(${EXAMPLE_NAME} 
     PRIVATE ${RF3D_LIB_DIR} 
     ${ASSIMP_LIBRARY_DIRS}
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../vendor/SPIRV-Cross
+    PRIVATE /usr/local/lib
   )
   target_link_libraries(${EXAMPLE_NAME} 
     rf3d 

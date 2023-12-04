@@ -10,6 +10,8 @@
 #include <rf3d/framework/logger.h>
 #include <rf3d/framework/renderer/renderer_frontend.h>
 #include <unordered_map>
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb/stb_image.h"
 
 class DeferredExample : public Example {
 public:

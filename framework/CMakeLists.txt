@@ -27,10 +27,10 @@ endif()
 include_directories(
   ${Vulkan_INCLUDE_DIRS}
   ${SDL2_INCLUDE_DIRS}
-  ${CMAKE_SOURCE_DIR}/../vendor
-  ${CMAKE_SOURCE_DIR}/../vendor/glad/include
-  ${CMAKE_SOURCE_DIR}/../vendor/VulkanMemoryAllocator/include
-  ${CMAKE_SOURCE_DIR}/../vendor/glm
+  ${CMAKE_CURRENT_SOURCE_DIR}/../vendor
+  ${CMAKE_CURRENT_SOURCE_DIR}/../vendor/glad/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../vendor/VulkanMemoryAllocator/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../vendor/glm
 )
 
 add_definitions(
@@ -81,7 +81,7 @@ install(DIRECTORY "${CMAKE_SOURCE_DIR}/"
 
 target_link_directories(
   ${PROJECT_NAME}
-  PRIVATE ../vendor/SPIRV-Cross
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../vendor/SPIRV-Cross
   PRIVATE /usr/local/lib
 )
 

@@ -28,7 +28,7 @@ foreach(ASSET ${ASSETS})
   get_filename_component(FILE_PATH ${ASSET} PATH)
   get_filename_component(LAST_DIR ${FILE_PATH} NAME)
   file(COPY ${ASSET} DESTINATION "${PROJECT_BINARY_DIR}/bin/assets/${LAST_DIR}/")
-endforeach(ASSETS)
+endforeach()
 
 file(GLOB_RECURSE VK_GLSL_SOURCE_FILES
   "assets/shaders/*.frag"

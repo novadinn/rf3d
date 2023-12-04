@@ -6,11 +6,11 @@
 #include <rf3d/framework/renderer/renderer_frontend.h>
 #include <string>
 #include <vector>
+#include <array>
 
 #if defined(PLATFORM_WINDOWS)
 #define SLASH_CHAR '\\'
-#elif defined(PLATFORM_LINUX) || defined(PLATFORM_IOS) ||                      \
-    defined(PLATFORM_MACOS) || defined(PLATFORM_ANDROID)
+#else
 #define SLASH_CHAR '/'
 #endif
 
