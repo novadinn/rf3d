@@ -119,9 +119,6 @@ bool VulkanBackend::Initialize(SDL_Window *sdl_window) {
           GPU_RENDER_PASS_CLEAR_FLAG_STENCIL);
 
   main_framebuffers.resize(context->swapchain->GetImageCount());
-  for (uint32_t i = 0; i < main_framebuffers.size(); ++i) {
-    main_framebuffers[i] = RenderTargetAllocate();
-  }
   RegenerateFramebuffers();
 
   context->device->UpdateCommandBuffers();
@@ -214,7 +211,29 @@ void VulkanBackend::Shutdown() {
   window = 0;
 }
 
-void VulkanBackend::Resize(uint32_t width, uint32_t height) {}
+void VulkanBackend::Resize(uint32_t width, uint32_t height) {
+  vkDeviceWaitIdle(context->device->GetLogicalDevice());
+
+  context->swapchain->Recreate(width, height);
+
+  main_render_pass->SetRenderArea(glm::vec4(0, 0, width, height));
+
+  RegenerateFramebuffers();
+
+  context->device->UpdateCommandBuffers();
+
+  for (int i = 0; i < context->images_in_flight.size(); ++i) {
+    context->images_in_flight[i] = 0;
+  }
+  context->images_in_flight.resize(context->swapchain->GetMaxFramesInFlights());
+  for (int i = 0; i < context->in_flight_fences.size(); ++i) {
+    context->in_flight_fences[i]->Destroy();
+  }
+  context->in_flight_fences.resize(context->swapchain->GetMaxFramesInFlights());
+  for (int i = 0; i < context->in_flight_fences.size(); ++i) {
+    context->in_flight_fences[i]->Create(true);
+  }
+}
 
 bool VulkanBackend::BeginFrame() {
   vkDeviceWaitIdle(context->device->GetLogicalDevice());
@@ -237,22 +256,6 @@ bool VulkanBackend::BeginFrame() {
   VulkanCommandBuffer *command_buffer =
       &info.command_buffers[context->image_index];
   command_buffer->Begin(0);
-
-  VkViewport viewport;
-  viewport.x = 0.0f;
-  viewport.y = render_area.w;
-  viewport.width = render_area.z;
-  viewport.height = -render_area.w;
-  viewport.minDepth = 0.0f;
-  viewport.maxDepth = 1.0f;
-
-  VkRect2D scissor;
-  scissor.offset.x = scissor.offset.y = 0;
-  scissor.extent.width = render_area.z;
-  scissor.extent.height = render_area.w;
-
-  vkCmdSetViewport(command_buffer->GetHandle(), 0, 1, &viewport);
-  vkCmdSetScissor(command_buffer->GetHandle(), 0, 1, &scissor);
 
   return true;
 }
@@ -448,6 +451,12 @@ void VulkanBackend::RegenerateFramebuffers() {
     std::vector<GPUAttachment *> attachments;
     attachments.emplace_back(color_attachments[i]);
     attachments.emplace_back(&depth_attachment);
+
+    if (!main_framebuffers[i]) {
+      main_framebuffers[i] = RenderTargetAllocate();
+    } else {
+      main_framebuffers[i]->Destroy();
+    }
 
     main_framebuffers[i]->Create(main_render_pass, attachments, render_area.z,
                                  render_area.w);

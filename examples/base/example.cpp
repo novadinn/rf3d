@@ -10,7 +10,7 @@ Example::Example(const char *example_name, int window_width,
   height = window_height;
   window = SDL_CreateWindow(example_name, SDL_WINDOWPOS_UNDEFINED,
                             SDL_WINDOWPOS_UNDEFINED, width, height,
-                            SDL_WINDOW_VULKAN);
+                            SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
 
   frontend = new RendererFrontend();
   if (!frontend->Initialize(window, RendererBackendType::RBT_VULKAN)) {
@@ -63,10 +63,10 @@ void Example::UpdateStart() {
       if (event.window.event == SDL_WINDOWEVENT_CLOSE) {
         running = false;
       } else if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
-        int width, height;
         SDL_GetWindowSize(window, &width, &height);
 
         frontend->Resize((uint32_t)width, (uint32_t)height);
+        camera->SetViewportSize(width, height);
       }
     } break;
     case SDL_QUIT: {

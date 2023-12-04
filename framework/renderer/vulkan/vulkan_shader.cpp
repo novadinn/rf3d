@@ -128,7 +128,10 @@ bool VulkanShader::Create(std::vector<GPUShaderStageConfig> stage_configs,
     descriptor_set_layouts.emplace_back(set_layout);
   }
 
+  /* TODO: maybe configurable? */
   std::vector<VkDynamicState> dynamic_states;
+  dynamic_states.emplace_back(VK_DYNAMIC_STATE_VIEWPORT);
+  dynamic_states.emplace_back(VK_DYNAMIC_STATE_SCISSOR);
 
   VulkanPipelineConfig pipeline_config;
   pipeline_config.attributes = attributes;

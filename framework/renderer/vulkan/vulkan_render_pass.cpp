@@ -249,6 +249,22 @@ void VulkanRenderPass::Begin(GPURenderTarget *target) {
 
   vkCmdBeginRenderPass(command_buffer->GetHandle(), &begin_info,
                        VK_SUBPASS_CONTENTS_INLINE);
+
+  VkViewport viewport;
+  viewport.x = 0.0f;
+  viewport.y = render_area.w;
+  viewport.width = render_area.z;
+  viewport.height = -render_area.w;
+  viewport.minDepth = 0.0f;
+  viewport.maxDepth = 1.0f;
+
+  VkRect2D scissor;
+  scissor.offset.x = scissor.offset.y = 0;
+  scissor.extent.width = render_area.z;
+  scissor.extent.height = render_area.w;
+
+  vkCmdSetViewport(command_buffer->GetHandle(), 0, 1, &viewport);
+  vkCmdSetScissor(command_buffer->GetHandle(), 0, 1, &scissor);
 }
 
 void VulkanRenderPass::End() {

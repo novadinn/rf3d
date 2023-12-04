@@ -8,15 +8,33 @@ bool VulkanPipeline::Create(VulkanPipelineConfig *config,
                             VulkanRenderPass *render_pass) {
   VulkanContext *context = VulkanBackend::GetContext();
 
+  /* TODO: seriously? */
+  bool dynamic_viewport = false;
+  bool dynamic_scissor = false;
+
+  for (int i = 0; i < config->dynamic_states.size(); ++i) {
+    switch (config->dynamic_states[i]) {
+    case VK_DYNAMIC_STATE_VIEWPORT: {
+      dynamic_viewport = true;
+    } break;
+    case VK_DYNAMIC_STATE_SCISSOR: {
+      dynamic_scissor = true;
+    } break;
+    default: {
+      ERROR("Unsupported dynamic state!");
+    } break;
+    }
+  }
+
   /* TODO: other (configurable) states */
   VkPipelineViewportStateCreateInfo viewport_state = {};
   viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
   viewport_state.pNext = 0;
   viewport_state.flags = 0;
   viewport_state.viewportCount = 1;
-  viewport_state.pViewports = &config->viewport;
+  viewport_state.pViewports = dynamic_viewport ? 0 : &config->viewport;
   viewport_state.scissorCount = 1;
-  viewport_state.pScissors = &config->scissor;
+  viewport_state.pScissors = dynamic_scissor ? 0 : &config->scissor;
 
   VkPipelineRasterizationStateCreateInfo rasterizer_create_info = {};
   rasterizer_create_info.sType =
