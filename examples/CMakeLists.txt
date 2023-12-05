@@ -45,6 +45,7 @@ set(EXAMPLES
   geometry_shader
   deferred
   tesselation
+  depth_texture
 )
 
 function(buildExamples)

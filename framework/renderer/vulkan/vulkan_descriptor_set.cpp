@@ -1,6 +1,7 @@
 #include "vulkan_descriptor_set.h"
 
 #include "../../logger.h"
+#include "../gpu_utils.h"
 #include "vulkan_backend.h"
 #include "vulkan_debug_marker.h"
 #include "vulkan_descriptor_builder.h"
@@ -69,6 +70,9 @@ void VulkanDescriptorSet::Create(
     case GPU_DESCRIPTOR_BINDING_TYPE_ATTACHMENT: {
       VulkanAttachment *native_attachment =
           (VulkanAttachment *)binding.attachment;
+
+      bool is_depth_attachment =
+          GPUUtils::IsDepthFormat(binding.attachment->GetFormat());
 
       attachment_infos[attachment_count].sampler =
           native_attachment->GetSampler();

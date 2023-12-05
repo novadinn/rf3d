@@ -12,18 +12,18 @@ layout(set = 0, binding = 0) uniform WorldUBO {
 }
 worldUBO;
 
-layout(set = 1, binding = 0) uniform sampler2D samplerPosition;
-layout(set = 1, binding = 1) uniform sampler2D samplerNormal;
-layout(set = 1, binding = 2) uniform sampler2D samplerAlbedo;
+layout(set = 1, binding = 0) uniform sampler2D samplerColorPosition;
+layout(set = 1, binding = 1) uniform sampler2D samplerColorNormal;
+layout(set = 1, binding = 2) uniform sampler2D samplerColorAlbedo;
 
 layout(location = 0) in vec2 outTexCoords;
 
 layout(location = 0) out vec4 outColor;
 
 void main() {
-  vec3 fragPos = texture(samplerPosition, outTexCoords).rgb;
-  vec3 normal = texture(samplerNormal, outTexCoords).rgb;
-  vec4 albedo = texture(samplerAlbedo, outTexCoords);
+  vec3 fragPos = texture(samplerColorPosition, outTexCoords).rgb;
+  vec3 normal = texture(samplerColorNormal, outTexCoords).rgb;
+  vec4 albedo = texture(samplerColorAlbedo, outTexCoords);
 
   vec3 color = albedo.rgb * 0.2;
 

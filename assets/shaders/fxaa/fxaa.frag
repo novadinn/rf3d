@@ -4,7 +4,7 @@ layout(location = 0) in vec2 outTexCoords;
 
 layout(location = 0) out vec4 outColor;
 
-layout(set = 0, binding = 0) uniform sampler2D samplerTexture;
+layout(set = 0, binding = 0) uniform sampler2D samplerColorTexture;
 
 /* ---------------------------------------------------------------------------------
  * File:        es3-kepler\FXAA/FXAA3_11.h
@@ -928,10 +928,8 @@ vec3 BlurColor(float offset, sampler2D textureSampler, vec2 texCoords) {
 void main() {
   const float offset = 1.0 / 300.0;
 
-  // outColor = texture(samplerTexture, outTexCoords);
-  // outColor = vec4(BlurColor(offset, samplerTexture, outTexCoords), 1.0);
   const vec2 viewportSize = vec2(800, 600);
-  outColor = FxaaPixelShader(outTexCoords, samplerTexture,
+  outColor = FxaaPixelShader(outTexCoords, samplerColorTexture,
                              vec2(1 / viewportSize.x, 1 / viewportSize.y), 0.75,
                              0.063, 0.0625);
 }

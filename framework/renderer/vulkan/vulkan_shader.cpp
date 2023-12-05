@@ -285,9 +285,27 @@ void VulkanShader::ReflectStageUniforms(spirv_cross::Compiler &compiler,
       continue; /* set and binding are duplicated */
     }
 
+    /* NOTE: since we cannot know if the corresponding arrachment is a texture
+     * or color attachment or depth attachment, the name of the attachment will
+     * be used as a hint to set the corresponding depscriptor type.
+     * Shader convention:
+     * Texture - any name
+     * Color attachment - "samplerColor..."
+     * Depth attachment - "samplerDepth..."
+     */
+
+    VkDescriptorType descriptor_type;
+    if (image.name.find("samplerColor") != std::string::npos) {
+      descriptor_type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    } else if (image.name.find("samplerDepth") != std::string::npos) {
+      descriptor_type = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+    } else {
+      descriptor_type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    }
+
     VkDescriptorSetLayoutBinding layout_binding = {};
     layout_binding.binding = binding;
-    layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    layout_binding.descriptorType = descriptor_type;
     layout_binding.descriptorCount = 1; /* for array of uniforms */
     layout_binding.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS; /* TODO: we are
                            not checking in which stages this is presented */
