@@ -113,9 +113,9 @@ bool VulkanRenderPass::Create(
       attachment.initialLayout =
           attachment_config->load_operation ==
                   GPU_RENDER_PASS_ATTACHMENT_LOAD_OPERATION_LOAD
-              ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+              ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL
               : VK_IMAGE_LAYOUT_UNDEFINED;
-      attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+      attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
     }
 
     attachment_descriptions.emplace_back(attachment);

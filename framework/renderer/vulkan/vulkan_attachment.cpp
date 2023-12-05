@@ -21,8 +21,10 @@ void VulkanAttachment::Create(GPUFormat attachment_format,
       VulkanUtils::GPUTextureUsageToVulkanAspectFlags(aspect);
 
   VkImageUsageFlags usage;
+  /* TODO: all of the attachments are sampled for now */
   if (GPUUtils::IsDepthFormat(format)) {
-    usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    usage = VK_IMAGE_USAGE_SAMPLED_BIT |
+            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
   } else {
     usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
   }
@@ -83,6 +85,7 @@ void VulkanAttachment::Create(GPUFormat attachment_format,
   sampler_create_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
   sampler_create_info.pNext = 0;
   sampler_create_info.flags = 0;
+  /* TODO: linear may not be filterable */
   sampler_create_info.magFilter = VK_FILTER_LINEAR;
   sampler_create_info.minFilter = VK_FILTER_LINEAR;
   sampler_create_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;

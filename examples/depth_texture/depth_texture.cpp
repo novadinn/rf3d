@@ -25,9 +25,9 @@ public:
     vertex_buffer->SetDebugName("Cube vertex buffer");
 
     meshes.resize(3);
-    meshes[0].position = glm::vec3(0, 0, 5.0f);
-    meshes[1].position = glm::vec3(2, 0, 5.0f);
-    meshes[2].position = glm::vec3(-2, 0, 5.0f);
+    meshes[0].position = glm::vec3(0, 0, 0.0f);
+    meshes[1].position = glm::vec3(2, 0, 0.0f);
+    meshes[2].position = glm::vec3(-2, 0, 0.0f);
 
     offscreen_depth_attachment = frontend->AttachmentAllocate();
     offscreen_depth_attachment->Create(

@@ -79,7 +79,8 @@ void VulkanDescriptorSet::Create(
       attachment_infos[attachment_count].imageView =
           native_attachment->GetImageView();
       attachment_infos[attachment_count].imageLayout =
-          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+          is_depth_attachment ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL
+                              : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
       builder = builder.BindImage(binding.binding,
                                   &attachment_infos[attachment_count],
