@@ -30,9 +30,23 @@ enum GPUShaderDepthFlag {
   GPU_SHADER_DEPTH_FLAG_DEPTH_WRITE_ENABLE = (2 << 0),
 };
 
+enum GPUShaderStencilFlag {
+  GPU_SHADER_STENCIL_FLAG_STENCIL_TEST_ENABLE = (1 << 0),
+};
+
 struct GPUShaderStageConfig {
   GPUShaderStageType type;
   const char *file_path;
+};
+
+struct GPUShaderConfig {
+  std::vector<GPUShaderStageConfig> stage_configs;
+  GPUShaderTopologyType topology_type; 
+  uint8_t depth_flags;
+  uint8_t stencil_flags;
+  GPURenderPass *render_pass; 
+  float viewport_width;
+  float viewport_height;
 };
 
 class GPUShader {

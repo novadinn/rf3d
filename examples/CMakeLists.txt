@@ -46,6 +46,7 @@ set(EXAMPLES
   deferred
   tesselation
   depth_texture
+  stencil_buffer
 )
 
 function(buildExamples)
