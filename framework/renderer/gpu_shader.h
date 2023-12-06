@@ -53,10 +53,7 @@ class GPUShader {
 public:
   virtual ~GPUShader(){};
 
-  virtual bool Create(std::vector<GPUShaderStageConfig> stage_configs,
-                      GPUShaderTopologyType topology_type, uint8_t depth_flags,
-                      GPURenderPass *render_pass, float viewport_width,
-                      float viewport_height) = 0;
+  virtual bool Create(GPUShaderConfig * config) = 0;
   virtual void Destroy() = 0;
 
   virtual void Bind() = 0;

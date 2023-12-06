@@ -40,28 +40,35 @@ public:
       index_buffers.emplace_back(index_buffer);
     }
 
-    toon_shader = frontend->ShaderAllocate();
     std::vector<GPUShaderStageConfig> stage_configs;
     stage_configs.emplace_back(GPUShaderStageConfig{
         GPU_SHADER_STAGE_TYPE_VERTEX, "assets/shaders/toon.vert.spv"});
     stage_configs.emplace_back(GPUShaderStageConfig{
         GPU_SHADER_STAGE_TYPE_FRAGMENT, "assets/shaders/toon.frag.spv"});
-    toon_shader->Create(stage_configs, GPU_SHADER_TOPOLOGY_TYPE_TRIANGLE_LIST,
-                   GPU_SHADER_DEPTH_FLAG_DEPTH_TEST_ENABLE |
-                       GPU_SHADER_DEPTH_FLAG_DEPTH_WRITE_ENABLE,
-                   frontend->GetWindowRenderPass(), width, height);
+
+    GPUShaderConfig shader_config;
+    shader_config.stage_configs = stage_configs;
+    shader_config.topology_type = GPU_SHADER_TOPOLOGY_TYPE_TRIANGLE_LIST;
+    shader_config.depth_flags = GPU_SHADER_DEPTH_FLAG_DEPTH_TEST_ENABLE |
+                           GPU_SHADER_DEPTH_FLAG_DEPTH_WRITE_ENABLE;
+    shader_config.stencil_flags = 0;
+    shader_config.render_pass = frontend->GetWindowRenderPass(); 
+    shader_config.viewport_width = width;
+    shader_config.viewport_height = height;
+
+    toon_shader = frontend->ShaderAllocate();
+    toon_shader->Create(&shader_config);
     toon_shader->SetDebugName("Toon shader");
 
-    outline_shader = frontend->ShaderAllocate();
     stage_configs.clear();
     stage_configs.emplace_back(GPUShaderStageConfig{
         GPU_SHADER_STAGE_TYPE_VERTEX, "assets/shaders/outline.vert.spv"});
     stage_configs.emplace_back(GPUShaderStageConfig{
         GPU_SHADER_STAGE_TYPE_FRAGMENT, "assets/shaders/outline.frag.spv"});
-    outline_shader->Create(stage_configs, GPU_SHADER_TOPOLOGY_TYPE_TRIANGLE_LIST,
-                   GPU_SHADER_DEPTH_FLAG_DEPTH_TEST_ENABLE |
-                       GPU_SHADER_DEPTH_FLAG_DEPTH_WRITE_ENABLE,
-                   frontend->GetWindowRenderPass(), width, height);
+    shader_config.stage_configs = stage_configs;
+
+    outline_shader = frontend->ShaderAllocate();
+    outline_shader->Create(&shader_config);
     outline_shader->SetDebugName("Outline shader");
 
     global_uniform = frontend->UniformBufferAllocate();

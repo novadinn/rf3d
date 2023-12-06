@@ -51,14 +51,22 @@ public:
     cubemap->SetDebugName("Cubemap texture");
 
     std::vector<GPUShaderStageConfig> stage_configs;
-    skybox_shader = frontend->ShaderAllocate();
-    stage_configs.clear();
     stage_configs.emplace_back(GPUShaderStageConfig{
         GPU_SHADER_STAGE_TYPE_VERTEX, "assets/shaders/skybox.vert.spv"});
     stage_configs.emplace_back(GPUShaderStageConfig{
         GPU_SHADER_STAGE_TYPE_FRAGMENT, "assets/shaders/skybox.frag.spv"});
-    skybox_shader->Create(stage_configs, GPU_SHADER_TOPOLOGY_TYPE_TRIANGLE_LIST,
-                          0, frontend->GetWindowRenderPass(), width, height);
+
+    GPUShaderConfig shader_config;
+    shader_config.stage_configs = stage_configs;
+    shader_config.topology_type = GPU_SHADER_TOPOLOGY_TYPE_TRIANGLE_LIST;
+    shader_config.depth_flags = 0;
+    shader_config.stencil_flags = 0;
+    shader_config.render_pass = frontend->GetWindowRenderPass(); 
+    shader_config.viewport_width = width;
+    shader_config.viewport_height = height;
+
+    skybox_shader = frontend->ShaderAllocate();
+    skybox_shader->Create(&shader_config);
     skybox_shader->SetDebugName("Skybox shader");
 
     skybox_texture_set = frontend->DescriptorSetAllocate();
@@ -96,17 +104,19 @@ public:
         sphere_indices.data());
     sphere_index_buffer->SetDebugName("Sphere index buffer");
 
-    reflect_shader = frontend->ShaderAllocate();
     stage_configs.clear();
     stage_configs.emplace_back(GPUShaderStageConfig{
         GPU_SHADER_STAGE_TYPE_VERTEX, "assets/shaders/reflect.vert.spv"});
     stage_configs.emplace_back(GPUShaderStageConfig{
         GPU_SHADER_STAGE_TYPE_FRAGMENT, "assets/shaders/reflect.frag.spv"});
-    reflect_shader->Create(stage_configs,
-                           GPU_SHADER_TOPOLOGY_TYPE_TRIANGLE_LIST,
-                           GPU_SHADER_DEPTH_FLAG_DEPTH_TEST_ENABLE |
-                               GPU_SHADER_DEPTH_FLAG_DEPTH_WRITE_ENABLE,
-                           frontend->GetWindowRenderPass(), width, height);
+
+    shader_config.stage_configs = stage_configs;
+    shader_config.render_pass = frontend->GetWindowRenderPass();
+    shader_config.depth_flags = GPU_SHADER_DEPTH_FLAG_DEPTH_TEST_ENABLE |
+                           GPU_SHADER_DEPTH_FLAG_DEPTH_WRITE_ENABLE;
+
+    reflect_shader = frontend->ShaderAllocate();
+    reflect_shader->Create(&shader_config);
     reflect_shader->SetDebugName("Reflect shader");
   }
 

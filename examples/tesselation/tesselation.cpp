@@ -29,7 +29,6 @@ public:
                             vertices.data());
     vertex_buffer->SetDebugName("Cube vertex buffer");
 
-    shader = frontend->ShaderAllocate();
     std::vector<GPUShaderStageConfig> stage_configs;
     stage_configs.emplace_back(GPUShaderStageConfig{
         GPU_SHADER_STAGE_TYPE_VERTEX, "assets/shaders/tessellation.vert.spv"});
@@ -43,10 +42,18 @@ public:
         GPUShaderStageConfig{GPU_SHADER_STAGE_TYPE_FRAGMENT,
                              "assets/shaders/tessellation.frag.spv"});
 
-    shader->Create(stage_configs, GPU_SHADER_TOPOLOGY_TYPE_PATCH_LIST,
-                   GPU_SHADER_DEPTH_FLAG_DEPTH_TEST_ENABLE |
-                       GPU_SHADER_DEPTH_FLAG_DEPTH_WRITE_ENABLE,
-                   frontend->GetWindowRenderPass(), width, height);
+    GPUShaderConfig shader_config;
+    shader_config.stage_configs = stage_configs;
+    shader_config.topology_type = GPU_SHADER_TOPOLOGY_TYPE_PATCH_LIST;
+    shader_config.depth_flags = GPU_SHADER_DEPTH_FLAG_DEPTH_TEST_ENABLE |
+                           GPU_SHADER_DEPTH_FLAG_DEPTH_WRITE_ENABLE;
+    shader_config.stencil_flags = 0;
+    shader_config.render_pass = frontend->GetWindowRenderPass(); 
+    shader_config.viewport_width = width;
+    shader_config.viewport_height = height;
+
+    shader = frontend->ShaderAllocate();
+    shader->Create(&shader_config);
     shader->SetDebugName("Textures shader");
 
     global_uniform = frontend->UniformBufferAllocate();

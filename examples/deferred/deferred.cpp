@@ -172,11 +172,19 @@ public:
         GPU_SHADER_STAGE_TYPE_VERTEX, "assets/shaders/mrt.vert.spv"});
     stage_configs.emplace_back(GPUShaderStageConfig{
         GPU_SHADER_STAGE_TYPE_FRAGMENT, "assets/shaders/mrt.frag.spv"});
+
+    GPUShaderConfig shader_config;
+    shader_config.stage_configs = stage_configs;
+    shader_config.topology_type = GPU_SHADER_TOPOLOGY_TYPE_TRIANGLE_LIST;
+    shader_config.depth_flags = GPU_SHADER_DEPTH_FLAG_DEPTH_TEST_ENABLE |
+                           GPU_SHADER_DEPTH_FLAG_DEPTH_WRITE_ENABLE;
+    shader_config.stencil_flags = 0;
+    shader_config.render_pass = offscreen_render_pass; 
+    shader_config.viewport_width = width;
+    shader_config.viewport_height = height;
+
     mrt_shader = frontend->ShaderAllocate();
-    mrt_shader->Create(stage_configs, GPU_SHADER_TOPOLOGY_TYPE_TRIANGLE_LIST,
-                       GPU_SHADER_DEPTH_FLAG_DEPTH_TEST_ENABLE |
-                           GPU_SHADER_DEPTH_FLAG_DEPTH_WRITE_ENABLE,
-                       offscreen_render_pass, width, height);
+    mrt_shader->Create(&shader_config);
     mrt_shader->SetDebugName("MRT shader");
 
     mrt_global_uniform = frontend->UniformBufferAllocate();
@@ -228,12 +236,12 @@ public:
         GPU_SHADER_STAGE_TYPE_VERTEX, "assets/shaders/deferred.vert.spv"});
     stage_configs.emplace_back(GPUShaderStageConfig{
         GPU_SHADER_STAGE_TYPE_FRAGMENT, "assets/shaders/deferred.frag.spv"});
+
+    shader_config.stage_configs = stage_configs;
+    shader_config.render_pass = frontend->GetWindowRenderPass(); 
+
     deferred_shader = frontend->ShaderAllocate();
-    deferred_shader->Create(stage_configs,
-                            GPU_SHADER_TOPOLOGY_TYPE_TRIANGLE_LIST,
-                            GPU_SHADER_DEPTH_FLAG_DEPTH_TEST_ENABLE |
-                                GPU_SHADER_DEPTH_FLAG_DEPTH_WRITE_ENABLE,
-                            frontend->GetWindowRenderPass(), width, height);
+    deferred_shader->Create(&shader_config);
     deferred_shader->SetDebugName("Deferred shader");
 
     deferred_world_uniform = frontend->UniformBufferAllocate();

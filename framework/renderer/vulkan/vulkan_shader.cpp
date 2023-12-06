@@ -17,11 +17,16 @@
 #include <stdlib.h>
 #include <vulkan/vulkan_beta.h>
 
-bool VulkanShader::Create(std::vector<GPUShaderStageConfig> stage_configs,
-                          GPUShaderTopologyType topology_type,
-                          uint8_t depth_flags, GPURenderPass *render_pass,
-                          float viewport_width, float viewport_height) {
+bool VulkanShader::Create(GPUShaderConfig * config) {
   VulkanContext *context = VulkanBackend::GetContext();
+
+  std::vector<GPUShaderStageConfig> &stage_configs = config->stage_configs;
+  GPUShaderTopologyType topology_type = config->topology_type;
+  uint8_t depth_flags = config->depth_flags; 
+  GPURenderPass *render_pass = config->render_pass;
+  float viewport_width = config->viewport_width;
+  float viewport_height = config->viewport_height;
+
   VulkanRenderPass *native_pass = (VulkanRenderPass *)render_pass;
 
   std::vector<VkShaderModule> stages;

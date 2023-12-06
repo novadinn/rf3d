@@ -74,16 +74,24 @@ public:
         width, height);
     offscreen_render_target->SetDebugName("Offscreen framebuffer");
 
-    shader = frontend->ShaderAllocate();
     std::vector<GPUShaderStageConfig> stage_configs;
     stage_configs.emplace_back(GPUShaderStageConfig{
         GPU_SHADER_STAGE_TYPE_VERTEX, "assets/shaders/textures.vert.spv"});
     stage_configs.emplace_back(GPUShaderStageConfig{
         GPU_SHADER_STAGE_TYPE_FRAGMENT, "assets/shaders/textures.frag.spv"});
-    shader->Create(stage_configs, GPU_SHADER_TOPOLOGY_TYPE_TRIANGLE_LIST,
-                   GPU_SHADER_DEPTH_FLAG_DEPTH_TEST_ENABLE |
-                       GPU_SHADER_DEPTH_FLAG_DEPTH_WRITE_ENABLE,
-                   offscreen_render_pass, width, height);
+
+    GPUShaderConfig shader_config;
+    shader_config.stage_configs = stage_configs;
+    shader_config.topology_type = GPU_SHADER_TOPOLOGY_TYPE_TRIANGLE_LIST;
+    shader_config.depth_flags = GPU_SHADER_DEPTH_FLAG_DEPTH_TEST_ENABLE |
+                           GPU_SHADER_DEPTH_FLAG_DEPTH_WRITE_ENABLE;
+    shader_config.stencil_flags = 0;
+    shader_config.render_pass = offscreen_render_pass; 
+    shader_config.viewport_width = width;
+    shader_config.viewport_height = height;
+
+    shader = frontend->ShaderAllocate();
+    shader->Create(&shader_config);
     shader->SetDebugName("Texture shader");
 
     global_uniform = frontend->UniformBufferAllocate();
@@ -118,17 +126,17 @@ public:
       bindings.clear();
     }
 
-    post_processing_shader = frontend->ShaderAllocate();
     stage_configs.clear();
     stage_configs.emplace_back(GPUShaderStageConfig{
         GPU_SHADER_STAGE_TYPE_VERTEX, "assets/shaders/fxaa.vert.spv"});
     stage_configs.emplace_back(GPUShaderStageConfig{
         GPU_SHADER_STAGE_TYPE_FRAGMENT, "assets/shaders/fxaa.frag.spv"});
-    post_processing_shader->Create(
-        stage_configs, GPU_SHADER_TOPOLOGY_TYPE_TRIANGLE_LIST,
-        GPU_SHADER_DEPTH_FLAG_DEPTH_TEST_ENABLE |
-            GPU_SHADER_DEPTH_FLAG_DEPTH_WRITE_ENABLE,
-        frontend->GetWindowRenderPass(), width, height);
+
+    shader_config.stage_configs = stage_configs;
+    shader_config.render_pass = frontend->GetWindowRenderPass();
+
+    post_processing_shader = frontend->ShaderAllocate();
+    post_processing_shader->Create(&shader_config);
     post_processing_shader->SetDebugName("FXAA shader");
 
     post_processing_set = frontend->DescriptorSetAllocate();
