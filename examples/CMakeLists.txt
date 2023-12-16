@@ -38,10 +38,7 @@ function(buildExample EXAMPLE_NAME)
 endfunction(buildExample)
 
 set(EXAMPLES
-	textures
-  pbr
   skybox
-  fxaa
   geometry_shader
   deferred
   tesselation

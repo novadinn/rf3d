@@ -1,8 +1,8 @@
 #include <iostream>
 
 #include "../base/example.h"
-#include "../base/utils.h"
 #include "../base/mesh.h"
+#include "../base/utils.h"
 #include <SDL2/SDL.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -20,10 +20,9 @@ public:
       GPUVertexBuffer *vertex_buffer = frontend->VertexBufferAllocate();
       vertex_buffer->Create(sia_meshes[i].vertices.size() *
                             sizeof(sia_meshes[i].vertices[0]));
-      vertex_buffer->LoadData(0,
-                              sia_meshes[i].vertices.size() *
-                                  sizeof(sia_meshes[i].vertices[0]),
-                              sia_meshes[i].vertices.data());
+      vertex_buffer->LoadData(
+          0, sia_meshes[i].vertices.size() * sizeof(sia_meshes[i].vertices[0]),
+          sia_meshes[i].vertices.data());
       vertex_buffer->SetDebugName("Sia vertex buffer");
 
       vertex_buffers.emplace_back(vertex_buffer);
@@ -31,10 +30,9 @@ public:
       GPUIndexBuffer *index_buffer = frontend->IndexBufferAllocate();
       index_buffer->Create(sia_meshes[i].indices.size() *
                            sizeof(sia_meshes[i].indices[0]));
-      index_buffer->LoadData(0,
-                             sia_meshes[i].indices.size() *
-                                 sizeof(sia_meshes[i].indices[0]),
-                             sia_meshes[i].indices.data());
+      index_buffer->LoadData(
+          0, sia_meshes[i].indices.size() * sizeof(sia_meshes[i].indices[0]),
+          sia_meshes[i].indices.data());
       index_buffer->SetDebugName("Sia index buffer");
 
       index_buffers.emplace_back(index_buffer);
@@ -50,9 +48,9 @@ public:
     shader_config.stage_configs = stage_configs;
     shader_config.topology_type = GPU_SHADER_TOPOLOGY_TYPE_TRIANGLE_LIST;
     shader_config.depth_flags = GPU_SHADER_DEPTH_FLAG_DEPTH_TEST_ENABLE |
-                           GPU_SHADER_DEPTH_FLAG_DEPTH_WRITE_ENABLE;
+                                GPU_SHADER_DEPTH_FLAG_DEPTH_WRITE_ENABLE;
     shader_config.stencil_flags = 0;
-    shader_config.render_pass = frontend->GetWindowRenderPass(); 
+    shader_config.render_pass = frontend->GetWindowRenderPass();
     shader_config.viewport_width = width;
     shader_config.viewport_height = height;
 
@@ -109,11 +107,11 @@ public:
     delete toon_shader;
     outline_shader->Destroy();
     delete outline_shader;
-    for(int i = 0; i < sia_meshes.size(); ++i) {
-        vertex_buffers[i]->Destroy();
-        delete vertex_buffers[i];
-        index_buffers[i]->Destroy();
-        delete index_buffers[i];
+    for (int i = 0; i < sia_meshes.size(); ++i) {
+      vertex_buffers[i]->Destroy();
+      delete vertex_buffers[i];
+      index_buffers[i]->Destroy();
+      delete index_buffers[i];
     }
   }
 
@@ -137,27 +135,32 @@ public:
         instance_ubo.model =
             glm::translate(instance_ubo.model, glm::vec3(0.0, -1.0, 0.0));
         instance_uniform->LoadData(0, instance_uniform->GetSize(),
-                                     &instance_ubo);
+                                   &instance_ubo);
 
-        for(int i = 0; i < sia_meshes.size(); ++i) {
-            GPUVertexBuffer *vertex_buffer = vertex_buffers[i];
-            GPUIndexBuffer *index_buffer = index_buffers[i];
+        for (int i = 0; i < sia_meshes.size(); ++i) {
+          GPUVertexBuffer *vertex_buffer = vertex_buffers[i];
+          GPUIndexBuffer *index_buffer = index_buffers[i];
 
-            toon_shader->Bind();
-            vertex_buffer->Bind(0);
-            index_buffer->Bind(0);
-            toon_shader->BindUniformBuffer(global_descriptor_set, 0, 0);
-            toon_shader->BindUniformBuffer(instance_descriptor_set, 0, 1);
+          toon_shader->Bind();
+          vertex_buffer->Bind(0);
+          index_buffer->Bind(0);
+          toon_shader->BindUniformBuffer(global_descriptor_set, 0, 0);
+          toon_shader->BindUniformBuffer(instance_descriptor_set, 0, 1);
 
-            frontend->DrawIndexed(sia_meshes[i].indices.size());
+          frontend->DrawIndexed(sia_meshes[i].indices.size());
+        }
 
-            outline_shader->Bind();
-            vertex_buffer->Bind(0);
-            index_buffer->Bind(0);
-            outline_shader->BindUniformBuffer(global_descriptor_set, 0, 0);
-            outline_shader->BindUniformBuffer(instance_descriptor_set, 0, 1);
+        for (int i = 0; i < sia_meshes.size(); ++i) {
+          GPUVertexBuffer *vertex_buffer = vertex_buffers[i];
+          GPUIndexBuffer *index_buffer = index_buffers[i];
 
-            frontend->DrawIndexed(sia_meshes[i].indices.size());
+          outline_shader->Bind();
+          vertex_buffer->Bind(0);
+          index_buffer->Bind(0);
+          outline_shader->BindUniformBuffer(global_descriptor_set, 0, 0);
+          outline_shader->BindUniformBuffer(instance_descriptor_set, 0, 1);
+
+          frontend->DrawIndexed(sia_meshes[i].indices.size());
         }
 
         frontend->EndDebugRegion();
